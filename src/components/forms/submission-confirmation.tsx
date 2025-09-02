@@ -10,8 +10,6 @@ interface SubmissionConfirmationProps {
 }
 
 const SubmissionConfirmation = ({ onStartOver, response }: SubmissionConfirmationProps) => {
-  const operationId = response?.[0]?.leadWrappers?.[0]?.idFullOperation;
-
   return (
     <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="p-3 rounded-full bg-green-100 mb-4">
@@ -22,24 +20,23 @@ const SubmissionConfirmation = ({ onStartOver, response }: SubmissionConfirmatio
           Gracias por completar el formulario. Hemos recibido su información.
         </p>
         
-        {operationId && (
-          <Card className="w-full max-w-md my-4 bg-green-50 border-green-200">
+        {response && (
+          <Card className="w-full max-w-2xl my-4 bg-gray-50 border-gray-200">
             <CardHeader>
-              <CardTitle className="text-lg text-green-800">Detalles de la Confirmación</CardTitle>
+              <CardTitle className="text-lg text-gray-800">Respuesta de Salesforce</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-600">ID de Operación:</span>
-                <span className="font-mono text-green-700 bg-green-100 px-2 py-1 rounded-md">{operationId}</span>
-              </div>
+              <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto">
+                {JSON.stringify(response, null, 2)}
+              </pre>
             </CardContent>
           </Card>
         )}
 
-        <p className="text-sm text-center text-muted-foreground mb-8">
+        <p className="text-sm text-center text-muted-foreground my-8">
           Recibirá un correo electrónico de confirmación en breve. Si tiene alguna pregunta, no dude en ponerse en contacto con nuestro equipo de soporte.
         </p>
-        <Button onClick={onStartOver} size="lg" className="bg-lime-500 hover:bg-lime-600 text-black font-bold">
+        <Button onClick={onStartOver} size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
             Iniciar un nuevo formulario
         </Button>
     </div>

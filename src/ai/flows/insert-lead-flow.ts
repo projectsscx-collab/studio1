@@ -87,8 +87,7 @@ export const insertLeadFlow = ai.defineFlow(
   },
   async (input) => {
     const { accessToken, instanceUrl } = await getSalesforceToken();
-    const leadPayload = {
-        leadWrappers: [
+    const leadPayload = [
             {
                 firstName: input.firstName,
                 lastName: input.lastName,
@@ -143,8 +142,7 @@ export const insertLeadFlow = ai.defineFlow(
                     ipData: {}
                 },
             },
-        ],
-    };
+        ];
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
         method: 'POST',
@@ -152,7 +150,7 @@ export const insertLeadFlow = ai.defineFlow(
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(leadPayload)
+        body: JSON.stringify({ "leadWrappers": leadPayload })
     });
 
     if (!leadResponse.ok) {

@@ -95,7 +95,7 @@ export const insertLeadFlow = ai.defineFlow(
           lastName: input.lastName,
           documentType: input.documentType, 
           documentNumber: input.documentNumber,
-          birthdate: format(input.dateOfBirth, 'yyyy-MM-dd'),
+          birthdate: input.dateOfBirth,
           sex: genderMapping[input.gender] || '04',
           maritalStatus: maritalStatusMapping[input.maritalStatus] || '01',
           additionalInformation: 'test',

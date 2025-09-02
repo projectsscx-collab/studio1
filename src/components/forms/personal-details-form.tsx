@@ -5,14 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { personalDetailsSchema, type PersonalDetailsData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import AiAssistant from '@/components/ai-assistant';
 
 interface PersonalDetailsFormProps {
@@ -33,6 +33,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
     defaultValues: {
       firstName: '',
       lastName: '',
+      dateOfBirth: '',
       documentType: '',
       documentNumber: '',
       nationality: '',
@@ -44,10 +45,19 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
 
   const currentValues = watch();
   const fieldNames = Object.keys(personalDetailsSchema.shape);
+  
+  const getDateFromValue = (value: string | undefined | null): Date | undefined => {
+    if (!value) return undefined;
+    try {
+        return parseISO(value)
+    } catch(e) {
+        return undefined
+    }
+  }
+
 
   return (
-    <FormProvider {...form}>
-      <Form {...form}>
+      <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
@@ -131,7 +141,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             variant={'outline'}
                             className={cn('w-[240px] pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
                           >
-                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            {field.value ? format(getDateFromValue(field.value) || new Date(), 'PPP') : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -139,8 +149,8 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
+                          selected={getDateFromValue(field.value)}
+                          onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
                           disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                           initialFocus
                         />
@@ -160,7 +170,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a nationality" />
-                        </SelectTrigger>
+                        </Trigger>
                       </FormControl>
                       <SelectContent>
                         {nationalities.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
@@ -183,8 +193,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
             </CardFooter>
           </Card>
         </form>
-      </Form>
-    </FormProvider>
+      </FormProvider>
   );
 };
 

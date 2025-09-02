@@ -3,9 +3,8 @@ import { z } from 'zod';
 export const personalDetailsSchema = z.object({
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
   lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
-  dateOfBirth: z.date({
+  dateOfBirth: z.string({
     required_error: 'A date of birth is required.',
-    invalid_type_error: "That's not a valid date!",
   }),
   nationality: z.string().min(1, { message: 'Please select a nationality.' }),
   documentType: z.string().min(1, { message: 'Please select a document type.'}),

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { demographicInfoSchema, type DemographicInfoData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import AiAssistant from '@/components/ai-assistant';
@@ -39,7 +39,6 @@ const DemographicInfoForm = ({ onSubmit, onBack, initialData }: DemographicInfoF
 
   return (
     <FormProvider {...form}>
-    <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
@@ -139,7 +138,6 @@ const DemographicInfoForm = ({ onSubmit, onBack, initialData }: DemographicInfoF
           </CardFooter>
         </Card>
       </form>
-    </Form>
     </FormProvider>
   );
 };

@@ -10,6 +10,7 @@ import FormStepper from '@/components/form-stepper';
 import Logo from '@/components/logo';
 import { insertLead } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const TOTAL_STEPS = 3;
 
@@ -22,14 +23,21 @@ export default function Home() {
   const handleNext = async (data: object) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
-    setFormData(updatedFormData);
+    
 
     if (currentStep < TOTAL_STEPS) {
+      setFormData(updatedFormData);
       setCurrentStep((prev) => prev + 1);
     } else {
+       const finalData = { ...updatedFormData };
+       if (finalData.dateOfBirth && finalData.dateOfBirth instanceof Date) {
+        finalData.dateOfBirth = format(finalData.dateOfBirth, 'yyyy-MM-dd');
+       }
+       setFormData(finalData);
+
       // Last step, submit to salesforce
       try {
-        await insertLead(updatedFormData);
+        await insertLead(finalData);
         setCurrentStep(prev => prev + 1);
       } catch (e) {
         console.error("Failed to insert lead", e);

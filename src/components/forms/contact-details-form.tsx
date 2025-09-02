@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { contactDetailsSchema, type ContactDetailsData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AiAssistant from '@/components/ai-assistant';
@@ -39,8 +39,7 @@ const ContactDetailsForm = ({ onSubmit, onBack, initialData }: ContactDetailsFor
   const fieldNames = Object.keys(contactDetailsSchema.shape);
 
   return (
-    <FormProvider {...form}>
-      <Form {...form}>
+      <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
@@ -162,8 +161,7 @@ const ContactDetailsForm = ({ onSubmit, onBack, initialData }: ContactDetailsFor
             </CardFooter>
           </Card>
         </form>
-      </Form>
-    </FormProvider>
+      </FormProvider>
   );
 };
 

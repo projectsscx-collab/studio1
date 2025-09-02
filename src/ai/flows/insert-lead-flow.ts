@@ -150,7 +150,7 @@ export const insertLeadFlow = ai.defineFlow(
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ "leadWrappers": leadPayload })
+        body: JSON.stringify(leadPayload)
     });
 
     if (!leadResponse.ok) {

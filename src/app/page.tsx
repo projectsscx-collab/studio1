@@ -147,7 +147,7 @@ export default function Home() {
               <FormStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
             </header>
 
-            <main className="relative overflow-hidden">
+            <main className="relative min-h-[700px]">
               <AnimatePresence initial={false} custom={direction}>
                 <motion.div
                   key={currentStep}

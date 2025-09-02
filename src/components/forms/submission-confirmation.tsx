@@ -2,7 +2,6 @@
 
 import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SubmissionConfirmationProps {
   onStartOver: () => void;
@@ -10,25 +9,21 @@ interface SubmissionConfirmationProps {
 
 const SubmissionConfirmation = ({ onStartOver }: SubmissionConfirmationProps) => {
   return (
-    <Card>
-      <CardHeader className="items-center text-center">
-        <div className="p-3 rounded-full bg-accent mb-4">
-            <CheckCircle2 className="h-10 w-10 text-accent-foreground" />
+    <div className="flex flex-col items-center justify-center text-center py-12">
+        <div className="p-3 rounded-full bg-green-100 mb-4">
+            <CheckCircle2 className="h-16 w-16 text-green-600" />
         </div>
-        <CardTitle className="text-2xl">Submission Successful!</CardTitle>
-        <CardDescription>
-          Thank you for completing the form. Your information has been received.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-center text-muted-foreground">
-          You will receive a confirmation email shortly. If you have any questions, please don't hesitate to contact our support team.
+        <h2 className="text-2xl font-bold mb-2">¡Solicitud enviada exitosamente!</h2>
+        <p className="text-muted-foreground mb-6">
+          Gracias por completar el formulario. Hemos recibido su información.
         </p>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <Button onClick={onStartOver}>Start a New Form</Button>
-      </CardFooter>
-    </Card>
+        <p className="text-sm text-center text-muted-foreground mb-8">
+          Recibirá un correo electrónico de confirmación en breve. Si tiene alguna pregunta, no dude en ponerse en contacto con nuestro equipo de soporte.
+        </p>
+        <Button onClick={onStartOver} size="lg" className="bg-lime-500 hover:bg-lime-600 text-black font-bold">
+            Iniciar un nuevo formulario
+        </Button>
+    </div>
   );
 };
 

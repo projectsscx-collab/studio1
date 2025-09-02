@@ -2,16 +2,19 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { format } from 'date-fns';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
-import ContactDetailsForm from '@/components/forms/contact-details-form';
-import DemographicInfoForm from '@/components/forms/demographic-info-form';
+import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
+import QuoteForm from '@/components/forms/quote-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import Logo from '@/components/logo';
 import { insertLead } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
+import Header from '@/components/header';
+import AdditionalInfoForm from '@/components/forms/additional-info-form';
+import PaymentForm from '@/components/forms/payment-form';
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 5;
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -22,14 +25,20 @@ export default function Home() {
 
   const handleNext = async (data: object) => {
     setDirection(1);
-    const updatedFormData = { ...formData, ...data };
+    
+    // Format dateOfBirth if it exists in the current step's data
+    const formattedData = { ...data };
+    if ('dateOfBirth' in formattedData && formattedData.dateOfBirth instanceof Date) {
+        (formattedData as any).dateOfBirth = format(formattedData.dateOfBirth, 'yyyy-MM-dd');
+    }
+
+    const updatedFormData = { ...formData, ...formattedData };
     setFormData(updatedFormData);
     
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep((prev) => prev + 1);
     } else {
        setIsSubmitting(true);
-      // Last step, submit to salesforce
       try {
         await insertLead(updatedFormData);
         setCurrentStep(prev => prev + 1);
@@ -79,10 +88,14 @@ export default function Home() {
       case 1:
         return <PersonalDetailsForm onSubmit={handleNext} initialData={formData} />;
       case 2:
-        return <ContactDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+        return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <DemographicInfoForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 4:
+        return <AdditionalInfoForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+      case 5:
+        return <PaymentForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+      case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} />;
       default:
         return null;
@@ -90,36 +103,31 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-secondary p-4 sm:p-6">
-      <div className="w-full max-w-2xl">
-        <header className="flex flex-col items-center justify-center mb-6 text-center">
-          <Logo className="h-12 w-12 mb-2 text-primary" />
-          <h1 className="text-3xl font-bold font-headline text-primary">CoverMe Forms</h1>
-          <p className="text-muted-foreground mt-1">A smarter way to fill out forms.</p>
-        </header>
+    <div className="flex flex-col min-h-screen bg-background">
+       <Header />
+       <div className="flex-grow flex items-start justify-center p-4 sm:p-6">
+        <div className="w-full max-w-5xl bg-card p-8 rounded-lg shadow-md mt-4">
+            <header className="flex flex-col items-center justify-center mb-8">
+              <FormStepper currentStep={currentStep} />
+            </header>
 
-        {currentStep <= TOTAL_STEPS && (
-            <div className="mb-8">
-                <FormStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
-            </div>
-        )}
-
-        <main className="relative h-[550px] sm:h-[500px] overflow-hidden">
-          <AnimatePresence initial={false} custom={direction}>
-            <motion.div
-              key={currentStep}
-              custom={direction}
-              variants={formVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="absolute w-full"
-            >
-              {renderStep()}
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      </div>
+            <main className="relative h-[650px] overflow-hidden">
+              <AnimatePresence initial={false} custom={direction}>
+                <motion.div
+                  key={currentStep}
+                  custom={direction}
+                  variants={formVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="absolute w-full"
+                >
+                  {renderStep()}
+                </motion.div>
+              </AnimatePresence>
+            </main>
+          </div>
+       </div>
     </div>
   );
 }

@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'CoverMe Forms',
-  description: 'An intelligent form application',
+  title: 'MAPFRE Full Cover',
+  description: 'An intelligent form application for MAPFRE Insurance.',
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased h-full">
+      <body className="font-body antialiased h-full bg-background">
         {children}
         <Toaster />
       </body>

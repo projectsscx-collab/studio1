@@ -9,16 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import {
-  personalDetailsSchema,
-  contactDetailsSchema,
-  demographicInfoSchema,
-} from '@/lib/schemas';
-import { format } from 'date-fns';
+import { personalDetailsSchema } from '@/lib/schemas';
 
-const InsertLeadInputSchema = personalDetailsSchema
-  .merge(contactDetailsSchema)
-  .merge(demographicInfoSchema);
+const InsertLeadInputSchema = personalDetailsSchema;
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
@@ -65,16 +58,13 @@ async function getSalesforceToken(): Promise<{
 const genderMapping: Record<string, string> = {
   male: '01',
   female: '02',
-  'non-binary': '03',
-  'prefer-not-to-say': '04'
 };
 
 const maritalStatusMapping: Record<string, string> = {
-  "Single": "01",
-  "Married": "02",
-  "Divorced": "03",
-  "Widowed": "04",
-  "Separated": "05",
+  "SOLTERO/A": "01",
+  "CASADO/A": "02",
+  "DIVORCIADO/A": "03",
+  "VIUDO/A": "04",
 };
 
 export const insertLeadFlow = ai.defineFlow(
@@ -93,10 +83,10 @@ export const insertLeadFlow = ai.defineFlow(
           idOwner: '005D700000GSthDIAT',
           firstName: input.firstName,
           lastName: input.lastName,
-          documentType: input.documentType, 
-          documentNumber: input.documentNumber,
+          documentType: "02", // Hardcoded for now
+          documentNumber: "AA16923241389", // Hardcoded for now
           birthdate: input.dateOfBirth, // Expects 'yyyy-MM-dd' string
-          sex: genderMapping[input.gender] || '04',
+          sex: genderMapping[input.gender] || '01',
           maritalStatus: maritalStatusMapping[input.maritalStatus] || '01',
           additionalInformation: 'test',
           contactData: {
@@ -104,14 +94,14 @@ export const insertLeadFlow = ai.defineFlow(
             phone: input.phone,
             email: input.email,
             address: {
-              street: input.address,
-              postalCode: input.zip,
-              city: 'Puerto Rico', // Hardcoded as per Postman
+              street: "123 Main St", // Hardcoded
+              postalCode: "12345", // Hardcoded
+              city: 'Puerto Rico', 
               district: "Test",
               municipality: "Test",
-              state: input.state,
-              country: input.country,
-              colony: "Central Park"
+              state: "XX", // Hardcoded
+              country: "XX", // Hardcoded
+              colony: "Central Park" // Hardcoded
             },
           },
           interestProduct: {

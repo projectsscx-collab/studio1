@@ -1,10 +1,9 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { personalDetailsSchema, type PersonalDetailsData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,19 +12,16 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import AiAssistant from '@/components/ai-assistant';
+import ContactDetailsForm from './contact-details-form';
+import VehicleUsageForm from './vehicle-usage-form';
 
 interface PersonalDetailsFormProps {
-  onSubmit: (data: PersonalDetailsData) => void;
+  onSubmit: (data: any) => void;
   initialData: Partial<PersonalDetailsData>;
 }
 
-const nationalities = ["American", "British", "Canadian", "Australian", "German", "French", "Japanese", "Chinese", "Indian", "Brazilian"];
-const documentTypes = [
-    { value: '01', label: 'Passport' },
-    { value: '02', label: 'Driver\'s License' },
-    { value: '03', label: 'National ID' },
-];
+const towns = ["GUAYANILLA - 00656", "ADJUNTAS - 00601", "AGUADA - 00602", "AGUADILLA - 00603"];
+const maritalStatuses = ["SOLTERO/A", "CASADO/A", "DIVORCIADO/A", "VIUDO/A"];
 
 const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {
   const form = useForm<PersonalDetailsData>({
@@ -34,156 +30,155 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
       firstName: '',
       lastName: '',
       dateOfBirth: '',
-      documentType: '',
-      documentNumber: '',
-      nationality: '',
+      gender: '',
+      maritalStatus: '',
+      town: '',
+      email: '',
+      confirmEmail: '',
+      phone: '',
+      isPrincipalDriver: '',
+      hasInsuranceAgent: '',
       ...initialData,
     },
     mode: 'onChange',
   });
-  const { watch, handleSubmit } = form;
-
-  const currentValues = watch();
-  const fieldNames = Object.keys(personalDetailsSchema.shape);
 
   return (
-      <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Details</CardTitle>
-              <CardDescription>Please provide your personal information.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="documentType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Document Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a document type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {documentTypes.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="documentNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Document Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="A1B2C3D4" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date of Birth</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={'outline'}
-                            className={cn('w-[240px] pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
-                          >
-                            {field.value ? format(new Date(field.value), 'PPP') : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                          disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="nationality"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nationality</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a nationality" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {nationalities.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-            <CardFooter className="flex justify-between">
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="space-y-8">
                 <div>
-                <AiAssistant
-                    formType="Personal Details"
-                    currentFields={Object.fromEntries(Object.entries(currentValues).filter(([_, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => [k, String(v)]))}
-                    fieldNames={fieldNames}
-                />
-              </div>
-              <Button type="submit">Next</Button>
-            </CardFooter>
-          </Card>
+                    <h2 className="text-xl font-semibold mb-6">Bríndanos tu información</h2>
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <FormField
+                                control={form.control}
+                                name="firstName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>¿Cuál es tu primer nombre? <span className="text-red-500">*</span></FormLabel>
+                                    <FormControl><Input placeholder="Nestor Maximo" {...field} /></FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="lastName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>¿Cuáles son tus apellidos? <span className="text-red-500">*</span></FormLabel>
+                                    <FormControl><Input placeholder="Aceves Huelamo" {...field} /></FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <FormField
+                                control={form.control}
+                                name="gender"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Género <span className="text-red-500">*</span></FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="MASCULINO" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="male">MASCULINO</SelectItem>
+                                            <SelectItem value="female">FEMENINO</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="town"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>¿En qué pueblo vives? <span className="text-red-500">*</span></FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="GUAYANILLA - 00656" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {towns.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                                control={form.control}
+                                name="maritalStatus"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>¿Cuál es tu estado civil? <span className="text-red-500">*</span></FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="SOLTERO/A" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                             {maritalStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="dateOfBirth"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>¿Cuál es tu fecha de nacimiento? <span className="text-red-500">*</span></FormLabel>
+                                        <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                            <Button
+                                                variant={'outline'}
+                                                className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>09/06/2005</span>}
+                                            </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                            mode="single"
+                                            selected={field.value ? new Date(field.value) : undefined}
+                                            onSelect={(date) => field.onChange(date)}
+                                            disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
+                                            initialFocus
+                                            />
+                                        </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <hr/>
+                
+                <ContactDetailsForm onSubmit={() => {}} initialData={form.getValues()} />
+
+                <hr/>
+
+                <VehicleUsageForm onSubmit={() => {}} initialData={form.getValues()} />
+
+            </div>
+          
+            <div className="flex justify-end mt-12">
+              <Button type="submit" size="lg" className="bg-lime-500 hover:bg-lime-600 text-black font-bold">
+                CONTINUAR &gt;
+              </Button>
+            </div>
         </form>
-      </Form>
+      </FormProvider>
   );
 };
 

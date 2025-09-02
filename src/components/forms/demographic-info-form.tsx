@@ -39,9 +39,10 @@ const DemographicInfoForm = ({ onSubmit, onBack, initialData, isSubmitting }: De
   const currentValues = watch();
   const fieldNames = Object.keys(demographicInfoSchema.shape);
 
+  const finalJson = { ...initialData, ...currentValues };
+
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
             <CardTitle>Demographic Information</CardTitle>
@@ -128,6 +129,13 @@ const DemographicInfoForm = ({ onSubmit, onBack, initialData, isSubmitting }: De
                 </FormItem>
               )}
             />
+
+            <div className="space-y-2">
+                <label className="text-sm font-medium">JSON to Submit</label>
+                <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto">
+                    {JSON.stringify(finalJson, null, 2)}
+                </pre>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Back</Button>
@@ -136,13 +144,12 @@ const DemographicInfoForm = ({ onSubmit, onBack, initialData, isSubmitting }: De
                 currentFields={Object.fromEntries(Object.entries(currentValues).filter(([_, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]))}
                 fieldNames={fieldNames}
               />
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </Button>
           </CardFooter>
         </Card>
-      </form>
     </Form>
   );
 };

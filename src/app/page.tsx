@@ -55,13 +55,7 @@ export default function Home() {
     } else {
        setIsSubmitting(true);
       try {
-        // Format dates right before submission
-        const payload = {
-          ...updatedFormData,
-          birthdate: updatedFormData.birthdate ? format(new Date(updatedFormData.birthdate), 'yyyy-MM-dd') : '',
-          effectiveDate: updatedFormData.effectiveDate ? format(new Date(updatedFormData.effectiveDate), 'yyyy-MM-dd') : '',
-          expirationDate: updatedFormData.expirationDate ? format(new Date(updatedFormData.expirationDate), 'yyyy-MM-dd') : '',
-        };
+        const payload = { ...updatedFormData };
         const response = await insertLead(payload);
         setSubmissionResponse(response);
         setCurrentStep(prev => prev + 1);
@@ -85,7 +79,29 @@ export default function Home() {
   
   const handleStartOver = () => {
     setDirection(1);
-    setFormData({});
+    setFormData({
+      // Step 1
+      firstName: '',
+      lastName: '',
+      documentType: '',
+      documentNumber: '',
+      birthdate: '',
+      mobilePhone: '',
+      phone: '',
+      email: '',
+      // Step 2
+      numero_de_matricula: '',
+      marca: '',
+      modelo: '',
+      ano_del_vehiculo: '',
+      numero_de_serie: '',
+      // Step 3
+      effectiveDate: '',
+      expirationDate: '',
+      paymentMethod: '',
+      paymentPeriodicity: '',
+      paymentTerm: '',
+    });
     setSubmissionResponse(null);
     setCurrentStep(1);
   }
@@ -131,7 +147,7 @@ export default function Home() {
               <FormStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
             </header>
 
-            <main className="relative h-[650px] overflow-hidden">
+            <main className="relative overflow-hidden">
               <AnimatePresence initial={false} custom={direction}>
                 <motion.div
                   key={currentStep}

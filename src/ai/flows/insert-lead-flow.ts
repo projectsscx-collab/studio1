@@ -87,7 +87,9 @@ export const insertLeadFlow = ai.defineFlow(
   },
   async (input) => {
     const { accessToken, instanceUrl } = await getSalesforceToken();
-    const leadPayload = [
+    
+    const leadPayload = {
+        leadWrappers: [
             {
                 firstName: input.firstName,
                 lastName: input.lastName,
@@ -142,7 +144,8 @@ export const insertLeadFlow = ai.defineFlow(
                     ipData: {}
                 },
             },
-        ];
+        ]
+    };
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
         method: 'POST',

@@ -10,7 +10,7 @@ interface SubmissionConfirmationProps {
 }
 
 const SubmissionConfirmation = ({ onStartOver, response }: SubmissionConfirmationProps) => {
-  const operationId = response?.leadWrappers?.[0]?.idFullOperation;
+  const operationId = response?.[0]?.leadWrappers?.[0]?.idFullOperation;
 
   return (
     <div className="flex flex-col items-center justify-center text-center py-12">

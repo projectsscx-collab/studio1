@@ -30,8 +30,8 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         paymentTerm: true,
     })),
     defaultValues: {
-        effectiveDate: undefined,
-        expirationDate: undefined,
+        effectiveDate: '',
+        expirationDate: '',
         paymentMethod: '',
         paymentPeriodicity: '',
         paymentTerm: '',
@@ -66,10 +66,13 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
-                                mode="single"
-                                selected={field.value ? new Date(field.value) : undefined}
-                                onSelect={field.onChange}
-                                initialFocus
+                                    mode="single"
+                                    captionLayout="dropdown-buttons"
+                                    fromYear={new Date().getFullYear()}
+                                    toYear={new Date().getFullYear() + 10}
+                                    selected={field.value ? new Date(field.value) : undefined}
+                                    onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                                    initialFocus
                                 />
                             </PopoverContent>
                             </Popover>
@@ -97,10 +100,13 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
-                                mode="single"
-                                selected={field.value ? new Date(field.value) : undefined}
-                                onSelect={field.onChange}
-                                initialFocus
+                                    mode="single"
+                                    captionLayout="dropdown-buttons"
+                                    fromYear={new Date().getFullYear()}
+                                    toYear={new Date().getFullYear() + 10}
+                                    selected={field.value ? new Date(field.value) : undefined}
+                                    onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                                    initialFocus
                                 />
                             </PopoverContent>
                             </Popover>

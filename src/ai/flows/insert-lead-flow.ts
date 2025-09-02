@@ -95,7 +95,7 @@ export const insertLeadFlow = ai.defineFlow(
           lastName: input.lastName,
           documentType: input.documentType, 
           documentNumber: input.documentNumber,
-          birthdate: input.dateOfBirth,
+          birthdate: input.dateOfBirth, // Expects 'yyyy-MM-dd' string
           sex: genderMapping[input.gender] || '04',
           maritalStatus: maritalStatusMapping[input.maritalStatus] || '01',
           additionalInformation: 'test',
@@ -210,6 +210,7 @@ export const insertLeadFlow = ai.defineFlow(
 
     if (!leadResponse.ok) {
         const errorText = await leadResponse.text();
+        console.error("Salesforce Error Response:", errorText);
         throw new Error(`Failed to insert lead: ${leadResponse.status} ${errorText}`);
     }
 

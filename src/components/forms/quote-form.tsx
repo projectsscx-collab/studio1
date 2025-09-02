@@ -16,7 +16,7 @@ import { SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
 
 interface QuoteFormProps {
   onGetToken: () => void;
-  onSubmit: () => void;
+  onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
@@ -43,19 +43,13 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
   
   const finalData = { ...initialData, ...currentValues };
   
-  const handleFormSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      // First, validate the form using react-hook-form's trigger
-      form.trigger().then(isValid => {
-          if(isValid) {
-              // If form is valid and we have a token, submit. Otherwise, get token.
-              if(tokenResponse) {
-                onSubmit();
-              } else {
-                onGetToken();
-              }
-          }
-      });
+  const handleFormSubmit = (data: any) => {
+      // If we have a token, submit the lead. Otherwise, get the token.
+      if(tokenResponse) {
+        onSubmit(data);
+      } else {
+        onGetToken();
+      }
   }
 
   const leadPayload = {
@@ -120,7 +114,7 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleFormSubmit}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)}>
         <div className="space-y-8">
             <h2 className="text-xl font-semibold">Detalles de la Cotización</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -254,7 +248,7 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
                       {JSON.stringify(tokenResponse || leadPayload, null, 2)}
                   </pre>
               </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between pt-8">
                 <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
                 <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

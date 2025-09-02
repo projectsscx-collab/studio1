@@ -53,7 +53,7 @@ export default function Home() {
     }
   };
 
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmit = async (data: object) => {
     if (!tokenResponse) {
         toast({
             variant: "destructive",
@@ -64,9 +64,12 @@ export default function Home() {
     }
     
     setIsSubmitting(true);
+    const finalData = { ...formData, ...data };
+    setFormData(finalData);
+
     try {
         const payload = { 
-            ...formData,
+            ...finalData,
             accessToken: tokenResponse.access_token,
             instanceUrl: tokenResponse.instance_url
         };
@@ -75,10 +78,11 @@ export default function Home() {
         setCurrentStep(prev => prev + 1);
     } catch (e) {
         console.error("Failed to insert lead", e);
+        const errorMessage = e instanceof Error ? e.message : "There was an error submitting your form. Please try again.";
         toast({
             variant: "destructive",
             title: "Submission Failed",
-            description: "There was an error submitting your form. Please try again."
+            description: errorMessage,
         });
     } finally {
         setIsSubmitting(false);

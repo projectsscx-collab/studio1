@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { format } from 'date-fns';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
 import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
 import QuoteForm from '@/components/forms/quote-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken, SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -42,38 +41,72 @@ export default function Home() {
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
+  const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
   const { toast } = useToast();
 
   const handleNext = async (data: object) => {
     setDirection(1);
-    
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
-    
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep((prev) => prev + 1);
-    } else {
-       setIsSubmitting(true);
-      try {
-        const payload = { ...updatedFormData };
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!tokenResponse) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Salesforce token not available. Please authenticate first."
+        });
+        return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+        const payload = { 
+            ...formData,
+            accessToken: tokenResponse.access_token,
+            instanceUrl: tokenResponse.instance_url
+        };
         const response = await insertLead(payload);
         setSubmissionResponse(response);
         setCurrentStep(prev => prev + 1);
-      } catch (e) {
+    } catch (e) {
         console.error("Failed to insert lead", e);
         toast({
             variant: "destructive",
             title: "Submission Failed",
             description: "There was an error submitting your form. Please try again."
         });
-      } finally {
+    } finally {
         setIsSubmitting(false);
-      }
     }
-  };
+  }
+
+
+  const handleGetToken = async () => {
+    setIsSubmitting(true);
+    setTokenResponse(null);
+    try {
+        const token = await getSalesforceToken();
+        setTokenResponse(token);
+    } catch (e) {
+         console.error("Failed to get token", e);
+        toast({
+            variant: "destructive",
+            title: "Authentication Failed",
+            description: "Could not get authentication token from Salesforce."
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
 
   const handlePrev = () => {
     setDirection(-1);
+    setTokenResponse(null);
     setCurrentStep((prev) => prev - 1);
   };
   
@@ -103,6 +136,7 @@ export default function Home() {
       paymentTerm: '',
     });
     setSubmissionResponse(null);
+    setTokenResponse(null);
     setCurrentStep(1);
   }
 
@@ -130,7 +164,7 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
+        return <QuoteForm onGetToken={handleGetToken} onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} tokenResponse={tokenResponse}/>;
       case 4:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:

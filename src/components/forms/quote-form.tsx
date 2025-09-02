@@ -12,15 +12,18 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Input } from '../ui/input';
+import { SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
 
 interface QuoteFormProps {
-  onSubmit: (data: any) => void;
+  onGetToken: () => void;
+  onSubmit: () => void;
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  tokenResponse: SalesforceTokenResponse | null;
 }
 
-const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormProps) => {
+const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, tokenResponse }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         effectiveDate: true,
@@ -33,11 +36,27 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         ...initialData,
         netPremium: '1000.00',
     },
+    mode: 'onChange'
   });
   
   const currentValues = form.watch();
   
   const finalData = { ...initialData, ...currentValues };
+  
+  const handleFormSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      // First, validate the form using react-hook-form's trigger
+      form.trigger().then(isValid => {
+          if(isValid) {
+              // If form is valid and we have a token, submit. Otherwise, get token.
+              if(tokenResponse) {
+                onSubmit();
+              } else {
+                onGetToken();
+              }
+          }
+      });
+  }
 
   const leadPayload = {
     leadWrappers: [
@@ -101,7 +120,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={handleFormSubmit}>
         <div className="space-y-8">
             <h2 className="text-xl font-semibold">Detalles de la Cotización</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -216,8 +235,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                   name="paymentTerm"
                   render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Plazo de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Plazo de Pago</FormLabel>                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plazo" /></SelectTrigger></FormControl>
                       <SelectContent>
                           {Object.entries(paymentTerms).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
@@ -229,16 +247,18 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                 />
             </div>
              <div className="space-y-2 pt-4">
-                  <label className="text-sm font-medium">JSON a Enviar</label>
+                  <label className="text-sm font-medium">
+                    {tokenResponse ? "Respuesta de Autenticación" : "JSON a Enviar (datos del lead)"}
+                  </label>
                   <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                      {JSON.stringify(leadPayload, null, 2)}
+                      {JSON.stringify(tokenResponse || leadPayload, null, 2)}
                   </pre>
               </div>
-            <div className="flex justify-between pt-8">
+            <div className="flex justify-between">
                 <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
                 <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSubmitting ? 'Enviando...' : 'Enviar'}
+                    {isSubmitting ? 'Procesando...' : (tokenResponse ? 'Enviar Lead' : 'Obtener Token')}
                 </Button>
             </div>
         </div>

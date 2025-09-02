@@ -3,15 +3,31 @@
 /**
  * @fileoverview A Genkit flow to insert a lead into Salesforce.
  *
- * - insertLead - A function that orchestrates authentication and data submission to Salesforce.
- * - InsertLeadInput - The input type for the insertLead function.
+ * - insertLead - A function that orchestrates data submission to Salesforce.
+ * - getSalesforceToken - A function that handles authentication.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
+// Schema for the authentication token response
+const SalesforceTokenResponseSchema = z.object({
+  access_token: z.string(),
+  instance_url: z.string(),
+  id: z.string(),
+  token_type: z.string(),
+  issued_at: z.string(),
+  signature: z.string(),
+});
+export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
+
+
 const InsertLeadInputSchema = z.object({
-  // Step 1
+  // Token and instance URL from auth step
+  accessToken: z.string(),
+  instanceUrl: z.string(),
+
+  // Form data
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
@@ -20,15 +36,11 @@ const InsertLeadInputSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().min(1, 'El teléfono es requerido.'),
   email: z.string().email('El correo electrónico no es válido.'),
-  
-  // Step 2
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),
   marca: z.string().min(1, 'La marca es requerida.'),
   modelo: z.string().min(1, 'El modelo es requerido.'),
   ano_del_vehiculo: z.string().min(1, 'El año del vehículo es requerido.'),
   numero_de_serie: z.string().min(1, 'El número de serie es requerido.'),
-
-  // Step 3
   effectiveDate: z.string().min(1, { message: 'La fecha de efectividad es requerida.'}),
   expirationDate: z.string().min(1, { message: 'La fecha de expiración es requerida.'}),
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
@@ -39,40 +51,50 @@ const InsertLeadInputSchema = z.object({
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
-async function getSalesforceToken(): Promise<any> {
-  const params = new URLSearchParams();
-  params.append('grant_type', 'password');
-  params.append(
-    'client_id',
-    '3MVG9GnaLrwG9TQSi1HwolwMYR_mPFa_N1Vlp6IDnM5CBR7gEw3J3.kA_Yq55RKLo0cpoWqEJPOG0ar8XEV32'
-  );
-  params.append(
-    'client_secret',
-    '2ED807FA499232A40E0F2A8E1A68503F39CC565D2AE677EBA4E80EDBB41F6A42'
-  );
-  params.append('username', 'rwsap@latam.mapfre.com.ropov3');
-  params.append('password', 'R0PoCor3V3@2025!');
+// Flow to get the authentication token
+export const getSalesforceTokenFlow = ai.defineFlow(
+  {
+    name: 'getSalesforceTokenFlow',
+    inputSchema: z.void(),
+    outputSchema: SalesforceTokenResponseSchema,
+  },
+  async () => {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'password');
+    params.append(
+      'client_id',
+      '3MVG9GnaLrwG9TQSi1HwolwMYR_mPFa_N1Vlp6IDnM5CBR7gEw3J3.kA_Yq55RKLo0cpoWqEJPOG0ar8XEV32'
+    );
+    params.append(
+      'client_secret',
+      '2ED807FA499232A40E0F2A8E1A68503F39CC565D2AE677EBA4E80EDBB41F6A42'
+    );
+    params.append('username', 'rwsap@latam.mapfre.com.ropov3');
+    params.append('password', 'R0PoCor3V3@2025!');
 
-  const response = await fetch(
-    'https://test.salesforce.com/services/oauth2/token',
-    {
-      method: 'POST',
-      body: params,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+    const response = await fetch(
+      'https://test.salesforce.com/services/oauth2/token',
+      {
+        method: 'POST',
+        body: params,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Salesforce login failed: ${response.status} ${errorText}`);
     }
-  );
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Salesforce login failed: ${response.status} ${errorText}`);
+    const data = await response.json();
+    return data;
   }
+);
 
-  const data = await response.json();
-  return data;
-}
 
+// Flow to insert the lead, now receiving token and instanceUrl
 export const insertLeadFlow = ai.defineFlow(
   {
     name: 'insertLeadFlow',
@@ -80,22 +102,20 @@ export const insertLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async (input) => {
-    const authResponse = await getSalesforceToken();
-    const accessToken = authResponse.access_token;
-    const instanceUrl = authResponse.instance_url;
+    const { accessToken, instanceUrl, ...formData } = input;
     
     const leadPayload = {
         leadWrappers: [
             {
-                firstName: input.firstName,
-                lastName: input.lastName,
-                documentType: input.documentType,
-                documentNumber: input.documentNumber,
-                birthdate: input.birthdate,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                documentType: formData.documentType,
+                documentNumber: formData.documentNumber,
+                birthdate: formData.birthdate,
                 contactData: {
-                    mobilePhone: input.mobilePhone,
-                    phone: input.phone,
-                    email: input.email,
+                    mobilePhone: formData.mobilePhone,
+                    phone: formData.phone,
+                    email: formData.email,
                 },
                 interestProduct: {
                     businessLine: "01",
@@ -103,24 +123,24 @@ export const insertLeadFlow = ai.defineFlow(
                     subsector: "XX_00",
                     branch: "XX_205",
                     risk: JSON.stringify({
-                        "Número de matrícula__c": input.numero_de_matricula,
-                        "Marca__c": input.marca,
-                        "Modelo__c": input.modelo,
-                        "Año del vehículo__c": input.ano_del_vehiculo,
-                        "Número de serie__c": input.numero_de_serie
+                        "Número de matrícula__c": formData.numero_de_matricula,
+                        "Marca__c": formData.marca,
+                        "Modelo__c": formData.modelo,
+                        "Año del vehículo__c": formData.ano_del_vehiculo,
+                        "Número de serie__c": formData.numero_de_serie
                     }),
                     quotes: [
                         {
                             id: "TestWSConvertMIN",
-                            effectiveDate: input.effectiveDate,
-                            expirationDate: input.expirationDate,
+                            effectiveDate: formData.effectiveDate,
+                            expirationDate: formData.expirationDate,
                             productCode: "PRD001",
                             productName: "Life Insurance",
                             netPremium: 1000.00,
-                            paymentMethod: input.paymentMethod,
+                            paymentMethod: formData.paymentMethod,
                             isSelected: true,
-                            paymentPeriodicity: input.paymentPeriodicity,
-                            paymentTerm: input.paymentTerm,
+                            paymentPeriodicity: formData.paymentPeriodicity,
+                            paymentTerm: formData.paymentTerm,
                             additionalInformation: "test"
                         }
                     ]
@@ -161,6 +181,12 @@ export const insertLeadFlow = ai.defineFlow(
     return await leadResponse.json();
   }
 );
+
+
+// Exported functions to be called from the frontend
+export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
+    return getSalesforceTokenFlow();
+}
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);

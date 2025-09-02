@@ -35,7 +35,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
       lastName: '',
       documentType: '',
       documentNumber: '',
-      birthdate: undefined,
+      birthdate: '',
       mobilePhone: '',
       phone: '',
       email: '',
@@ -122,11 +122,14 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
-                                        mode="single"
-                                        selected={field.value ? new Date(field.value) : undefined}
-                                        onSelect={field.onChange}
-                                        disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
-                                        initialFocus
+                                            mode="single"
+                                            captionLayout="dropdown-buttons"
+                                            fromYear={1900}
+                                            toYear={new Date().getFullYear()}
+                                            selected={field.value ? new Date(field.value) : undefined}
+                                            onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                                            disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
+                                            initialFocus
                                         />
                                     </PopoverContent>
                                     </Popover>

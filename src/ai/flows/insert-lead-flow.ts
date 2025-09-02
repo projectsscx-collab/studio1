@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { personalDetailsSchema } from '@/lib/schemas';
+import { personalDetailsSchema, genderMapping, maritalStatusMapping } from '@/lib/schemas';
 
 const InsertLeadInputSchema = personalDetailsSchema;
 
@@ -54,18 +54,6 @@ async function getSalesforceToken(): Promise<{
     instanceUrl: data.instance_url,
   };
 }
-
-const genderMapping: Record<string, string> = {
-  male: '01',
-  female: '02',
-};
-
-const maritalStatusMapping: Record<string, string> = {
-  "SOLTERO/A": "01",
-  "CASADO/A": "02",
-  "DIVORCIADO/A": "03",
-  "VIUDO/A": "04",
-};
 
 export const insertLeadFlow = ai.defineFlow(
   {

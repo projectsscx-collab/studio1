@@ -1,4 +1,18 @@
+'use client';
+
 import { z } from 'zod';
+
+export const genderMapping: Record<string, string> = {
+  male: '01',
+  female: '02',
+};
+
+export const maritalStatusMapping: Record<string, string> = {
+  "SOLTERO/A": "01",
+  "CASADO/A": "02",
+  "DIVORCIADO/A": "03",
+  "VIUDO/A": "04",
+};
 
 export const personalDetailsSchema = z.object({
   firstName: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),

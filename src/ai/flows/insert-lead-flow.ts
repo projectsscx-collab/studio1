@@ -10,7 +10,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { leadSchema } from '@/lib/schemas';
-import { format } from 'date-fns';
 
 const InsertLeadInputSchema = leadSchema;
 
@@ -74,7 +73,7 @@ export const insertLeadFlow = ai.defineFlow(
           lastName: input.lastName,
           documentType: input.documentType,
           documentNumber: input.documentNumber,
-          birthdate: input.birthdate ? format(new Date(input.birthdate), 'yyyy-MM-dd') : "",
+          birthdate: input.birthdate, // Expecting already formatted string
           sex: "01",
           maritalStatus: "01",
           additionalInformation: 'test',
@@ -110,8 +109,8 @@ export const insertLeadFlow = ai.defineFlow(
                 id: "TestWSConvert",
                 issueDate: "2024-02-01", 
                 dueDate: "2025-01-01",
-                effectiveDate: input.effectiveDate ? format(new Date(input.effectiveDate), 'yyyy-MM-dd') : "",
-                expirationDate: input.expirationDate ? format(new Date(input.expirationDate), 'yyyy-MM-dd') : "",
+                effectiveDate: input.effectiveDate, // Expecting already formatted string
+                expirationDate: input.expirationDate, // Expecting already formatted string
                 productCode: "PRD001",
                 productName: "Life Insurance",
                 netPremium: 1000.00,

@@ -16,7 +16,29 @@ const TOTAL_STEPS = 3;
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({
+      // Step 1
+      firstName: '',
+      lastName: '',
+      documentType: '',
+      documentNumber: '',
+      birthdate: undefined,
+      mobilePhone: '',
+      phone: '',
+      email: '',
+      // Step 2
+      numero_de_matricula: '',
+      marca: '',
+      modelo: '',
+      ano_del_vehiculo: '',
+      numero_de_serie: '',
+      // Step 3
+      effectiveDate: undefined,
+      expirationDate: undefined,
+      paymentMethod: '',
+      paymentPeriodicity: '',
+      paymentTerm: '',
+  });
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -24,13 +46,7 @@ export default function Home() {
   const handleNext = async (data: object) => {
     setDirection(1);
     
-    // Format dateOfBirth if it exists in the current step's data
-    const formattedData = { ...data };
-    if ('birthdate' in formattedData && formattedData.birthdate instanceof Date) {
-        (formattedData as any).birthdate = format(formattedData.birthdate, 'yyyy-MM-dd');
-    }
-
-    const updatedFormData = { ...formData, ...formattedData };
+    const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
     
     if (currentStep < TOTAL_STEPS) {
@@ -38,7 +54,14 @@ export default function Home() {
     } else {
        setIsSubmitting(true);
       try {
-        await insertLead(updatedFormData);
+        // Format dates right before submission
+        const payload = {
+          ...updatedFormData,
+          birthdate: updatedFormData.birthdate ? format(new Date(updatedFormData.birthdate), 'yyyy-MM-dd') : '',
+          effectiveDate: updatedFormData.effectiveDate ? format(new Date(updatedFormData.effectiveDate), 'yyyy-MM-dd') : '',
+          expirationDate: updatedFormData.expirationDate ? format(new Date(updatedFormData.expirationDate), 'yyyy-MM-dd') : '',
+        };
+        await insertLead(payload);
         setCurrentStep(prev => prev + 1);
       } catch (e) {
         console.error("Failed to insert lead", e);

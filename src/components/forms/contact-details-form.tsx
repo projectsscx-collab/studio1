@@ -21,7 +21,16 @@ const countries = ["United States", "United Kingdom", "Canada", "Australia", "Ge
 const ContactDetailsForm = ({ onSubmit, onBack, initialData }: ContactDetailsFormProps) => {
   const form = useForm<ContactDetailsData>({
     resolver: zodResolver(contactDetailsSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: '',
+      phone: '',
+      email: '',
+      ...initialData,
+    },
     mode: 'onChange',
   });
   const { watch } = form;
@@ -146,7 +155,7 @@ const ContactDetailsForm = ({ onSubmit, onBack, initialData }: ContactDetailsFor
               <Button type="button" variant="outline" onClick={onBack}>Back</Button>
                <AiAssistant
                 formType="Contact Details"
-                currentFields={Object.fromEntries(Object.entries(currentValues).map(([k, v]) => [k, String(v)]))}
+                currentFields={Object.fromEntries(Object.entries(currentValues).filter(([_, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]))}
                 fieldNames={fieldNames}
               />
               <Button type="submit">Next</Button>

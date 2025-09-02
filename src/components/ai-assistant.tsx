@@ -87,7 +87,7 @@ const AiAssistant = ({ formType, currentFields, fieldNames }: AiAssistantProps) 
               ))}
             </ul>
           ) : (
-            <div className="text-sm text-muted-foreground">No suggestions available.</div>
+            <div className="text-sm text-muted-foreground">No suggestions available or still typing.</div>
           )}
         </div>
       </PopoverContent>

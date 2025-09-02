@@ -23,7 +23,13 @@ const educationLevels = ["High School", "Some College", "Bachelor's Degree", "Ma
 const DemographicInfoForm = ({ onSubmit, onBack, initialData }: DemographicInfoFormProps) => {
   const form = useForm<DemographicInfoData>({
     resolver: zodResolver(demographicInfoSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      gender: 'prefer-not-to-say',
+      maritalStatus: '',
+      employmentStatus: '',
+      educationLevel: '',
+      ...initialData,
+    },
     mode: 'onChange',
   });
   const { watch } = form;
@@ -126,7 +132,7 @@ const DemographicInfoForm = ({ onSubmit, onBack, initialData }: DemographicInfoF
             <Button type="button" variant="outline" onClick={onBack}>Back</Button>
             <AiAssistant
                 formType="Demographic Information"
-                currentFields={Object.fromEntries(Object.entries(currentValues).map(([k, v]) => [k, String(v)]))}
+                currentFields={Object.fromEntries(Object.entries(currentValues).filter(([_, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]))}
                 fieldNames={fieldNames}
               />
             <Button type="submit">Submit</Button>

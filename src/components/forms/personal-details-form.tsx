@@ -30,7 +30,14 @@ const documentTypes = [
 const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {
   const form = useForm<PersonalDetailsData>({
     resolver: zodResolver(personalDetailsSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      documentType: '',
+      documentNumber: '',
+      nationality: '',
+      ...initialData,
+    },
     mode: 'onChange',
   });
   const { watch } = form;
@@ -168,7 +175,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                <div>
                 <AiAssistant
                     formType="Personal Details"
-                    currentFields={Object.fromEntries(Object.entries(currentValues).map(([k, v]) => [k, String(v)]))}
+                    currentFields={Object.fromEntries(Object.entries(currentValues).filter(([_, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]))}
                     fieldNames={fieldNames}
                 />
               </div>

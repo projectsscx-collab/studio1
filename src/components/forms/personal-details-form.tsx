@@ -2,7 +2,7 @@
 
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { leadSchema, documentTypes } from '@/lib/schemas';
+import { documentTypes, leadSchema } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -172,12 +172,11 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                         />
                     </div>
                 </div>
-            </div>
-          
-            <div className="flex justify-end mt-12">
-              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-                CONTINUAR >
-              </Button>
+                 <div className="flex justify-end pt-8">
+                    <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                        CONTINUAR >
+                    </Button>
+                </div>
             </div>
         </form>
       </FormProvider>

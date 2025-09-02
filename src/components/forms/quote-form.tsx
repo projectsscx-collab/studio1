@@ -234,13 +234,13 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                       {JSON.stringify(leadPayload, null, 2)}
                   </pre>
               </div>
-        </div>
-        <div className="flex justify-between mt-12">
-            <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Enviando...' : 'Enviar'}
-            </Button>
+            <div className="flex justify-between pt-8">
+                <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSubmitting ? 'Enviando...' : 'Enviar'}
+                </Button>
+            </div>
         </div>
       </form>
     </FormProvider>

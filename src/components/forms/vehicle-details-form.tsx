@@ -89,12 +89,12 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
                     )}
                 />
             </div>
-        </div>
-        <div className="flex justify-between mt-12">
-            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-            CONTINUAR >
-            </Button>
+            <div className="flex justify-between pt-8">
+                <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                CONTINUAR >
+                </Button>
+            </div>
         </div>
       </form>
     </FormProvider>

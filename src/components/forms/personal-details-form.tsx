@@ -148,7 +148,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                                             <Calendar
                                             mode="single"
                                             selected={field.value ? new Date(field.value) : undefined}
-                                            onSelect={(date) => field.onChange(date)}
+                                            onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
                                             disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                                             initialFocus
                                             />
@@ -164,11 +164,11 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
 
                 <hr/>
                 
-                <ContactDetailsForm onSubmit={() => {}} initialData={form.getValues()} />
+                <ContactDetailsForm />
 
                 <hr/>
 
-                <VehicleUsageForm onSubmit={() => {}} initialData={form.getValues()} />
+                <VehicleUsageForm />
 
             </div>
           

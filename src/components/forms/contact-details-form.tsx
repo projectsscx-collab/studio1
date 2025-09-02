@@ -1,33 +1,14 @@
 'use client';
 
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { contactDetailsSchema, type ContactDetailsData } from '@/lib/schemas';
-import { Button } from '@/components/ui/button';
+import { useFormContext } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-interface ContactDetailsFormProps {
-  onSubmit: (data: ContactDetailsData) => void;
-  initialData: Partial<ContactDetailsData>;
-}
-
-const ContactDetailsForm = ({ onSubmit, initialData }: ContactDetailsFormProps) => {
-  const form = useForm<ContactDetailsData>({
-    resolver: zodResolver(contactDetailsSchema),
-    defaultValues: {
-      email: '',
-      confirmEmail: '',
-      phone: '',
-      ...initialData,
-    },
-    mode: 'onChange',
-  });
-  const { handleSubmit } = form;
+const ContactDetailsForm = () => {
+  const form = useFormContext();
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)}>
+    <div>
         <h2 className="text-xl font-semibold mb-6">¿Cómo podemos contactarte?</h2>
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -72,8 +53,7 @@ const ContactDetailsForm = ({ onSubmit, initialData }: ContactDetailsFormProps) 
                 )}
             />
         </div>
-      </form>
-    </FormProvider>
+    </div>
   );
 };
 

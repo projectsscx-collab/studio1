@@ -1,33 +1,15 @@
 'use client';
 
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { vehicleUsageSchema, type VehicleUsageData } from '@/lib/schemas';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useFormContext } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface VehicleUsageFormProps {
-  onSubmit: (data: VehicleUsageData) => void;
-  initialData: Partial<VehicleUsageData>;
-}
-
-const VehicleUsageForm = ({ onSubmit, initialData }: VehicleUsageFormProps) => {
-  const form = useForm<VehicleUsageData>({
-    resolver: zodResolver(vehicleUsageSchema),
-    defaultValues: {
-        isPrincipalDriver: '',
-        hasInsuranceAgent: '',
-        ...initialData,
-    },
-    mode: 'onChange',
-  });
-  const { handleSubmit } = form;
+const VehicleUsageForm = () => {
+  const form = useFormContext();
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)}>
+    <div>
         <h2 className="text-xl font-semibold mb-6">¿Quién usaría el vehículo?</h2>
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -65,8 +47,7 @@ const VehicleUsageForm = ({ onSubmit, initialData }: VehicleUsageFormProps) => {
                 />
             </div>
         </div>
-      </form>
-    </FormProvider>
+    </div>
   );
 };
 

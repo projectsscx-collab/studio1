@@ -22,7 +22,14 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
         ano_del_vehiculo: true,
         numero_de_serie: true,
     })),
-    defaultValues: initialData,
+    defaultValues: {
+      numero_de_matricula: '',
+      marca: '',
+      modelo: '',
+      ano_del_vehiculo: '',
+      numero_de_serie: '',
+      ...initialData
+    },
   });
 
   return (

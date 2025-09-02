@@ -30,7 +30,17 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
         phone: true,
         email: true,
     })),
-    defaultValues: initialData,
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      documentType: '',
+      documentNumber: '',
+      birthdate: undefined,
+      mobilePhone: '',
+      phone: '',
+      email: '',
+      ...initialData,
+    },
     mode: 'onChange',
   });
 

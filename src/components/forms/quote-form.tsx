@@ -30,8 +30,13 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         paymentTerm: true,
     })),
     defaultValues: {
+        effectiveDate: undefined,
+        expirationDate: undefined,
+        paymentMethod: '',
+        paymentPeriodicity: '',
+        paymentTerm: '',
+        netPremium: '1000.00',
         ...initialData,
-        netPremium: '1000.00' // Default value
     },
   });
 

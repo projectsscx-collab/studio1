@@ -18,13 +18,13 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<any>({});
   const [direction, setDirection] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleNext = async (data: object) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
     
-
     if (currentStep < TOTAL_STEPS) {
       setFormData(updatedFormData);
       setCurrentStep((prev) => prev + 1);
@@ -34,7 +34,7 @@ export default function Home() {
         finalData.dateOfBirth = format(finalData.dateOfBirth, 'yyyy-MM-dd');
        }
        setFormData(finalData);
-
+       setIsSubmitting(true);
       // Last step, submit to salesforce
       try {
         await insertLead(finalData);
@@ -46,6 +46,8 @@ export default function Home() {
             title: "Submission Failed",
             description: "There was an error submitting your form. Please try again."
         });
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -85,7 +87,7 @@ export default function Home() {
       case 2:
         return <ContactDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <DemographicInfoForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+        return <DemographicInfoForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
         return <SubmissionConfirmation onStartOver={handleStartOver} />;
       default:

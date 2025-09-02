@@ -32,7 +32,7 @@ export const leadSchema = z.object({
   lastName: z.string().min(1, 'El apellido es requerido.'),
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
   documentNumber: z.string().min(1, 'El número de documento es requerido.'),
-  birthdate: z.any().refine(val => val, { message: 'La fecha de nacimiento es requerida.'}),
+  birthdate: z.string().min(1, { message: 'La fecha de nacimiento es requerida.'}),
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().min(1, 'El teléfono es requerido.'),
   email: z.string().email('El correo electrónico no es válido.'),
@@ -45,8 +45,8 @@ export const leadSchema = z.object({
   numero_de_serie: z.string().min(1, 'El número de serie es requerido.'),
 
   // Step 3
-  effectiveDate: z.any().refine(val => val, { message: 'La fecha de efectividad es requerida.'}),
-  expirationDate: z.any().refine(val => val, { message: 'La fecha de expiración es requerida.'}),
+  effectiveDate: z.string().min(1, { message: 'La fecha de efectividad es requerida.'}),
+  expirationDate: z.string().min(1, { message: 'La fecha de expiración es requerida.'}),
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),

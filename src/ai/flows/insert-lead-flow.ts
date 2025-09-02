@@ -64,117 +64,62 @@ export const insertLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl } = await getSalesforceToken();
     const leadPayload = {
-      leadWrappers: [
-        {
-          id: null,
-          idFullOperation: crypto.randomUUID(),
-          idOwner: '005D700000GSthDIAT',
-          firstName: input.firstName,
-          lastName: input.lastName,
-          documentType: input.documentType,
-          documentNumber: input.documentNumber,
-          birthdate: input.birthdate, // Expecting already formatted string
-          sex: "01",
-          maritalStatus: "01",
-          additionalInformation: 'test',
-          contactData: {
-            mobilePhone: input.mobilePhone,
-            phone: input.phone,
-            email: input.email,
-            address: {
-              street: "123 Main St",
-              postalCode: "12345",
-              city: 'Puerto Rico', 
-              district: "Test",
-              municipality: "Test",
-              state: "XX",
-              country: "XX",
-              colony: "Central Park"
+        leadWrappers: [
+            {
+                firstName: input.firstName,
+                lastName: input.lastName,
+                documentType: input.documentType,
+                documentNumber: input.documentNumber,
+                birthdate: input.birthdate,
+                contactData: {
+                    mobilePhone: input.mobilePhone,
+                    phone: input.phone,
+                    email: input.email,
+                },
+                interestProduct: {
+                    businessLine: "01",
+                    sector: "XX_01",
+                    subsector: "XX_00",
+                    branch: "XX_205",
+                    risk: JSON.stringify({
+                        "Número de matrícula__c": input.numero_de_matricula,
+                        "Marca__c": input.marca,
+                        "Modelo__c": input.modelo,
+                        "Año del vehículo__c": input.ano_del_vehiculo,
+                        "Número de serie__c": input.numero_de_serie
+                    }),
+                    quotes: [
+                        {
+                            id: "TestWSConvertMIN",
+                            effectiveDate: input.effectiveDate,
+                            expirationDate: input.expirationDate,
+                            productCode: "PRD001",
+                            productName: "Life Insurance",
+                            netPremium: 1000.00,
+                            paymentMethod: input.paymentMethod,
+                            isSelected: true,
+                            paymentPeriodicity: input.paymentPeriodicity,
+                            paymentTerm: input.paymentTerm,
+                            additionalInformation: "test"
+                        }
+                    ]
+                },
+                utmData: {
+                    utmCampaign: "ROPO_Auto"
+                },
+                sourceData: {
+                    sourceEvent: "01",
+                    eventReason: "01",
+                    sourceSite: "Website",
+                    deviceType: "01",
+                    deviceModel: "iPhone",
+                    leadSource: "01",
+                    origin: "01",
+                    systemOrigin: "05",
+                    ipData: {}
+                },
             },
-          },
-          interestProduct: {
-            businessLine: "01",
-            sector: "XX_01",
-            subsector: "XX_00",
-            branch: "XX_205",
-            risk: JSON.stringify({
-                "Número de matrícula__c": input.numero_de_matricula,
-                "Marca__c": input.marca,
-                "Modelo__c": input.modelo,
-                "Año del vehículo__c": input.ano_del_vehiculo,
-                "Número de serie__c": input.numero_de_serie
-            }),
-            quotes: [
-              {
-                id: "TestWSConvert",
-                issueDate: "2024-02-01", 
-                dueDate: "2025-01-01",
-                effectiveDate: input.effectiveDate, // Expecting already formatted string
-                expirationDate: input.expirationDate, // Expecting already formatted string
-                productCode: "PRD001",
-                productName: "Life Insurance",
-                netPremium: 1000.00,
-                totalPremium: 1200.00,
-                paymentMethod: input.paymentMethod,
-                currencyIsoCode: "EUR",
-                isSelected: true,
-                discount: "0.24",
-                paymentPeriodicity: input.paymentPeriodicity,
-                paymentTerm: input.paymentTerm,
-                additionalInformation: "test"
-              }
-            ]
-          },
-          commercialStructureData: {
-            idIntermediary: null,
-            regionalOffice: null,
-            managerOffice: null
-          },
-          qualificationData: {
-            scoring: "21",
-            rating: "01"
-          },
-          googleAnalyticsData: {
-            gaClientId: "GA12345",
-            gaUserId: "User123",
-            gaTrackId: "Track123",
-            gaTerm: "Insurance",
-            gaMedium: "Email"
-          },
-          utmData: {
-            utmCampaign: "ROPO_Auto",
-            utmContent: "EmailMarketing",
-            utmSource: "Google"
-          },
-          sourceData: {
-            sourceEvent: "01",
-            eventReason: "01",
-            sourceSite: "Website",
-            screenName: "HomePage",
-            deviceType: "01",
-            deviceModel: "iPhone",
-            leadSource: "01",
-            origin: "01",
-            systemOrigin: "05",
-            ipData: {
-              ipSubmitter: "Test",
-              ipHostName: "Test",
-              ipCity: "Test",
-              ipRegion: "Test",
-              ipCountry: "Test",
-              ipPostalCode: "Test",
-              ipLocation: "Test",
-              ipOrganization: "Test"
-            }
-          },
-          conversionData: {
-            convertedStatus: null,
-            policyNumber: null,
-            netPremium: null,
-            totalPremium: null
-          }
-        },
-      ],
+        ],
     };
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {

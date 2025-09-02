@@ -30,13 +30,8 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         paymentTerm: true,
     })),
     defaultValues: {
-        effectiveDate: '',
-        expirationDate: '',
-        paymentMethod: '',
-        paymentPeriodicity: '',
-        paymentTerm: '',
-        netPremium: '1000.00',
         ...initialData,
+        netPremium: '1000.00',
     },
   });
   
@@ -51,7 +46,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
             lastName: finalData.lastName,
             documentType: finalData.documentType,
             documentNumber: finalData.documentNumber,
-            birthdate: finalData.birthdate ? format(new Date(finalData.birthdate), 'yyyy-MM-dd') : '',
+            birthdate: finalData.birthdate,
             contactData: {
                 mobilePhone: finalData.mobilePhone,
                 phone: finalData.phone,
@@ -72,8 +67,8 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                 quotes: [
                     {
                         id: "TestWSConvertMIN",
-                        effectiveDate: finalData.effectiveDate ? format(new Date(finalData.effectiveDate), 'yyyy-MM-dd') : '',
-                        expirationDate: finalData.expirationDate ? format(new Date(finalData.expirationDate), 'yyyy-MM-dd') : '',
+                        effectiveDate: finalData.effectiveDate,
+                        expirationDate: finalData.expirationDate,
                         productCode: "PRD001",
                         productName: "Life Insurance",
                         netPremium: 1000.00,
@@ -253,5 +248,3 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
 };
 
 export default QuoteForm;
-
-    

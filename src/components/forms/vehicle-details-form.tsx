@@ -1,10 +1,11 @@
 'use client';
 
 import { useForm, FormProvider } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { leadSchema } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 interface VehicleDetailsFormProps {
   onSubmit: (data: any) => void;
@@ -12,11 +13,15 @@ interface VehicleDetailsFormProps {
   initialData: any;
 }
 
-const vehicleDetailsSchema = z.object({});
-
 const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFormProps) => {
   const form = useForm({
-    resolver: zodResolver(vehicleDetailsSchema),
+    resolver: zodResolver(leadSchema.pick({
+        numero_de_matricula: true,
+        marca: true,
+        modelo: true,
+        ano_del_vehiculo: true,
+        numero_de_serie: true,
+    })),
     defaultValues: initialData,
   });
 
@@ -24,13 +29,69 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="space-y-8">
-            <h2 className="text-xl font-semibold">Vehicle Details (Placeholder)</h2>
-            <p>This is the second step.</p>
+            <h2 className="text-xl font-semibold mb-6">Datos del Vehículo</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="numero_de_matricula"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Número de Matrícula</FormLabel>
+                        <FormControl><Input placeholder="E.g. 1234ABC" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="marca"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Marca</FormLabel>
+                        <FormControl><Input placeholder="E.g. Toyota" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="modelo"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Modelo</FormLabel>
+                        <FormControl><Input placeholder="E.g. Corolla" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="ano_del_vehiculo"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Año del Vehículo</FormLabel>
+                        <FormControl><Input placeholder="E.g. 2020" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="numero_de_serie"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Número de Serie</FormLabel>
+                        <FormControl><Input placeholder="E.g. 123456789" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
         </div>
         <div className="flex justify-between mt-12">
-            <Button type="button" variant="outline" onClick={onBack}>Back</Button>
-            <Button type="submit" size="lg" className="bg-lime-500 hover:bg-lime-600 text-black font-bold">
-            CONTINUAR &gt;
+            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+            CONTINUAR >
             </Button>
         </div>
       </form>

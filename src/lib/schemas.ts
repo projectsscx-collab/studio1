@@ -2,59 +2,54 @@
 
 import { z } from 'zod';
 
-export const genderMapping: Record<string, string> = {
-  male: '01',
-  female: '02',
+export const documentTypes = {
+  "01": "Cédula de Identidad",
+  "02": "Pasaporte",
+  "03": "Licencia de Conducir",
 };
 
-export const maritalStatusMapping: Record<string, string> = {
-  "SOLTERO/A": "01",
-  "CASADO/A": "02",
-  "DIVORCIADO/A": "03",
-  "VIUDO/A": "04",
+export const paymentMethods = {
+    "01": "Tarjeta de Crédito",
+    "02": "Transferencia Bancaria",
+    "03": "PayPal"
 };
 
-export const personalDetailsSchema = z.object({
-  firstName: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
-  lastName: z.string().min(2, { message: 'El apellido debe tener al menos 2 caracteres.' }),
-  gender: z.string().min(1, { message: 'Por favor seleccione un género.' }),
-  town: z.string().min(1, { message: 'Por favor seleccione un pueblo.' }),
-  maritalStatus: z.string().min(1, { message: 'Por favor seleccione un estado civil.' }),
-  dateOfBirth: z.any().refine(val => val, { message: 'La fecha de nacimiento es requerida.'}),
-  email: z.string().email({ message: 'Correo electrónico inválido.' }),
-  confirmEmail: z.string().email({ message: 'Correo electrónico inválido.' }),
-  phone: z.string().min(1, { message: 'El número de teléfono es requerido.' }),
-  isPrincipalDriver: z.string().min(1, { message: 'Por favor seleccione una opción.' }),
-  hasInsuranceAgent: z.string().optional(),
-}).refine(data => data.email === data.confirmEmail, {
-    message: 'Los correos electrónicos no coinciden.',
-    path: ['confirmEmail'],
+export const paymentPeriodicities = {
+    "01": "Mensual",
+    "02": "Trimestral",
+    "03": "Anual"
+};
+
+export const paymentTerms = {
+    "01": "12 meses",
+    "02": "24 meses",
+    "03": "36 meses"
+};
+
+export const leadSchema = z.object({
+  // Step 1
+  firstName: z.string().min(1, 'El nombre es requerido.'),
+  lastName: z.string().min(1, 'El apellido es requerido.'),
+  documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
+  documentNumber: z.string().min(1, 'El número de documento es requerido.'),
+  birthdate: z.any().refine(val => val, { message: 'La fecha de nacimiento es requerida.'}),
+  mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
+  phone: z.string().min(1, 'El teléfono es requerido.'),
+  email: z.string().email('El correo electrónico no es válido.'),
+  
+  // Step 2
+  numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),
+  marca: z.string().min(1, 'La marca es requerida.'),
+  modelo: z.string().min(1, 'El modelo es requerido.'),
+  ano_del_vehiculo: z.string().min(1, 'El año del vehículo es requerido.'),
+  numero_de_serie: z.string().min(1, 'El número de serie es requerido.'),
+
+  // Step 3
+  effectiveDate: z.any().refine(val => val, { message: 'La fecha de efectividad es requerida.'}),
+  expirationDate: z.any().refine(val => val, { message: 'La fecha de expiración es requerida.'}),
+  paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
+  paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
+  paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
 });
 
-export const contactDetailsSchema = z.object({
-  email: z.string().email({ message: 'Correo electrónico inválido.' }),
-  confirmEmail: z.string().email({ message: 'Correo electrónico inválido.' }),
-  phone: z.string().min(1, { message: 'El número de teléfono es requerido.' }),
-}).refine(data => data.email === data.confirmEmail, {
-    message: 'Los correos electrónicos no coinciden.',
-    path: ['confirmEmail'],
-});
-
-export const vehicleUsageSchema = z.object({
-    isPrincipalDriver: z.string().min(1, { message: 'Por favor seleccione una opción.' }),
-    hasInsuranceAgent: z.string().optional(),
-})
-
-export const demographicInfoSchema = z.object({
-  gender: z.enum(['male', 'female', 'non-binary', 'prefer-not-to-say'], {
-    required_error: 'Please select a gender.',
-  }),
-  maritalStatus: z.string().min(1, { message: 'Please select a marital status.' }),
-  employmentStatus: z.string().min(1, { message: 'Please select an employment status.' }),
-  educationLevel: z.string().min(1, { message: 'Please select an education level.' }),
-});
-
-export type PersonalDetailsData = z.infer<typeof personalDetailsSchema>;
-export type ContactDetailsData = z.infer<typeof contactDetailsSchema>;
-export type VehicleUsageData = z.infer<typeof vehicleUsageSchema>;
-export type DemographicInfoData = z.infer<typeof demographicInfoSchema>;
+export type LeadData = z.infer<typeof leadSchema>;

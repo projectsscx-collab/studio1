@@ -9,9 +9,10 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { personalDetailsSchema, genderMapping, maritalStatusMapping } from '@/lib/schemas';
+import { leadSchema } from '@/lib/schemas';
+import { format } from 'date-fns';
 
-const InsertLeadInputSchema = personalDetailsSchema;
+const InsertLeadInputSchema = leadSchema;
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
@@ -71,25 +72,25 @@ export const insertLeadFlow = ai.defineFlow(
           idOwner: '005D700000GSthDIAT',
           firstName: input.firstName,
           lastName: input.lastName,
-          documentType: "02", // Hardcoded for now
-          documentNumber: "AA16923241389", // Hardcoded for now
-          birthdate: input.dateOfBirth, // Expects 'yyyy-MM-dd' string
-          sex: genderMapping[input.gender] || '01',
-          maritalStatus: maritalStatusMapping[input.maritalStatus] || '01',
+          documentType: input.documentType,
+          documentNumber: input.documentNumber,
+          birthdate: input.birthdate ? format(new Date(input.birthdate), 'yyyy-MM-dd') : "",
+          sex: "01",
+          maritalStatus: "01",
           additionalInformation: 'test',
           contactData: {
-            mobilePhone: input.phone,
+            mobilePhone: input.mobilePhone,
             phone: input.phone,
             email: input.email,
             address: {
-              street: "123 Main St", // Hardcoded
-              postalCode: "12345", // Hardcoded
+              street: "123 Main St",
+              postalCode: "12345",
               city: 'Puerto Rico', 
               district: "Test",
               municipality: "Test",
-              state: "XX", // Hardcoded
-              country: "XX", // Hardcoded
-              colony: "Central Park" // Hardcoded
+              state: "XX",
+              country: "XX",
+              colony: "Central Park"
             },
           },
           interestProduct: {
@@ -98,29 +99,29 @@ export const insertLeadFlow = ai.defineFlow(
             subsector: "XX_00",
             branch: "XX_205",
             risk: JSON.stringify({
-                "Número de matrícula__c": "1234ABC",
-                "Marca__c": "MARCA",
-                "Modelo__c": "MODELO",
-                "Año del vehículo__c": "2000",
-                "Número de serie__c": "4164684"
+                "Número de matrícula__c": input.numero_de_matricula,
+                "Marca__c": input.marca,
+                "Modelo__c": input.modelo,
+                "Año del vehículo__c": input.ano_del_vehiculo,
+                "Número de serie__c": input.numero_de_serie
             }),
             quotes: [
               {
                 id: "TestWSConvert",
                 issueDate: "2024-02-01", 
                 dueDate: "2025-01-01",
-                effectiveDate: "2024-02-01",
-                expirationDate: "2025-02-01",
+                effectiveDate: input.effectiveDate ? format(new Date(input.effectiveDate), 'yyyy-MM-dd') : "",
+                expirationDate: input.expirationDate ? format(new Date(input.expirationDate), 'yyyy-MM-dd') : "",
                 productCode: "PRD001",
                 productName: "Life Insurance",
                 netPremium: 1000.00,
                 totalPremium: 1200.00,
-                paymentMethod: "01",
+                paymentMethod: input.paymentMethod,
                 currencyIsoCode: "EUR",
                 isSelected: true,
                 discount: "0.24",
-                paymentPeriodicity: "01",
-                paymentTerm: "01",
+                paymentPeriodicity: input.paymentPeriodicity,
+                paymentTerm: input.paymentTerm,
                 additionalInformation: "test"
               }
             ]
@@ -168,7 +169,7 @@ export const insertLeadFlow = ai.defineFlow(
             }
           },
           conversionData: {
-            convertedStatus: "01",
+            convertedStatus: null,
             policyNumber: null,
             netPremium: null,
             totalPremium: null

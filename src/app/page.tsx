@@ -11,10 +11,8 @@ import FormStepper from '@/components/form-stepper';
 import { insertLead } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
-import AdditionalInfoForm from '@/components/forms/additional-info-form';
-import PaymentForm from '@/components/forms/payment-form';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 3;
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -28,8 +26,8 @@ export default function Home() {
     
     // Format dateOfBirth if it exists in the current step's data
     const formattedData = { ...data };
-    if ('dateOfBirth' in formattedData && formattedData.dateOfBirth instanceof Date) {
-        (formattedData as any).dateOfBirth = format(formattedData.dateOfBirth, 'yyyy-MM-dd');
+    if ('birthdate' in formattedData && formattedData.birthdate instanceof Date) {
+        (formattedData as any).birthdate = format(formattedData.birthdate, 'yyyy-MM-dd');
     }
 
     const updatedFormData = { ...formData, ...formattedData };
@@ -90,12 +88,8 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+        return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
       case 4:
-        return <AdditionalInfoForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
-      case 5:
-        return <PaymentForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
-      case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} />;
       default:
         return null;
@@ -108,7 +102,7 @@ export default function Home() {
        <div className="flex-grow flex items-start justify-center p-4 sm:p-6">
         <div className="w-full max-w-5xl bg-card p-8 rounded-lg shadow-md mt-4">
             <header className="flex flex-col items-center justify-center mb-8">
-              <FormStepper currentStep={currentStep} />
+              <FormStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
             </header>
 
             <main className="relative h-[650px] overflow-hidden">

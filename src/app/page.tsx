@@ -1,3 +1,103 @@
+'use client';
+
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import PersonalDetailsForm from '@/components/forms/personal-details-form';
+import ContactDetailsForm from '@/components/forms/contact-details-form';
+import DemographicInfoForm from '@/components/forms/demographic-info-form';
+import SubmissionConfirmation from '@/components/forms/submission-confirmation';
+import FormStepper from '@/components/form-stepper';
+import Logo from '@/components/logo';
+
+const TOTAL_STEPS = 3;
+
 export default function Home() {
-  return <></>;
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState({});
+  const [direction, setDirection] = useState(1);
+
+  const handleNext = (data: object) => {
+    setDirection(1);
+    setFormData((prev) => ({ ...prev, ...data }));
+    if (currentStep < TOTAL_STEPS + 1) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentStep((prev) => prev - 1);
+  };
+  
+  const handleStartOver = () => {
+    setDirection(1);
+    setFormData({});
+    setCurrentStep(1);
+  }
+
+  const formVariants = {
+    hidden: (direction: number) => ({
+      x: direction > 0 ? '100%' : '-100%',
+      opacity: 0,
+    }),
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.5, ease: 'easeInOut' },
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? '100%' : '-100%',
+      opacity: 0,
+      transition: { duration: 0.5, ease: 'easeInOut' },
+    }),
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <PersonalDetailsForm onSubmit={handleNext} initialData={formData} />;
+      case 2:
+        return <ContactDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+      case 3:
+        return <DemographicInfoForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+      case 4:
+        return <SubmissionConfirmation onStartOver={handleStartOver} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-secondary p-4 sm:p-6">
+      <div className="w-full max-w-2xl">
+        <header className="flex flex-col items-center justify-center mb-6 text-center">
+          <Logo className="h-12 w-12 mb-2 text-primary" />
+          <h1 className="text-3xl font-bold font-headline text-primary">CoverMe Forms</h1>
+          <p className="text-muted-foreground mt-1">A smarter way to fill out forms.</p>
+        </header>
+
+        {currentStep <= TOTAL_STEPS && (
+            <div className="mb-8">
+                <FormStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
+            </div>
+        )}
+
+        <main className="relative h-[550px] sm:h-[500px] overflow-hidden">
+          <AnimatePresence initial={false} custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="absolute w-full"
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+    </div>
+  );
 }

@@ -39,10 +39,7 @@ const InsertLeadInputSchema = z.object({
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
-async function getSalesforceToken(): Promise<{
-  accessToken: string;
-  instanceUrl: string;
-}> {
+async function getSalesforceToken(): Promise<any> {
   const params = new URLSearchParams();
   params.append('grant_type', 'password');
   params.append(
@@ -73,10 +70,7 @@ async function getSalesforceToken(): Promise<{
   }
 
   const data = await response.json();
-  return {
-    accessToken: data.access_token,
-    instanceUrl: data.instance_url,
-  };
+  return data;
 }
 
 export const insertLeadFlow = ai.defineFlow(
@@ -86,7 +80,9 @@ export const insertLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async (input) => {
-    const { accessToken, instanceUrl } = await getSalesforceToken();
+    const authResponse = await getSalesforceToken();
+    const accessToken = authResponse.access_token;
+    const instanceUrl = authResponse.instance_url;
     
     const leadPayload = {
         leadWrappers: [

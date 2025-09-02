@@ -41,6 +41,7 @@ export default function Home() {
   });
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   const { toast } = useToast();
 
   const handleNext = async (data: object) => {
@@ -61,7 +62,8 @@ export default function Home() {
           effectiveDate: updatedFormData.effectiveDate ? format(new Date(updatedFormData.effectiveDate), 'yyyy-MM-dd') : '',
           expirationDate: updatedFormData.expirationDate ? format(new Date(updatedFormData.expirationDate), 'yyyy-MM-dd') : '',
         };
-        await insertLead(payload);
+        const response = await insertLead(payload);
+        setSubmissionResponse(response);
         setCurrentStep(prev => prev + 1);
       } catch (e) {
         console.error("Failed to insert lead", e);
@@ -84,6 +86,7 @@ export default function Home() {
   const handleStartOver = () => {
     setDirection(1);
     setFormData({});
+    setSubmissionResponse(null);
     setCurrentStep(1);
   }
 
@@ -113,7 +116,7 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
       case 4:
-        return <SubmissionConfirmation onStartOver={handleStartOver} />;
+        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
         return null;
     }

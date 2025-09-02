@@ -8,19 +8,37 @@ import DemographicInfoForm from '@/components/forms/demographic-info-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
 import Logo from '@/components/logo';
+import { insertLead } from '@/ai/flows/insert-lead-flow';
+import { useToast } from '@/hooks/use-toast';
 
 const TOTAL_STEPS = 3;
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<any>({});
   const [direction, setDirection] = useState(1);
+  const { toast } = useToast();
 
-  const handleNext = (data: object) => {
+  const handleNext = async (data: object) => {
     setDirection(1);
-    setFormData((prev) => ({ ...prev, ...data }));
-    if (currentStep < TOTAL_STEPS + 1) {
+    const updatedFormData = { ...formData, ...data };
+    setFormData(updatedFormData);
+
+    if (currentStep < TOTAL_STEPS) {
       setCurrentStep((prev) => prev + 1);
+    } else {
+      // Last step, submit to salesforce
+      try {
+        await insertLead(updatedFormData);
+        setCurrentStep(prev => prev + 1);
+      } catch (e) {
+        console.error("Failed to insert lead", e);
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "There was an error submitting your form. Please try again."
+        });
+      }
     }
   };
 

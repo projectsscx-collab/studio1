@@ -21,6 +21,11 @@ interface PersonalDetailsFormProps {
 }
 
 const nationalities = ["American", "British", "Canadian", "Australian", "German", "French", "Japanese", "Chinese", "Indian", "Brazilian"];
+const documentTypes = [
+    { value: '01', label: 'Passport' },
+    { value: '02', label: 'Driver\'s License' },
+    { value: '03', label: 'National ID' },
+];
 
 const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {
   const form = useForm<PersonalDetailsData>({
@@ -65,6 +70,41 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="documentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Document Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a document type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {documentTypes.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="documentNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Document Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="A1B2C3D4" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -125,11 +165,13 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
               />
             </CardContent>
             <CardFooter className="flex justify-between">
-              <AiAssistant
-                formType="Personal Details"
-                currentFields={Object.fromEntries(Object.entries(currentValues).map(([k, v]) => [k, String(v)]))}
-                fieldNames={fieldNames}
-              />
+               <div>
+                <AiAssistant
+                    formType="Personal Details"
+                    currentFields={Object.fromEntries(Object.entries(currentValues).map(([k, v]) => [k, String(v)]))}
+                    fieldNames={fieldNames}
+                />
+              </div>
               <Button type="submit">Next</Button>
             </CardFooter>
           </Card>

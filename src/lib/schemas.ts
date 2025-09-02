@@ -8,6 +8,8 @@ export const personalDetailsSchema = z.object({
     invalid_type_error: "That's not a valid date!",
   }),
   nationality: z.string().min(1, { message: 'Please select a nationality.' }),
+  documentType: z.string().min(1, { message: 'Please select a document type.'}),
+  documentNumber: z.string().min(1, { message: 'Document number is required.'}),
 });
 
 export const contactDetailsSchema = z.object({

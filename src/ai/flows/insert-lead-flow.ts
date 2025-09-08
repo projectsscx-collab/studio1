@@ -232,11 +232,12 @@ export const updateLeadFlow = ai.defineFlow(
   
       const responseText = await leadResponse.text();
       
-      // Handle empty response for success
-      if (leadResponse.status === 204 || responseText.length === 0) {
+      // Handle empty response for success (e.g., HTTP 204 No Content)
+      if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
         return { success: true, idFullOperation };
       }
 
+      // If we got here, there's likely content to parse.
       const responseData = JSON.parse(responseText);
 
       if (!leadResponse.ok) {

@@ -26,7 +26,7 @@ const SubmissionConfirmation = ({ onStartOver, response }: SubmissionConfirmatio
               <CardTitle className="text-lg text-gray-800">Respuesta de Salesforce</CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto">
+              <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto max-h-96">
                 {JSON.stringify(response, null, 2)}
               </pre>
             </CardContent>

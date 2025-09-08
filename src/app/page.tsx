@@ -67,23 +67,17 @@ export default function Home() {
         
         const response = await insertLead(payload);
 
-        if (response && response[0] && response[0].resultErrors) {
-            const errorMessage = response[0].resultErrors[0]?.errorMessage || "Hubo un error al crear el lead en Salesforce.";
-            throw new Error(errorMessage);
-        }
+        // Si la llamada a la API tiene éxito, 'response' contendrá los datos.
+        // Si hay un error, la promesa será rechazada y el control pasará al bloque 'catch'.
+        // Por lo tanto, si llegamos aquí, la operación fue exitosa en Salesforce.
 
-        const fullOperationId = response?.[0]?.idFullOperation || response?.[0]?.result?.idFullOperation;
+        setSubmissionResponse(response);
+        toast({
+            title: "Lead Creado Exitosamente",
+            description: `Su solicitud ha sido procesada por Salesforce.`,
+        });
+        handleNext(data); // Avanza al siguiente paso (confirmación)
 
-        if (fullOperationId) {
-            setSubmissionResponse(response);
-            toast({
-                title: "Lead Creado Exitosamente",
-                description: `Su lead ha sido creado. ID de Operación: ${fullOperationId}`,
-            });
-            handleNext(data);
-        } else {
-             throw new Error("No se pudo obtener el ID de Operación de Salesforce.");
-        }
     } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";
         toast({

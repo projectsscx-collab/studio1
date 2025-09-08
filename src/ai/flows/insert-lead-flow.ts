@@ -227,6 +227,13 @@ export const updateLeadFlow = ai.defineFlow(
     async (input) => {
         const { accessToken, instanceUrl, leadId, ...formData } = input;
         
+        let utmCampaign = 'ROPO_Auto';
+        if (formData.agentType === 'APM') {
+            utmCampaign = 'ROPO_APMCampaign';
+        } else if (formData.agentType === 'ADM') {
+            utmCampaign = 'ROPO_ADMCampaign';
+        }
+
         // Base structure for the update payload
         const updatePayload: any = {
             leadWrappers: [{
@@ -278,24 +285,22 @@ export const updateLeadFlow = ai.defineFlow(
                     ipData: {},
                 },
                 utmData: {
-                    utmCampaign: 'ROPO_Auto',
+                    utmCampaign: utmCampaign,
                 },
             }],
         };
 
         const leadWrapper = updatePayload.leadWrappers[0];
 
-        // Dynamically adjust sourceData and utmData based on agentType
+        // Dynamically adjust sourceData based on agentType
         if (formData.agentType === 'APM') {
             leadWrapper.sourceData.systemOrigin = '02';
             leadWrapper.sourceData.origin = '02';
             leadWrapper.sourceData.leadSource = '02';
-            leadWrapper.utmData.utmCampaign = 'ROPO_APMCampaign';
         } else if (formData.agentType === 'ADM') {
             leadWrapper.sourceData.systemOrigin = '06';
             leadWrapper.sourceData.origin = '02';
             leadWrapper.sourceData.leadSource = '10';
-            leadWrapper.utmData.utmCampaign = 'ROPO_ADMCampaign';
         }
         
         // Add conversionData only if convertedStatus is provided

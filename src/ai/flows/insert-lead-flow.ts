@@ -54,9 +54,31 @@ const InsertLeadInputSchema = z.object({
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
 
-const UpdateLeadInputSchema = InsertLeadInputSchema.extend({
-    leadResultId: z.string(),
+const UpdateLeadInputSchema = z.object({
+    accessToken: z.string(),
+    instanceUrl: z.string(),
+    leadResultId: z.string(), // This is the idFullOperation from the create step
     
+    // Pass the full original form data
+    firstName: z.string(),
+    lastName: z.string(),
+    documentType: z.string(),
+    documentNumber: z.string(),
+    birthdate: z.string(),
+    mobilePhone: z.string(),
+    phone: z.string(),
+    email: z.string(),
+    numero_de_matricula: z.string(),
+    marca: z.string(),
+    modelo: z.string(),
+    ano_del_vehiculo: z.string(),
+    numero_de_serie: z.string(),
+    effectiveDate: z.string(),
+    expirationDate: z.string(),
+    paymentMethod: z.string(),
+    paymentPeriodicity: z.string(),
+    paymentTerm: z.string(),
+
     // Optional fields for updates
     sourceEvent: z.string().optional(),
     systemOrigin: z.string().optional(),
@@ -210,7 +232,7 @@ export const updateLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl, ...updateData } = input;
     
-    // Re-create the full base payload
+    // Re-create the full base payload to ensure all required fields are present
     const riskObject = {
         'Número de matrícula__c': updateData.numero_de_matricula,
         'Marca__c': updateData.marca,
@@ -219,8 +241,8 @@ export const updateLeadFlow = ai.defineFlow(
         'Número de serie__c': updateData.numero_de_serie,
     };
     
-    const leadWrapperBase = {
-      idFullOperation: updateData.leadResultId, // We use the leadResultId as the idFullOperation
+    const leadWrapperBase: any = {
+      idFullOperation: updateData.leadResultId, // Use the stored ID for the update
       
       // Re-send all required data from the original object
       firstName: updateData.firstName,
@@ -256,30 +278,49 @@ export const updateLeadFlow = ai.defineFlow(
         ],
       },
       
-      // Add/overwrite with the new data for the update
+      // Initialize with default/original sourceData
       sourceData: {
-          sourceEvent: updateData.sourceEvent,
-          systemOrigin: updateData.systemOrigin || '05', // Keep original if not provided
-          origin: updateData.origin || '01', // Keep original if not provided
-          leadSource: updateData.leadSource || '01', // Keep original if not provided
-          // Keep other sourceData fields from insert if needed
+          sourceEvent: '01',
           eventReason: '01',
           sourceSite: 'Website',
           deviceType: '01',
           deviceModel: 'iPhone',
+          leadSource: '01',
+          origin: '01',
+          systemOrigin: '05', 
           ipData: {},
       },
+      // Initialize with default/original utmData
       utmData: {
-          utmCampaign: updateData.utmCampaign || 'ROPO_Auto', // Keep original if not provided
+          utmCampaign: 'ROPO_Auto',
       },
-      conversionData: {
-          convertedStatus: updateData.convertedStatus,
-      }
+      // Initialize empty conversionData
+      conversionData: {},
     };
     
-    // Add ownerId ONLY when converting the lead
+    // Overwrite with the new data for the update if present
+    if (updateData.sourceEvent) {
+        leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
+    }
+    if (updateData.systemOrigin) {
+        leadWrapperBase.sourceData.systemOrigin = updateData.systemOrigin;
+    }
+    if (updateData.origin) {
+        leadWrapperBase.sourceData.origin = updateData.origin;
+    }
+    if (updateData.leadSource) {
+        leadWrapperBase.sourceData.leadSource = updateData.leadSource;
+    }
+    if (updateData.utmCampaign) {
+        leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
+    }
+    
+    // Add conversion data and ownerId ONLY when converting the lead
     if (updateData.convertedStatus) {
-        (leadWrapperBase as any).ownerId = '005D700000GSRhDIAX';
+        leadWrapperBase.conversionData = {
+          convertedStatus: updateData.convertedStatus,
+          ownerId: '005D700000GSRhDIAX' 
+        };
     }
 
     const updatePayload = {
@@ -306,7 +347,12 @@ export const updateLeadFlow = ai.defineFlow(
         return { success: true, message: "Lead updated successfully." };
     }
 
-    return await leadResponse.json();
+    try {
+        return await leadResponse.json();
+    } catch (e) {
+        // If parsing fails but status was OK, assume success.
+        return { success: true, message: "Lead update processed." };
+    }
   }
 );
 

@@ -58,14 +58,12 @@ const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
     leadId: z.string(),
-    idFullOperation: z.string(), // This is now required for updates.
+    idFullOperation: z.string(),
 
-    // Form data from subsequent steps
+    // Form data from all steps
     sourceEvent: z.string().optional(),
     agentType: z.string().optional(),
     convertedStatus: z.string().optional(),
-    
-    // Include all other fields from the form to pass through if needed
     firstName: z.string(),
     lastName: z.string(),
     birthdate: z.string(),
@@ -141,6 +139,14 @@ export const insertLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl, ...formData } = input;
     
+    const riskObject = {
+        'Número de matrícula__c': formData.numero_de_matricula,
+        'Marca__c': formData.marca,
+        'Modelo__c': formData.modelo,
+        'Año del vehículo__c': formData.ano_del_vehiculo,
+        'Número de serie__c': formData.numero_de_serie,
+    };
+
     const leadPayload = {
       leadWrappers: [{
         firstName: formData.firstName,
@@ -158,13 +164,7 @@ export const insertLeadFlow = ai.defineFlow(
             sector: 'XX_01',
             subsector: 'XX_00',
             branch: 'XX_205',
-            risk: JSON.stringify({
-                'Número de matrícula__c': formData.numero_de_matricula,
-                'Marca__c': formData.marca,
-                'Modelo__c': formData.modelo,
-                'Año del vehículo__c': formData.ano_del_vehiculo,
-                'Número de serie__c': formData.numero_de_serie,
-            }),
+            risk: JSON.stringify(riskObject),
             quotes: [
                 {
                     id: 'TestWSConvertMIN',
@@ -225,7 +225,7 @@ export const updateLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async (input) => {
-    const { accessToken, instanceUrl, leadId, ...formData } = input;
+    const { accessToken, instanceUrl, ...formData } = input;
     
     let utmCampaign = 'ROPO_Auto';
     let systemOrigin = '05';
@@ -243,6 +243,14 @@ export const updateLeadFlow = ai.defineFlow(
         origin = '02';
         leadSource = '10';
     }
+    
+    const riskObject = {
+        'Número de matrícula__c': formData.numero_de_matricula,
+        'Marca__c': formData.marca,
+        'Modelo__c': formData.modelo,
+        'Año del vehículo__c': formData.ano_del_vehiculo,
+        'Número de serie__c': formData.numero_de_serie,
+    };
 
     const updatePayload: any = {
         leadWrappers: [{
@@ -262,13 +270,7 @@ export const updateLeadFlow = ai.defineFlow(
                 sector: 'XX_01',
                 subsector: 'XX_00',
                 branch: 'XX_205',
-                risk: JSON.stringify({
-                    'Número de matrícula__c': formData.numero_de_matricula,
-                    'Marca__c': formData.marca,
-                    'Modelo__c': formData.modelo,
-                    'Año del vehículo__c': formData.ano_del_vehiculo,
-                    'Número de serie__c': formData.numero_de_serie,
-                }),
+                risk: JSON.stringify(riskObject),
                 quotes: [{
                     id: 'TestWSConvertMIN',
                     effectiveDate: formData.effectiveDate,

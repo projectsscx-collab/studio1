@@ -121,7 +121,7 @@ export default function Home() {
           const payload = { 
               ...updatedFormData,
               leadId: leadId,
-              idFullOperation: idFullOperation, // Pass idFullOperation
+              idFullOperation: idFullOperation,
               accessToken: tokenResponse.access_token,
               instanceUrl: tokenResponse.instance_url
           };
@@ -160,7 +160,7 @@ export default function Home() {
         const payload = { 
             ...finalData,
             leadId: leadId,
-            idFullOperation: idFullOperation, // Pass idFullOperation
+            idFullOperation: idFullOperation,
             accessToken: tokenResponse.access_token,
             instanceUrl: tokenResponse.instance_url,
         };

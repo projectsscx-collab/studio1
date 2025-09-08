@@ -51,34 +51,34 @@ const InsertLeadInputSchema = z.object({
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
 const UpdateLeadInputSchema = z.object({
-  accessToken: z.string(),
-  instanceUrl: z.string(),
-  leadId: z.string(),
-  // Full data for resubmission
-  firstName: z.string(),
-  lastName: z.string(),
-  birthdate: z.string(),
-  documentType: z.string(),
-  documentNumber: z.string(),
-  mobilePhone: z.string(),
-  phone: z.string(),
-  email: z.string(),
-  // Vehicle data for interestProduct
-  numero_de_matricula: z.string(),
-  marca: z.string(),
-  modelo: z.string(),
-  ano_del_vehiculo: z.string(),
-  numero_de_serie: z.string(),
-  // Quote data for interestProduct
-  effectiveDate: z.string(),
-  expirationDate: z.string(),
-  paymentMethod: z.string(),
-  paymentPeriodicity: z.string(),
-  paymentTerm: z.string(),
-  // Conditional fields for update type
-  sourceEvent: z.string().optional(),
-  agentType: z.string().optional(),
-  convertedStatus: z.string().optional(),
+    accessToken: z.string(),
+    instanceUrl: z.string(),
+    leadId: z.string(),
+    // Full data for resubmission
+    firstName: z.string(),
+    lastName: z.string(),
+    birthdate: z.string(),
+    documentType: z.string(),
+    documentNumber: z.string(),
+    mobilePhone: z.string(),
+    phone: z.string(),
+    email: z.string(),
+    // Vehicle data for interestProduct
+    numero_de_matricula: z.string(),
+    marca: z.string(),
+    modelo: z.string(),
+    ano_del_vehiculo: z.string(),
+    numero_de_serie: z.string(),
+    // Quote data for interestProduct
+    effectiveDate: z.string(),
+    expirationDate: z.string(),
+    paymentMethod: z.string(),
+    paymentPeriodicity: z.string(),
+    paymentTerm: z.string(),
+    // Conditional fields for update type
+    sourceEvent: z.string().optional(),
+    agentType: z.string().optional(),
+    convertedStatus: z.string().optional(),
 });
 export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
@@ -222,12 +222,13 @@ export const updateLeadFlow = ai.defineFlow(
         outputSchema: z.any(),
     },
     async (input) => {
-        const { accessToken, instanceUrl, leadId, agentType, sourceEvent, convertedStatus, ...rest } = input;
+        const { accessToken, instanceUrl, leadId, ...rest } = input;
 
-        // Start with a base payload that includes all required fields for an update.
+        // Base payload structure required for all updates
         const updatePayload: any = {
             leadWrappers: [
                 {
+                    // Always send personal and contact data
                     firstName: rest.firstName,
                     lastName: rest.lastName,
                     birthdate: rest.birthdate,
@@ -238,6 +239,7 @@ export const updateLeadFlow = ai.defineFlow(
                         phone: rest.phone,
                         email: rest.email,
                     },
+                    // Always send interest product data
                     interestProduct: {
                         businessLine: '01',
                         sector: 'XX_01',
@@ -266,15 +268,16 @@ export const updateLeadFlow = ai.defineFlow(
                           },
                         ],
                     },
+                    // Default source and UTM data
                     sourceData: {
-                        sourceEvent: sourceEvent || '01', // Default if not provided
+                        sourceEvent: rest.sourceEvent || '01',
                         eventReason: '01',
                         sourceSite: 'Website',
                         deviceType: '01',
                         deviceModel: 'iPhone',
                         leadSource: '01',
                         origin: '01',
-                        systemOrigin: '05', // Default systemOrigin
+                        systemOrigin: '05',
                         ipData: {},
                     },
                     utmData: {
@@ -284,31 +287,32 @@ export const updateLeadFlow = ai.defineFlow(
             ]
         };
         
-        // Modify the payload based on the agentType
-        if (agentType) {
-            if (agentType === 'APM') {
-                updatePayload.leadWrappers[0].sourceData.systemOrigin = '02';
-                updatePayload.leadWrappers[0].sourceData.origin = '02';
+        // Modify payload based on agentType
+        if (rest.agentType) {
+            const sourceData = updatePayload.leadWrappers[0].sourceData;
+            if (rest.agentType === 'APM') {
+                sourceData.systemOrigin = '02';
+                sourceData.origin = '02';
+                sourceData.leadSource = '02';
                 updatePayload.leadWrappers[0].utmData.utmCampaign = 'ROPO_APMCampaign';
-                updatePayload.leadWrappers[0].sourceData.leadSource = '02';
-            } else if (agentType === 'ADM') {
-                updatePayload.leadWrappers[0].sourceData.systemOrigin = '06';
-                updatePayload.leadWrappers[0].sourceData.origin = '02';
+            } else if (rest.agentType === 'ADM') {
+                sourceData.systemOrigin = '06';
+                sourceData.origin = '02';
+                sourceData.leadSource = '10';
                 updatePayload.leadWrappers[0].utmData.utmCampaign = 'ROPO_ADMCampaign';
-                updatePayload.leadWrappers[0].sourceData.leadSource = '10';
             }
         }
 
-        // Add conversion data if provided. This is the key change.
-        // The process CORE_ConvertLeads needs this object to exist.
-        if (convertedStatus) {
+        // If this update is for conversion, add the conversionData object
+        if (rest.convertedStatus) {
             updatePayload.leadWrappers[0].conversionData = {
-                convertedStatus: convertedStatus
+                convertedStatus: rest.convertedStatus
             };
         }
 
+        // The endpoint for updates includes the leadId in the URL
         const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
-            method: 'POST',
+            method: 'POST', // API requires POST for updates
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'

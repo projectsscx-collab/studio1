@@ -40,16 +40,19 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
   
   const leadPayload = {
       leadWrappers: [{
+        // Personal Data
         firstName: allData.firstName,
         lastName: allData.lastName,
         birthdate: allData.birthdate,
         documentType: allData.documentType,
         documentNumber: allData.documentNumber,
+        // Contact Data
         contactData: {
             mobilePhone: allData.mobilePhone,
             phone: allData.phone,
             email: allData.email,
         },
+        // Interest Product and Vehicle Data
         interestProduct: {
             businessLine: '01',
             sector: 'XX_01',
@@ -62,9 +65,10 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                 'Año del vehículo__c': allData.ano_del_vehiculo,
                 'Número de serie__c': allData.numero_de_serie,
             }),
+            // Quote Data
             quotes: [
                 {
-                    id: 'TestWSConvertMIN',
+                    id: 'TestWSConvertMIN', // Static ID as required by Apex validation
                     effectiveDate: allData.effectiveDate,
                     expirationDate: allData.expirationDate,
                     productCode: 'PRD001',
@@ -78,6 +82,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                 },
             ],
         },
+        // Default Source Data
         sourceData: {
             sourceEvent: '01',
             eventReason: '01',
@@ -89,6 +94,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
             systemOrigin: '05', 
             ipData: {},
         },
+        // Default UTM Data
         utmData: {
             utmCampaign: 'ROPO_Auto',
         },
@@ -233,7 +239,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">JSON a Enviar (Creación)</label>
+            <label className="text-sm font-medium">JSON a Enviar</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(leadPayload, null, 2)}
             </pre>

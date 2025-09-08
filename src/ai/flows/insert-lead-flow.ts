@@ -315,7 +315,7 @@ export const updateLeadFlow = ai.defineFlow(
           convertedStatus: updateData.convertedStatus
         };
         // This is the correct way to pass the owner for conversion, as per the Apex class.
-        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; 
+        leadWrapperBase.idOwner = '005D700000GSthDIAT'; 
     }
 
     const updatePayload: any = {

@@ -9,7 +9,7 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken, SalesforceTokenResponse, updateLead } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken, SalesforceTokenResponse, updateLead, UpdateLeadInput } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -91,6 +91,9 @@ export default function Home() {
                 title: "Lead Creado Exitosamente",
                 description: `El lead con ID: ${leadId} ha sido creado.`,
             });
+        } else {
+           const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido.";
+            throw new Error(errorMessage);
         }
 
         handleNext(data);
@@ -127,18 +130,11 @@ export default function Home() {
             throw new Error("No se pudo encontrar el leadResultId en la respuesta de envío.");
         }
         
-        const payload: any = { 
+        const payload: UpdateLeadInput = { 
             accessToken: tokenResponse.access_token,
             instanceUrl: tokenResponse.instance_url,
             leadId: leadId,
-            documentType: updatedFormData.documentType,
-            documentNumber: updatedFormData.documentNumber,
-            mobilePhone: updatedFormData.mobilePhone,
-            phone: updatedFormData.phone,
-            email: updatedFormData.email,
-            firstName: updatedFormData.firstName,
-            lastName: updatedFormData.lastName,
-            birthdate: updatedFormData.birthdate,
+            ...updatedFormData,
         };
         
         if (data.hasOwnProperty('agentType')) {
@@ -153,11 +149,16 @@ export default function Home() {
         const response = await updateLead(payload);
         setLastUpdateResponse(response);
         
-        toast({
-            title: "Lead Actualizado Exitosamente",
-            description: `El lead con ID: ${leadId} ha sido actualizado.`,
-        });
-
+        if (response[0]?.leadResultId) {
+             toast({
+                title: "Lead Actualizado Exitosamente",
+                description: `El lead con ID: ${leadId} ha sido actualizado.`,
+            });
+        } else {
+            const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido al actualizar.";
+            throw new Error(errorMessage);
+        }
+       
         handleNext(data);
     } catch (e) {
         console.error("Failed to update lead", e);

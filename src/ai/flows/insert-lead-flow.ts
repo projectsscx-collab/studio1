@@ -54,6 +54,7 @@ const UpdateLeadInputSchema = z.object({
   accessToken: z.string(),
   instanceUrl: z.string(),
   leadId: z.string(),
+  // Full data for resubmission
   documentType: z.string(),
   documentNumber: z.string(),
   mobilePhone: z.string(),
@@ -62,6 +63,19 @@ const UpdateLeadInputSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   birthdate: z.string(),
+  // Vehicle data for interestProduct
+  numero_de_matricula: z.string(),
+  marca: z.string(),
+  modelo: z.string(),
+  ano_del_vehiculo: z.string(),
+  numero_de_serie: z.string(),
+  // Quote data for interestProduct
+  effectiveDate: z.string(),
+  expirationDate: z.string(),
+  paymentMethod: z.string(),
+  paymentPeriodicity: z.string(),
+  paymentTerm: z.string(),
+  // Conditional fields for update type
   sourceEvent: z.string().optional(),
   agentType: z.string().optional(),
   convertedStatus: z.string().optional(),
@@ -224,7 +238,34 @@ export const updateLeadFlow = ai.defineFlow(
                         phone: rest.phone,
                         email: rest.email,
                     },
-                    // Include source and utm data shells to be populated if needed
+                    interestProduct: {
+                        businessLine: '01',
+                        sector: 'XX_01',
+                        subsector: 'XX_00',
+                        branch: 'XX_205',
+                        risk: JSON.stringify({
+                          'Número de matrícula__c': rest.numero_de_matricula,
+                          'Marca__c': rest.marca,
+                          'Modelo__c': rest.modelo,
+                          'Año del vehículo__c': rest.ano_del_vehiculo,
+                          'Número de serie__c': rest.numero_de_serie,
+                        }),
+                        quotes: [
+                          {
+                            id: 'TestWSConvertMIN',
+                            effectiveDate: rest.effectiveDate,
+                            expirationDate: rest.expirationDate,
+                            productCode: 'PRD001',
+                            productName: 'Life Insurance',
+                            netPremium: 1000.0,
+                            paymentMethod: rest.paymentMethod,
+                            isSelected: true,
+                            paymentPeriodicity: rest.paymentPeriodicity,
+                            paymentTerm: rest.paymentTerm,
+                            additionalInformation: 'test',
+                          },
+                        ],
+                    },
                     sourceData: {
                         sourceEvent: sourceEvent || '01', // Default if not provided
                         eventReason: '01',

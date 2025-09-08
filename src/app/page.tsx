@@ -67,23 +67,22 @@ export default function Home() {
         
         const response = await insertLead(payload);
 
-        if (response && response[0] && !response[0].resultErrors) {
-            const leadResult = response[0];
-            const fullOperationId = leadResult.idFullOperation || leadResult.result?.idFullOperation;
-
-            if (fullOperationId) {
-                setSubmissionResponse(response);
-                toast({
-                    title: "Lead Creado Exitosamente",
-                    description: `Su lead ha sido creado. ID de Operación: ${fullOperationId}`,
-                });
-                handleNext(data);
-            } else {
-                 throw new Error("No se pudo obtener el ID de Operación de Salesforce.");
-            }
-        } else {
-            const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error al crear el lead.";
+        if (response && response[0] && response[0].resultErrors) {
+            const errorMessage = response[0].resultErrors[0]?.errorMessage || "Hubo un error al crear el lead en Salesforce.";
             throw new Error(errorMessage);
+        }
+
+        const fullOperationId = response?.[0]?.idFullOperation || response?.[0]?.result?.idFullOperation;
+
+        if (fullOperationId) {
+            setSubmissionResponse(response);
+            toast({
+                title: "Lead Creado Exitosamente",
+                description: `Su lead ha sido creado. ID de Operación: ${fullOperationId}`,
+            });
+            handleNext(data);
+        } else {
+             throw new Error("No se pudo obtener el ID de Operación de Salesforce.");
         }
     } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";

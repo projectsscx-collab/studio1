@@ -299,14 +299,14 @@ export const updateLeadFlow = ai.defineFlow(
             }
         }
 
-        // Add conversion data if provided
+        // Add conversion data if provided. This is the key change.
+        // The process CORE_ConvertLeads needs this object to exist.
         if (convertedStatus) {
             updatePayload.leadWrappers[0].conversionData = {
                 convertedStatus: convertedStatus
-            }
+            };
         }
 
-        // Key change: Use specific endpoint for update, but with POST method
         const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
             method: 'POST',
             headers: {

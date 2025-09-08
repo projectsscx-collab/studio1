@@ -59,6 +59,9 @@ const UpdateLeadInputSchema = z.object({
   mobilePhone: z.string(),
   phone: z.string(),
   email: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  birthdate: z.string(),
   sourceEvent: z.string().optional(),
   agentType: z.string().optional(),
   convertedStatus: z.string().optional(),
@@ -122,11 +125,13 @@ export const insertLeadFlow = ai.defineFlow(
     const leadPayload = {
       leadWrappers: [
         {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          personLead: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            birthdate: formData.birthdate,
+          },
           documentType: formData.documentType,
           documentNumber: formData.documentNumber,
-          birthdate: formData.birthdate,
           contactData: {
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,
@@ -211,6 +216,11 @@ export const updateLeadFlow = ai.defineFlow(
             leadWrappers: [
                 {
                     id: leadId,
+                    personLead: {
+                      firstName: rest.firstName,
+                      lastName: rest.lastName,
+                      birthdate: rest.birthdate,
+                    },
                     documentType: rest.documentType,
                     documentNumber: rest.documentNumber,
                     contactData: {

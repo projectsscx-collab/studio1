@@ -136,6 +136,9 @@ export default function Home() {
             mobilePhone: updatedFormData.mobilePhone,
             phone: updatedFormData.phone,
             email: updatedFormData.email,
+            firstName: updatedFormData.firstName,
+            lastName: updatedFormData.lastName,
+            birthdate: updatedFormData.birthdate,
         };
         
         if (data.hasOwnProperty('agentType')) {

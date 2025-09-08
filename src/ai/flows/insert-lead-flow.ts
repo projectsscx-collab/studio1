@@ -55,14 +55,14 @@ const UpdateLeadInputSchema = z.object({
   instanceUrl: z.string(),
   leadId: z.string(),
   // Full data for resubmission
+  firstName: z.string(),
+  lastName: z.string(),
+  birthdate: z.string(),
   documentType: z.string(),
   documentNumber: z.string(),
   mobilePhone: z.string(),
   phone: z.string(),
   email: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  birthdate: z.string(),
   // Vehicle data for interestProduct
   numero_de_matricula: z.string(),
   marca: z.string(),
@@ -228,7 +228,6 @@ export const updateLeadFlow = ai.defineFlow(
         const updatePayload: any = {
             leadWrappers: [
                 {
-                    id: leadId, // Key change: ID inside the wrapper
                     firstName: rest.firstName,
                     lastName: rest.lastName,
                     birthdate: rest.birthdate,
@@ -307,9 +306,9 @@ export const updateLeadFlow = ai.defineFlow(
             }
         }
 
-        // Key change: Use generic endpoint, not specific one
-        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-            method: 'POST', // The endpoint only allows POST
+        // Key change: Use specific endpoint for update, but with POST method
+        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'

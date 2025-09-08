@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // This schema is used for the INITIAL CREATION of the Lead (Step 3)
 export const InsertLeadInputSchema = z.object({
+  idFullOperation: z.string().min(1, 'El ID de la operación es requerido.'),
   // Step 1: Personal Details
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),

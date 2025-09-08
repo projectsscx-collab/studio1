@@ -20,6 +20,14 @@ interface QuoteFormProps {
   isSubmitting: boolean;
 }
 
+// Helper to generate a unique operation ID
+const calculateFullOperationId = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randStr = Array.from({ length: 2 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    return `${Date.now()}${randStr}`;
+};
+
+
 const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
@@ -32,6 +40,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
     defaultValues: {
         ...initialData,
         netPremium: '1000.00',
+        idFullOperation: initialData.idFullOperation || calculateFullOperationId(),
     },
     mode: 'onChange'
   });
@@ -40,6 +49,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
   
   const leadPayload = {
       leadWrappers: [{
+        idFullOperation: allData.idFullOperation,
         // Personal Data
         firstName: allData.firstName,
         lastName: allData.lastName,

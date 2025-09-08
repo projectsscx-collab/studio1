@@ -103,7 +103,6 @@ export default function Home() {
       const response = await insertLead(updatedData, token);
 
       const leadResult = response?.[0] ?? {};
-      const newIdFullOperation = leadResult.idFullOperation ?? findKey(response, 'idFullOperation');
       const newLeadId = leadResult.leadResultId ?? findKey(response, 'leadResultId');
       const error = leadResult.resultErrors?.[0];
 
@@ -111,12 +110,12 @@ export default function Home() {
         throw new Error(error.errorMessage ?? 'An unknown error occurred during lead creation.');
       }
       
-      if (!newIdFullOperation || !newLeadId) {
+      if (!newLeadId) {
         throw new Error("Could not retrieve required IDs from Salesforce after creation.");
       }
 
-      // Persist IDs for subsequent steps
-      setIdFullOperation(newIdFullOperation);
+      // Persist IDs for subsequent steps. idFullOperation is available in the payload.
+      setIdFullOperation(updatedData.idFullOperation);
       setLeadId(newLeadId);
       
       setSubmissionResponse(response);
@@ -153,8 +152,8 @@ export default function Home() {
         const token = await getSalesforceToken();
         const payload: UpdateLeadInput = {
             ...updatedData,
-            id: leadId,
-            idFullOperation: idFullOperation,
+            id: leadId!,
+            idFullOperation: idFullOperation!,
         };
         const response = await updateLead(payload, token);
 
@@ -194,8 +193,8 @@ export default function Home() {
         const token = await getSalesforceToken();
         const payload: UpdateLeadInput = {
             ...updatedData,
-            id: leadId,
-            idFullOperation: idFullOperation,
+            id: leadId!,
+            idFullOperation: idFullOperation!,
         };
         const response = await updateLead(payload, token);
 

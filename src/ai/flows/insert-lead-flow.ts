@@ -77,6 +77,7 @@ const insertLeadFlow = ai.defineFlow(
     };
 
     const leadWrapper = {
+      idFullOperation: formData.idFullOperation,
       // Personal & Contact Data from Step 1
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -214,6 +215,11 @@ const updateLeadFlow = ai.defineFlow(
       const responseText = await leadResponse.text();
       if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
           return { success: true, idFullOperation: formData.idFullOperation };
+      }
+      
+      if (!responseText) {
+        if(leadResponse.ok) return { success: true, idFullOperation: formData.idFullOperation };
+        else throw new Error(`Failed to update lead: ${leadResponse.status} Empty error response`);
       }
 
       const responseData = JSON.parse(responseText);

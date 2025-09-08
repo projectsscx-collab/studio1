@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 interface EmissionFormProps {
@@ -26,6 +25,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
     defaultValues: {
       ...initialData,
       convertedStatus: '02', // Pre-select "Emitido"
+      policyNumber: initialData.policyNumber || '', // Ensure it's not undefined
     },
     mode: 'onChange',
   });
@@ -80,7 +80,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
                 <FormItem>
                   <FormLabel>Número de Póliza (Opcional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="E.g. POL123456789" {...field} />
+                    <Input placeholder="E.g. POL123456789" {...field} value={field.value ?? ''}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -72,7 +72,7 @@ export const leadSchema = z.object({
 
   // Step 5
   convertedStatus: z.string().min(1, 'El estado de conversión es requerido.'),
-  policyNumber: z.string().optional(),
+  policyNumber: z.string().optional().nullable(),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

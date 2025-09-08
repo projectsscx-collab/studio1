@@ -75,20 +75,24 @@ export default function Home() {
         };
         
         const response = await insertLead(payload);
-        
-        // If the response is valid and doesn't contain errors, proceed.
-        if (response && (!response[0] || !response[0].resultErrors)) {
-            const leadResultId = response[0]?.leadResultId;
-            const fullOperationId = response[0]?.idFullOperation;
-            
-            setLeadId(leadResultId || null);
-            setIdFullOperation(fullOperationId || null);
-            
-            toast({
-                title: "Lead Creado Exitosamente",
-                description: `Su lead ha sido creado. ${leadResultId ? `ID: ${leadResultId}` : ''}`,
-            });
-            handleNext(data);
+
+        if (response && response[0] && !response[0].resultErrors) {
+            const leadResult = response[0];
+            const leadResultId = leadResult.leadResultId || leadResult.result?.leadResultId;
+            const fullOperationId = leadResult.idFullOperation || leadResult.result?.idFullOperation;
+
+            if (fullOperationId) {
+                setLeadId(leadResultId || null);
+                setIdFullOperation(fullOperationId);
+                
+                toast({
+                    title: "Lead Creado Exitosamente",
+                    description: `Su lead ha sido creado. ID de Operación: ${fullOperationId}`,
+                });
+                handleNext(data);
+            } else {
+                 throw new Error("No se pudo obtener el ID de Operación de Salesforce.");
+            }
         } else {
             const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error al crear el lead.";
             throw new Error(errorMessage);
@@ -126,7 +130,7 @@ export default function Home() {
 
         const response = await updateLead(payload);
         
-        if (response) {
+        if (response && (!response[0] || !response[0].resultErrors)) {
             toast({
                 title: "Lead Actualizado Exitosamente",
                 description: `El lead ha sido actualizado con sus preferencias.`,
@@ -170,7 +174,7 @@ export default function Home() {
         
         const response = await updateLead(payload);
 
-        if (response) {
+        if (response && (!response[0] || !response[0].resultErrors)) {
             setSubmissionResponse(response);
              toast({
                 title: "Lead Convertido Exitosamente",

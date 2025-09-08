@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { User, Car, FileText, PhoneCall, Send } from 'lucide-react';
+import { User, Car, FileText } from 'lucide-react';
 
 interface FormStepperProps {
   currentStep: number;
@@ -10,8 +10,6 @@ const steps = [
     { number: 1, title: 'Datos Personales', icon: User },
     { number: 2, title: 'Datos del Vehículo', icon: Car },
     { number: 3, title: 'Cotización', icon: FileText },
-    { number: 4, title: 'Contacto', icon: PhoneCall },
-    { number: 5, title: 'Emitir', icon: Send },
 ];
 
 const FormStepper = ({ currentStep, totalSteps }: FormStepperProps) => {

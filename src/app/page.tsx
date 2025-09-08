@@ -5,15 +5,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
 import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
 import QuoteForm from '@/components/forms/quote-form';
-import ContactPreferenceForm from '@/components/forms/contact-preference-form';
-import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken, updateLead } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 3;
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -39,17 +37,10 @@ export default function Home() {
       paymentMethod: '',
       paymentPeriodicity: '',
       paymentTerm: '',
-      // Step 4
-      sourceEvent: '',
-      agentType: '',
-      // Step 5
-      convertedStatus: '',
   });
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
-  const [leadId, setLeadId] = useState<string | null>(null);
-  const [idFullOperation, setIdFullOperation] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleNext = (data: object) => {
@@ -78,13 +69,10 @@ export default function Home() {
 
         if (response && response[0] && !response[0].resultErrors) {
             const leadResult = response[0];
-            const leadResultId = leadResult.leadResultId || leadResult.result?.leadResultId;
             const fullOperationId = leadResult.idFullOperation || leadResult.result?.idFullOperation;
 
             if (fullOperationId) {
-                setLeadId(leadResultId || null);
-                setIdFullOperation(fullOperationId);
-                
+                setSubmissionResponse(response);
                 toast({
                     title: "Lead Creado Exitosamente",
                     description: `Su lead ha sido creado. ID de Operación: ${fullOperationId}`,
@@ -108,94 +96,6 @@ export default function Home() {
         setIsSubmitting(false);
     }
   };
-  
-  const handleUpdateSubmit = async (data: object) => {
-    if (!idFullOperation) {
-        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID de Operación para actualizar." });
-        return;
-    }
-    setIsSubmitting(true);
-    const updatedData = { ...formData, ...data };
-    setFormData(updatedData);
-
-    try {
-        const token = await getSalesforceToken();
-        const payload = { 
-            ...updatedData,
-            leadId,
-            idFullOperation,
-            accessToken: token.access_token,
-            instanceUrl: token.instance_url
-        };
-
-        const response = await updateLead(payload);
-        
-        if (response && (!response[0] || !response[0].resultErrors)) {
-            toast({
-                title: "Lead Actualizado Exitosamente",
-                description: `El lead ha sido actualizado con sus preferencias.`,
-            });
-            handleNext(data);
-        } else {
-             const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error desconocido durante la actualización.";
-             throw new Error(errorMessage);
-        }
-
-    } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : "Hubo un error al actualizar. Por favor, inténtelo de nuevo.";
-        toast({
-            variant: "destructive",
-            title: "Fallo en la Actualización (Paso 4)",
-            description: errorMessage,
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
-
-  const handleFinalSubmit = async (data: object) => {
-    if (!idFullOperation) {
-        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID de Operación para finalizar." });
-        return;
-    }
-    setIsSubmitting(true);
-    const finalData = { ...formData, ...data, convertedStatus: '01' };
-    setFormData(finalData);
-
-    try {
-        const token = await getSalesforceToken();
-        const payload = { 
-            ...finalData,
-            leadId,
-            idFullOperation,
-            accessToken: token.access_token,
-            instanceUrl: token.instance_url,
-        };
-        
-        const response = await updateLead(payload);
-
-        if (response && (!response[0] || !response[0].resultErrors)) {
-            setSubmissionResponse(response);
-             toast({
-                title: "Lead Convertido Exitosamente",
-                description: `Su lead con ID: ${leadId} ha sido procesado y convertido.`,
-            });
-            handleNext(finalData);
-        } else {
-            const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error desconocido durante la conversión.";
-            throw new Error(errorMessage);
-        }
-    } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : "Hubo un error al emitir su póliza. Por favor, inténtelo de nuevo.";
-        toast({
-            variant: "destructive",
-            title: "Fallo en la Emisión (Paso 5)",
-            description: errorMessage,
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
-  }
 
   const handlePrev = () => {
     setDirection(-1);
@@ -223,13 +123,8 @@ export default function Home() {
       paymentMethod: '',
       paymentPeriodicity: '',
       paymentTerm: '',
-      sourceEvent: '',
-      agentType: '',
-      convertedStatus: '',
     });
     setSubmissionResponse(null);
-    setLeadId(null);
-    setIdFullOperation(null);
     setCurrentStep(1);
   }
 
@@ -259,10 +154,6 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleQuoteSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdateSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
-      case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
-      case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
         return null;

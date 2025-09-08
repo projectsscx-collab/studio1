@@ -76,7 +76,7 @@ export default function Home() {
         
         const response = await insertLead(payload);
         
-        if (response && response[0]?.leadResultId && response[0]?.idFullOperation) {
+        if (response && Array.isArray(response) && response[0]?.leadResultId && response[0]?.idFullOperation) {
             setLeadId(response[0].leadResultId);
             setIdFullOperation(response[0].idFullOperation);
             toast({
@@ -121,7 +121,7 @@ export default function Home() {
 
         const response = await updateLead(payload);
         
-        if (response && response[0]?.isSuccess) {
+        if (response && Array.isArray(response) && response[0]?.isSuccess) {
             toast({
                 title: "Lead Actualizado Exitosamente",
                 description: `El lead ha sido actualizado con sus preferencias.`,
@@ -165,7 +165,7 @@ export default function Home() {
         
         const response = await updateLead(payload);
 
-        if (response && response[0]?.isSuccess) {
+        if (response && Array.isArray(response) && response[0]?.isSuccess) {
             setSubmissionResponse(response);
              toast({
                 title: "Lead Convertido Exitosamente",

@@ -58,7 +58,7 @@ const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
     leadId: z.string(),
-    idFullOperation: z.string().nullable(),
+    idFullOperation: z.string(), // This is now required for updates.
 
     // Form data from subsequent steps
     sourceEvent: z.string().optional(),
@@ -246,7 +246,7 @@ export const updateLeadFlow = ai.defineFlow(
 
     const updatePayload: any = {
         leadWrappers: [{
-            idFullOperation: formData.idFullOperation, // Crucial for linking operations
+            idFullOperation: formData.idFullOperation,
             firstName: formData.firstName,
             lastName: formData.lastName,
             birthdate: formData.birthdate,

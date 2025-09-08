@@ -1,56 +1,16 @@
 'use server';
 
 /**
- * @fileoverview Genkit flow to insert a lead in Salesforce.
+ * @fileoverview Genkit flow to insert and update a lead in Salesforce.
  *
  * - insertLead - Creates a new lead in Salesforce.
+ * - updateLead - Updates an existing lead, used for subsequent steps.
  * - getSalesforceToken - Handles authentication.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-// Schema for the authentication token response
-const SalesforceTokenResponseSchema = z.object({
-  access_token: z.string(),
-  instance_url: z.string(),
-  id: z.string(),
-  token_type: z.string(),
-  issued_at: z.string(),
-  signature: z.string(),
-});
-export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
-
-
-const InsertLeadInputSchema = z.object({
-  // Token and instance URL from auth step
-  accessToken: z.string(),
-  instanceUrl: z.string(),
-
-  // Form data from steps 1-3
-  firstName: z.string().min(1, 'El nombre es requerido.'),
-  lastName: z.string().min(1, 'El apellido es requerido.'),
-  documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
-  documentNumber: z.string().min(1, 'El número de documento es requerido.'),
-  birthdate: z.string().min(1, { message: 'La fecha de nacimiento es requerida.'}),
-  mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
-  phone: z.string().min(1, 'El teléfono es requerido.'),
-  email: z.string().email('El correo electrónico no es válido.'),
-  
-  numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),
-  marca: z.string().min(1, 'La marca es requerida.'),
-  modelo: z.string().min(1, 'El modelo es requerido.'),
-  ano_del_vehiculo: z.string().min(1, 'El año del vehículo es requerido.'),
-  numero_de_serie: z.string().min(1, 'El número de serie es requerido.'),
-  
-  effectiveDate: z.string().min(1, { message: 'La fecha de efectividad es requerida.'}),
-  expirationDate: z.string().min(1, { message: 'La fecha de expiración es requerida.'}),
-  paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
-  paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
-  paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
-});
-
-export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
+import { InsertLeadInputSchema, UpdateLeadInputSchema, SalesforceTokenResponseSchema, type InsertLeadInput, type UpdateLeadInput, type SalesforceTokenResponse } from '@/lib/salesforce-schemas';
 
 
 // Flow to get the authentication token
@@ -149,7 +109,7 @@ export const insertLeadFlow = ai.defineFlow(
             ],
         },
         sourceData: {
-            sourceEvent: '01',
+            sourceEvent: '01', // Default for creation
             eventReason: '01',
             sourceSite: 'Website',
             deviceType: '01',
@@ -174,16 +134,97 @@ export const insertLeadFlow = ai.defineFlow(
         body: JSON.stringify(leadPayload)
     });
 
+    const responseData = await leadResponse.json();
+
     if (!leadResponse.ok) {
-        const errorText = await leadResponse.text();
+        const errorText = JSON.stringify(responseData);
         console.error("Salesforce Error Response:", errorText);
         throw new Error(`Failed to insert lead: ${leadResponse.status} ${errorText}`);
     }
 
-    return await leadResponse.json();
+    return responseData;
   }
 );
 
+
+// Flow to update the lead
+export const updateLeadFlow = ai.defineFlow(
+    {
+      name: 'updateLeadFlow',
+      inputSchema: UpdateLeadInputSchema,
+      outputSchema: z.any(),
+    },
+    async (input) => {
+      const { accessToken, instanceUrl, idFullOperation, ...updateData } = input;
+      
+      // Base wrapper for the update payload
+      const leadWrapperBase: any = {
+        idFullOperation: idFullOperation,
+      };
+
+      // Add contact preference data if present (Step 4)
+      if (updateData.sourceEvent) {
+        leadWrapperBase.sourceData = {
+          sourceEvent: updateData.sourceEvent,
+        };
+      }
+      if (updateData.agentId || updateData.agentType) {
+          leadWrapperBase.commercialStructureData = {
+              idIntermediary: updateData.agentId,
+              // You might need to map agentType to a specific field if necessary
+          };
+      }
+      if (updateData.additionalInformation) {
+        leadWrapperBase.additionalInformation = updateData.additionalInformation;
+      }
+      
+      // Add emission data if present (Step 5)
+      if (updateData.convertedStatus) {
+        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; // Hardcoded as per requirement
+        leadWrapperBase.conversionData = {
+          convertedStatus: updateData.convertedStatus,
+          policyNumber: updateData.policyNumber,
+        };
+        // Re-add quote details for the emission step
+        leadWrapperBase.interestProduct = {
+            quotes: [{
+                id: 'TestWSConvertMIN', // This ID is required by the validation rule
+                effectiveDate: updateData.effectiveDate,
+                expirationDate: updateData.expirationDate,
+                paymentMethod: updateData.paymentMethod,
+                paymentPeriodicity: updateData.paymentPeriodicity,
+                paymentTerm: updateData.paymentTerm,
+            }]
+        }
+      }
+  
+      const updatePayload = {
+        leadWrappers: [leadWrapperBase],
+      };
+  
+      const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
+          method: 'POST', // Salesforce uses POST for this upsert logic
+          headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updatePayload)
+      });
+  
+      if (!leadResponse.ok) {
+          const errorText = await leadResponse.text();
+          console.error("Salesforce Update Error Response:", errorText);
+          throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+      }
+      
+      // Update might return 204 No Content, so handle that case
+      if (leadResponse.status === 204) {
+          return { success: true, idFullOperation };
+      }
+  
+      return await leadResponse.json();
+    }
+  );
 
 // Exported functions to be called from the frontend
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
@@ -192,4 +233,8 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);
+}
+
+export async function updateLead(input: UpdateLeadInput): Promise<any> {
+    return updateLeadFlow(input);
 }

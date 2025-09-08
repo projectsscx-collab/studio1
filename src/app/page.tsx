@@ -5,9 +5,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
 import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
 import QuoteForm from '@/components/forms/quote-form';
+import ContactPreferenceForm from '@/components/forms/contact-preference-form';
+import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken, updateLead } from '@/ai/flows/insert-lead-flow';
+import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -34,10 +37,18 @@ interface FormData {
   paymentMethod: string;
   paymentPeriodicity: string;
   paymentTerm: string;
+  // Step 4 - Contact Preference
+  sourceEvent: string;
+  agentType: string;
+  agentId: string;
+  additionalInformation: string;
+  // Step 5 - Emission
+  convertedStatus: string;
+  policyNumber: string;
 }
 
-const TOTAL_STEPS = 3;
-const TOTAL_SCREENS = 4;
+const TOTAL_STEPS = 5;
+const TOTAL_SCREENS = 6;
 
 const initialFormData: FormData = {
   // Step 1
@@ -61,6 +72,14 @@ const initialFormData: FormData = {
   paymentMethod: '',
   paymentPeriodicity: '',
   paymentTerm: '',
+  // Step 4
+  sourceEvent: '',
+  agentType: '',
+  agentId: '',
+  additionalInformation: '',
+  // Step 5
+  convertedStatus: '',
+  policyNumber: '',
 };
 
 export default function Home() {
@@ -69,6 +88,7 @@ export default function Home() {
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
+  const [idFullOperation, setIdFullOperation] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleNext = (data: Partial<FormData>) => {
@@ -83,6 +103,90 @@ export default function Home() {
 
   const handleFinalSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
+    const finalData = { ...formData, ...data };
+    setFormData(finalData);
+
+    try {
+      // It's the final step (Emission), so we call updateLead
+      const token = await getSalesforceToken();
+      const payload: UpdateLeadInput = {
+        accessToken: token.access_token,
+        instanceUrl: token.instance_url,
+        idFullOperation: idFullOperation!,
+        convertedStatus: finalData.convertedStatus,
+        policyNumber: finalData.policyNumber,
+        // Pass other necessary fields for the final update
+        effectiveDate: finalData.effectiveDate,
+        expirationDate: finalData.expirationDate,
+        paymentMethod: finalData.paymentMethod,
+        paymentPeriodicity: finalData.paymentPeriodicity,
+        paymentTerm: finalData.paymentTerm,
+      };
+      
+      const response = await updateLead(payload);
+      setSubmissionResponse(response);
+      handleNext(data);
+
+    } catch (error) {
+      console.error('Error submitting final form:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      toast({
+        variant: 'destructive',
+        title: 'Error en la Emisión',
+        description: errorMessage,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleUpdate = async (data: Partial<FormData>) => {
+    setIsSubmitting(true);
+    const updatedData = { ...formData, ...data };
+    setFormData(updatedData);
+
+    try {
+      const token = await getSalesforceToken();
+      if (!token?.access_token || !token?.instance_url) {
+        throw new Error('No se pudo obtener el token de Salesforce');
+      }
+      if (!idFullOperation) {
+        throw new Error('ID de operación no encontrado para la actualización.');
+      }
+
+      const payload: UpdateLeadInput = {
+        ...updatedData,
+        accessToken: token.access_token,
+        instanceUrl: token.instance_url,
+        idFullOperation: idFullOperation,
+      };
+      
+      const response = await updateLead(payload);
+      // The update response might not be the final one we want to show
+      // but we can log it or handle it if necessary.
+      console.log('Update successful:', response);
+      
+      handleNext(data);
+
+    } catch (error) {
+      console.error('Error updating form:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Hubo un error al actualizar su formulario.';
+      
+      toast({
+        variant: 'destructive',
+        title: 'Fallo en la Actualización',
+        description: errorMessage,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInitialSubmit = async (data: Partial<FormData>) => {
+    setIsSubmitting(true);
     const updatedData = { ...formData, ...data };
     setFormData(updatedData);
 
@@ -92,14 +196,24 @@ export default function Home() {
         throw new Error('No se pudo obtener el token de Salesforce');
       }
 
-      const payload: any = {
+      const payload: InsertLeadInput = {
         ...updatedData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
       };
       
       const response = await insertLead(payload);
-      setSubmissionResponse(response);
+      
+      // Assuming the response contains the idFullOperation needed for subsequent steps
+      const operationId = response[0]?.leadResultId; 
+      if (!operationId) {
+        // Look for error message
+        const errorMessage = response[0]?.resultErrors?.[0]?.errorMessage ?? 'No se recibió un ID de operación de Salesforce.';
+        throw new Error(errorMessage);
+      }
+      
+      setIdFullOperation(operationId);
+      setSubmissionResponse(response); // Store initial response
       
       handleNext(data);
 
@@ -120,6 +234,7 @@ export default function Home() {
     }
   };
 
+
   const handlePrev = () => {
     if (currentStep > 1) {
       setDirection(-1);
@@ -131,6 +246,7 @@ export default function Home() {
     setDirection(1);
     setFormData(initialFormData);
     setSubmissionResponse(null);
+    setIdFullOperation(null);
     setCurrentStep(1);
     setIsSubmitting(false);
   };
@@ -155,36 +271,17 @@ export default function Home() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <PersonalDetailsForm 
-            onSubmit={handleNext} 
-            initialData={formData} 
-          />
-        );
+        return <PersonalDetailsForm onSubmit={handleNext} initialData={formData} />;
       case 2:
-        return (
-          <VehicleDetailsForm 
-            onSubmit={handleNext} 
-            onBack={handlePrev} 
-            initialData={formData} 
-          />
-        );
+        return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return (
-          <QuoteForm
-            onSubmit={handleFinalSubmit}
-            onBack={handlePrev}
-            initialData={formData}
-            isSubmitting={isSubmitting}
-          />
-        );
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return (
-          <SubmissionConfirmation
-            onStartOver={handleStartOver}
-            response={submissionResponse}
-          />
-        );
+        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+      case 5:
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={{...formData, idFullOperation}} isSubmitting={isSubmitting} />;
+      case 6:
+        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
         return null;
     }

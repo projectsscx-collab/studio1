@@ -190,6 +190,7 @@ const updateLeadFlow = ai.defineFlow(
 
       const conversionData: any = {};
       if (formData.convertedStatus) conversionData.convertedStatus = formData.convertedStatus;
+      // Only include policyNumber if it has a value
       if (formData.policyNumber) conversionData.policyNumber = formData.policyNumber;
        
       const leadWrapper = {

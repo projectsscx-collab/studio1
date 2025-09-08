@@ -50,6 +50,7 @@ export default function Home() {
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [idFullOperation, setIdFullOperation] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleNext = (data: object) => {
@@ -78,9 +79,11 @@ export default function Home() {
         
         const response = await insertLead(payload);
         const newLeadId = response[0]?.leadResultId;
+        const newIdFullOperation = response[0]?.idFullOperation;
 
         if (newLeadId) {
             setLeadId(newLeadId);
+            setIdFullOperation(newIdFullOperation); // Save idFullOperation
             toast({
                 title: "Lead Creado Exitosamente",
                 description: `Su lead con ID: ${newLeadId} ha sido creado. Continúe con los siguientes pasos.`,
@@ -118,6 +121,7 @@ export default function Home() {
           const payload = { 
               ...updatedFormData,
               leadId: leadId,
+              idFullOperation: idFullOperation, // Pass idFullOperation
               accessToken: tokenResponse.access_token,
               instanceUrl: tokenResponse.instance_url
           };
@@ -156,6 +160,7 @@ export default function Home() {
         const payload = { 
             ...finalData,
             leadId: leadId,
+            idFullOperation: idFullOperation, // Pass idFullOperation
             accessToken: tokenResponse.access_token,
             instanceUrl: tokenResponse.instance_url,
         };
@@ -221,6 +226,7 @@ export default function Home() {
     setSubmissionResponse(null);
     setTokenResponse(null);
     setLeadId(null);
+    setIdFullOperation(null);
     setCurrentStep(1);
   }
 

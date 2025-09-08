@@ -225,7 +225,7 @@ export const updateLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async (input) => {
-    const { accessToken, instanceUrl, ...formData } = input;
+    const { accessToken, instanceUrl, leadId, ...formData } = input;
     
     let utmCampaign = 'ROPO_Auto';
     let systemOrigin = '05';

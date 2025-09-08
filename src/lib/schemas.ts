@@ -62,10 +62,6 @@ export const leadSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
-  
-  // Step 4
-  sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),
-  agentType: z.string().min(1, 'Seleccione un tipo de agente.'),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

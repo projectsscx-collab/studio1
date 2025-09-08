@@ -5,11 +5,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
 import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
 import QuoteForm from '@/components/forms/quote-form';
-import ContactPreferenceForm from '@/components/forms/contact-preference-form';
-import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken, updateLead } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -36,17 +34,10 @@ interface FormData {
   paymentMethod: string;
   paymentPeriodicity: string;
   paymentTerm: string;
-  // Step 4 - Contact Preferences
-  sourceEvent: string;
-  agentType: string;
 }
 
-interface LeadResult {
-  leadResultId: string | null;
-}
-
-const TOTAL_STEPS = 5; // Pasos del formulario (sin contar la confirmación)
-const TOTAL_SCREENS = 6; // Total de pantallas incluyendo confirmación
+const TOTAL_STEPS = 3;
+const TOTAL_SCREENS = 4;
 
 const initialFormData: FormData = {
   // Step 1
@@ -70,9 +61,6 @@ const initialFormData: FormData = {
   paymentMethod: '',
   paymentPeriodicity: '',
   paymentTerm: '',
-  // Step 4
-  sourceEvent: '',
-  agentType: '',
 };
 
 export default function Home() {
@@ -81,221 +69,50 @@ export default function Home() {
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
-  const [leadResult, setLeadResult] = useState<LeadResult>({
-    leadResultId: null,
-  });
   const { toast } = useToast();
-
-  const extractLeadId = (response: any): string | null => {
-    // Adjusted to check the new structure.
-    if (!response || !Array.isArray(response) || response.length === 0) {
-      return null;
-    }
-    const result = response[0];
-    if (result && result.resultErrors && result.resultErrors.length > 0) {
-      const errorMessages = result.resultErrors.map((e: any) => e.errorMessage).join(', ');
-      console.error("Salesforce returned errors:", errorMessages);
-      // Even if there are errors, an ID might still be present in some cases.
-      if (result.leadResultId) {
-        return result.leadResultId;
-      }
-      // If there's no ID, we throw the error to be caught below.
-      throw new Error(errorMessages);
-    }
-    return result?.leadResultId || null;
-  };
-
-
-  const canProceedToNextStep = (step: number): boolean => {
-    switch (step) {
-      case 4:
-      case 5:
-        return !!leadResult.leadResultId;
-      default:
-        return true;
-    }
-  };
 
   const handleNext = (data: Partial<FormData>) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
-    
-    if (currentStep < TOTAL_SCREENS) { 
+
+    if (currentStep < TOTAL_SCREENS) {
       setCurrentStep((prev) => prev + 1);
-    }
-  };
-  
-  const handleQuoteSubmit = async (data: Partial<FormData>) => {
-    setIsSubmitting(true);
-    const updatedData = { ...formData, ...data };
-    setFormData(updatedData);
-
-    try {
-      const token = await getSalesforceToken();
-      
-      if (!token?.access_token || !token?.instance_url) {
-        throw new Error("No se pudo obtener el token de Salesforce");
-      }
-
-      const payload: any = { 
-        ...updatedData,
-        accessToken: token.access_token,
-        instanceUrl: token.instance_url
-      };
-      
-      const response = await insertLead(payload);
-      
-      const leadId = extractLeadId(response);
-      setSubmissionResponse(response);
-      
-      if (leadId) {
-        setLeadResult({ leadResultId: leadId });
-        
-        toast({
-          title: "Paso 3 Exitoso",
-          description: "Lead creado correctamente en Salesforce.",
-        });
-        
-        handleNext(data); 
-      } else {
-         const errorMessages = response?.[0]?.resultErrors?.map((e: any) => e.errorMessage).join(', ') || "La respuesta de Salesforce no contiene el ID de Lead necesario.";
-         console.error("Salesforce response did not contain expected IDs:", response);
-         throw new Error(errorMessages);
-      }
-      
-    } catch (error) {
-      console.error("Error in handleQuoteSubmit:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";
-      
-      toast({
-        variant: "destructive",
-        title: "Fallo en el Envío (Paso 3)",
-        description: errorMessage,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdateSubmit = async (data: Partial<FormData>) => {
-    if (!canProceedToNextStep(4)) {
-      toast({
-        variant: "destructive",
-        title: "Error Crítico",
-        description: "No se ha encontrado el ID del Lead para actualizar. Por favor, vuelva a empezar.",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    const updatedData = { ...formData, ...data };
-    setFormData(updatedData);
-      
-    try {
-      const token = await getSalesforceToken();
-      
-      if (!token?.access_token || !token?.instance_url) {
-        throw new Error("No se pudo obtener el token de Salesforce");
-      }
-
-      const payload: any = {
-        ...updatedData, // Pass all form data for the backend to reconstruct
-        accessToken: token.access_token,
-        instanceUrl: token.instance_url,
-        leadResultId: leadResult.leadResultId, // This is the key for the update
-      };
-
-      // Add agent-specific data for the update
-      if (updatedData.agentType === 'APM') {
-        payload.systemOrigin = '02';
-        payload.origin = '02';
-        payload.utmCampaign = 'ROPO_APMCampaign';
-        payload.leadSource = '02';
-      } else if (updatedData.agentType === 'ADM') {
-        payload.systemOrigin = '06';
-        payload.origin = '02';
-        payload.utmCampaign = 'ROPO_ADMCampaign';
-        payload.leadSource = '10';
-      }
-      
-      await updateLead(payload);
-      setSubmissionResponse(payload); // For display purposes
-      
-      toast({
-        title: "Paso 4 Exitoso",
-        description: "Su preferencia de contacto ha sido guardada.",
-      });
-      
-      handleNext(data);
-          
-    } catch (error) {
-      console.error("Error in handleUpdateSubmit:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Hubo un error al actualizar su información.";
-      
-      toast({
-        variant: "destructive",
-        title: "Fallo en la Actualización (Paso 4)",
-        description: errorMessage,
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleFinalSubmit = async (data: Partial<FormData>) => {
-    if (!canProceedToNextStep(5)) {
-      toast({
-        variant: "destructive",
-        title: "Error Crítico",
-        description: "No se ha encontrado el ID del Lead para emitir. Por favor, vuelva a empezar.",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     const updatedData = { ...formData, ...data };
     setFormData(updatedData);
 
     try {
       const token = await getSalesforceToken();
-      
       if (!token?.access_token || !token?.instance_url) {
-        throw new Error("No se pudo obtener el token de Salesforce");
+        throw new Error('No se pudo obtener el token de Salesforce');
       }
 
       const payload: any = {
-        ...updatedData, // Pass all form data
+        ...updatedData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
-        leadResultId: leadResult.leadResultId,
-        convertedStatus: '01', // New data for this step
-        idOwner: '005D700000GSthDIAT', // Required for conversion
       };
-
-      const response = await updateLead(payload);
+      
+      const response = await insertLead(payload);
       setSubmissionResponse(response);
       
-      toast({
-        title: "Paso 5 Exitoso",
-        description: "Su póliza ha sido emitida en Salesforce.",
-      });
-      
       handleNext(data);
-          
+
     } catch (error) {
-      console.error("Error in handleFinalSubmit:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Hubo un error al emitir la póliza.";
+      console.error('Error submitting form:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.';
       
       toast({
-        variant: "destructive",
-        title: "Fallo en la Emisión (Paso 5)",
+        variant: 'destructive',
+        title: 'Fallo en el Envío',
         description: errorMessage,
       });
     } finally {
@@ -309,12 +126,11 @@ export default function Home() {
       setCurrentStep((prev) => prev - 1);
     }
   };
-  
+
   const handleStartOver = () => {
     setDirection(1);
     setFormData(initialFormData);
     setSubmissionResponse(null);
-    setLeadResult({ leadResultId: null });
     setCurrentStep(1);
     setIsSubmitting(false);
   };
@@ -355,36 +171,18 @@ export default function Home() {
         );
       case 3:
         return (
-          <QuoteForm 
-            onSubmit={handleQuoteSubmit} 
-            onBack={handlePrev} 
-            initialData={formData} 
-            isSubmitting={isSubmitting} 
+          <QuoteForm
+            onSubmit={handleFinalSubmit}
+            onBack={handlePrev}
+            initialData={formData}
+            isSubmitting={isSubmitting}
           />
         );
       case 4:
         return (
-          <ContactPreferenceForm 
-            onSubmit={handleUpdateSubmit} 
-            onBack={handlePrev} 
-            initialData={formData} 
-            isSubmitting={isSubmitting} 
-          />
-        );
-      case 5:
-        return (
-          <EmissionForm 
-            onSubmit={handleFinalSubmit} 
-            onBack={handlePrev} 
-            initialData={formData} 
-            isSubmitting={isSubmitting} 
-          />
-        );
-      case 6:
-        return (
-          <SubmissionConfirmation 
-            onStartOver={handleStartOver} 
-            response={submissionResponse} 
+          <SubmissionConfirmation
+            onStartOver={handleStartOver}
+            response={submissionResponse}
           />
         );
       default:

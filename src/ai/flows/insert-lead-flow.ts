@@ -1,10 +1,9 @@
 'use server';
 
 /**
- * @fileoverview Genkit flows to insert and update a lead in Salesforce.
+ * @fileoverview Genkit flow to insert a lead in Salesforce.
  *
  * - insertLead - Creates a new lead in Salesforce.
- * - updateLead - Updates an existing lead in Salesforce.
  * - getSalesforceToken - Handles authentication.
  */
 
@@ -52,43 +51,6 @@ const InsertLeadInputSchema = z.object({
 });
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
-
-
-const UpdateLeadInputSchema = z.object({
-    accessToken: z.string(),
-    instanceUrl: z.string(),
-    leadResultId: z.string(), // This is the leadResultId from the create step
-    
-    // Pass the full original form data
-    firstName: z.string(),
-    lastName: z.string(),
-    documentType: z.string(),
-    documentNumber: z.string(),
-    birthdate: z.string(),
-    mobilePhone: z.string(),
-    phone: z.string(),
-    email: z.string(),
-    numero_de_matricula: z.string(),
-    marca: z.string(),
-    modelo: z.string(),
-    ano_del_vehiculo: z.string(),
-    numero_de_serie: z.string(),
-    effectiveDate: z.string(),
-    expirationDate: z.string(),
-    paymentMethod: z.string(),
-    paymentPeriodicity: z.string(),
-    paymentTerm: z.string(),
-
-    // Optional fields for updates
-    sourceEvent: z.string().optional(),
-    systemOrigin: z.string().optional(),
-    origin: z.string().optional(),
-    utmCampaign: z.string().optional(),
-    leadSource: z.string().optional(),
-    convertedStatus: z.string().optional(),
-    idOwner: z.string().optional(),
-});
-export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
 
 // Flow to get the authentication token
@@ -223,135 +185,6 @@ export const insertLeadFlow = ai.defineFlow(
 );
 
 
-// Flow to update the lead
-export const updateLeadFlow = ai.defineFlow(
-  {
-    name: 'updateLeadFlow',
-    inputSchema: UpdateLeadInputSchema,
-    outputSchema: z.any(),
-  },
-  async (input) => {
-    const { accessToken, instanceUrl, ...updateData } = input;
-    
-    const riskObject = {
-        'Número de matrícula__c': updateData.numero_de_matricula,
-        'Marca__c': updateData.marca,
-        'Modelo__c': updateData.modelo,
-        'Año del vehículo__c': updateData.ano_del_vehiculo,
-        'Número de serie__c': updateData.numero_de_serie,
-    };
-    
-    const leadWrapperBase: any = {
-      idFullOperation: updateData.leadResultId, 
-      firstName: updateData.firstName,
-      lastName: updateData.lastName,
-      documentType: updateData.documentType,
-      documentNumber: updateData.documentNumber,
-      birthdate: updateData.birthdate,
-      contactData: {
-        mobilePhone: updateData.mobilePhone,
-        phone: updateData.phone,
-        email: updateData.email,
-      },
-      interestProduct: {
-        businessLine: '01',
-        sector: 'XX_01',
-        subsector: 'XX_00',
-        branch: 'XX_205',
-        risk: JSON.stringify(riskObject),
-         quotes: [
-            {
-                id: 'TestWSConvertMIN', // This is required by the validation rule.
-                effectiveDate: updateData.effectiveDate,
-                expirationDate: updateData.expirationDate,
-                productCode: 'PRD001',
-                productName: 'Life Insurance',
-                netPremium: 1000.0,
-                paymentMethod: updateData.paymentMethod,
-                paymentPeriodicity: updateData.paymentPeriodicity,
-                paymentTerm: updateData.paymentTerm,
-                additionalInformation: 'test',
-                isSelected: true,
-            },
-        ],
-      },
-      sourceData: {
-          sourceEvent: '01',
-          eventReason: '01',
-          sourceSite: 'Website',
-          deviceType: '01',
-          deviceModel: 'iPhone',
-          leadSource: '01',
-          origin: '01',
-          systemOrigin: '05', 
-          ipData: {},
-      },
-      utmData: {
-          utmCampaign: 'ROPO_Auto',
-      },
-      conversionData: {},
-    };
-    
-    // Apply dynamic updates from the form
-    if (updateData.sourceEvent) {
-        leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
-    }
-    if (updateData.systemOrigin) {
-        leadWrapperBase.sourceData.systemOrigin = updateData.systemOrigin;
-    }
-    if (updateData.origin) {
-        leadWrapperBase.sourceData.origin = updateData.origin;
-    }
-    if (updateData.leadSource) {
-        leadWrapperBase.sourceData.leadSource = updateData.leadSource;
-    }
-    if (updateData.utmCampaign) {
-        leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
-    }
-    
-    // Handle the conversion step specifically (Step 5)
-    if (updateData.convertedStatus) {
-        leadWrapperBase.conversionData = {
-          convertedStatus: updateData.convertedStatus
-        };
-        // This is the correct way to pass the owner for conversion, as per the Apex class.
-        leadWrapperBase.idOwner = '005D700000GSthDIAT'; 
-    }
-
-    const updatePayload: any = {
-      leadWrappers: [leadWrapperBase]
-    };
-
-    const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatePayload)
-    });
-
-    if (!leadResponse.ok) {
-        const errorText = await leadResponse.text();
-        console.error("Salesforce Update Error Response:", errorText);
-        throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
-    }
-    
-    // Update might return 204 No Content, so handle that case
-    if (leadResponse.status === 204) {
-        return { success: true, message: "Lead updated successfully." };
-    }
-
-    try {
-        return await leadResponse.json();
-    } catch (e) {
-        // Handle cases where the response is not a valid JSON but still successful
-        return { success: true, message: "Lead update processed." };
-    }
-  }
-);
-
-
 // Exported functions to be called from the frontend
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
     return getSalesforceTokenFlow();
@@ -359,8 +192,4 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);
-}
-
-export async function updateLead(input: UpdateLeadInput): Promise<any> {
-    return updateLeadFlow(input);
 }

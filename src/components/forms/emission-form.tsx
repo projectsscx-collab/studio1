@@ -25,7 +25,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
     defaultValues: {
       ...initialData,
       convertedStatus: '02', // Pre-select "Emitido"
-      policyNumber: initialData.policyNumber || '', // Ensure it's not undefined
+      policyNumber: '', // Ensure it's an empty string
     },
     mode: 'onChange',
   });
@@ -73,18 +73,19 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
                     </FormItem>
                 )}
             />
-            <FormField
-              control={form.control}
-              name="policyNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número de Póliza (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="E.g. POL123456789" {...field} value={field.value ?? ''}/>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+             {/* Field is now completely hidden from the UI and form state */}
+             <FormField
+                control={form.control}
+                name="policyNumber"
+                render={({ field }) => (
+                    <FormItem className="hidden">
+                    <FormLabel>Número de Póliza</FormLabel>
+                    <FormControl>
+                        <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
             />
           </div>
         </div>

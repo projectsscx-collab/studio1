@@ -100,6 +100,9 @@ export default function Home() {
 
     try {
       const token = await getSalesforceToken();
+      // Since we generate the ID in the form, we can persist it right away
+      setIdFullOperation(updatedData.idFullOperation); 
+
       const response = await insertLead(updatedData, token);
 
       const leadResult = response?.[0] ?? {};
@@ -114,8 +117,7 @@ export default function Home() {
         throw new Error("Could not retrieve required IDs from Salesforce after creation.");
       }
 
-      // Persist IDs for subsequent steps. idFullOperation is available in the payload.
-      setIdFullOperation(updatedData.idFullOperation);
+      // Persist the Salesforce record ID for subsequent steps
       setLeadId(newLeadId);
       
       setSubmissionResponse(response);
@@ -198,8 +200,10 @@ export default function Home() {
         };
         const response = await updateLead(payload, token);
 
+        // Per user request, ignore the "PolicyNumber" error and proceed,
+        // as the operation is successful in Salesforce.
         const error = findKey(response, 'errorMessage');
-        if (error) {
+        if (error && !error.includes('PolicyNumber')) {
             throw new Error(error);
         }
 

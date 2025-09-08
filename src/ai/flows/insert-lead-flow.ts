@@ -27,7 +27,7 @@ const InsertLeadInputSchema = z.object({
   accessToken: z.string(),
   instanceUrl: z.string(),
 
-  // Form data
+  // Form data from all steps
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
@@ -36,18 +36,19 @@ const InsertLeadInputSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().min(1, 'El teléfono es requerido.'),
   email: z.string().email('El correo electrónico no es válido.'),
+  
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),
   marca: z.string().min(1, 'La marca es requerida.'),
   modelo: z.string().min(1, 'El modelo es requerido.'),
   ano_del_vehiculo: z.string().min(1, 'El año del vehículo es requerido.'),
   numero_de_serie: z.string().min(1, 'El número de serie es requerido.'),
+  
   effectiveDate: z.string().min(1, { message: 'La fecha de efectividad es requerida.'}),
   expirationDate: z.string().min(1, { message: 'La fecha de expiración es requerida.'}),
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
   
-  // Optional fields for the final submission
   sourceEvent: z.string().optional(),
   agentType: z.string().optional(),
   convertedStatus: z.string().optional(),

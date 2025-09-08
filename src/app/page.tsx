@@ -9,7 +9,7 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken, SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -48,7 +48,6 @@ export default function Home() {
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
-  const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
   const { toast } = useToast();
 
   const handleNext = (data: object) => {
@@ -61,26 +60,19 @@ export default function Home() {
   };
   
   const handleFinalSubmit = async (data: object) => {
-    if (!tokenResponse) {
-        toast({
-            variant: "destructive",
-            title: "Error de Autenticación",
-            description: "El token de Salesforce no está disponible. Por favor, inténtelo de nuevo."
-        });
-        setIsSubmitting(false);
-        return;
-    }
-    
     setIsSubmitting(true);
     const finalData = { ...formData, ...data };
     setFormData(finalData);
 
     try {
+        const token = await getSalesforceToken();
+        
         const payload = { 
             ...finalData,
-            accessToken: tokenResponse.access_token,
-            instanceUrl: tokenResponse.instance_url
+            accessToken: token.access_token,
+            instanceUrl: token.instance_url
         };
+
         const response = await insertLead(payload);
         setSubmissionResponse(response);
         
@@ -105,27 +97,6 @@ export default function Home() {
             description: errorMessage,
         });
     } finally {
-        setIsSubmitting(false);
-    }
-  }
-
-  const handleGetTokenAndSubmit = async (data: object) => {
-    setIsSubmitting(true);
-    const updatedFormData = { ...formData, ...data };
-    setFormData(updatedFormData);
-
-    try {
-        const token = await getSalesforceToken();
-        setTokenResponse(token);
-        // Now that we have the token, call the final submit function
-        await handleFinalSubmit({ ...updatedFormData, accessToken: token.access_token, instanceUrl: token.instance_url });
-    } catch (e) {
-        console.error("Failed to get token", e);
-        toast({
-            variant: "destructive",
-            title: "Fallo de Autenticación",
-            description: "No se pudo obtener el token de autenticación de Salesforce."
-        });
         setIsSubmitting(false);
     }
   }
@@ -161,7 +132,6 @@ export default function Home() {
       convertedStatus: '01',
     });
     setSubmissionResponse(null);
-    setTokenResponse(null);
     setCurrentStep(1);
   }
 
@@ -193,7 +163,7 @@ export default function Home() {
       case 4:
         return <ContactPreferenceForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 5:
-        return <EmissionForm onSubmit={handleGetTokenAndSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:

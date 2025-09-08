@@ -45,13 +45,6 @@ interface LeadResult {
   leadResultId: string | null;
 }
 
-interface SalesforceResponse {
-  leadResultId?: string;
-  result?: {
-    leadResultId?: string;
-  };
-}
-
 const TOTAL_STEPS = 5; // Pasos del formulario (sin contar la confirmación)
 const TOTAL_SCREENS = 6; // Total de pantallas incluyendo confirmación
 
@@ -99,11 +92,12 @@ export default function Home() {
     }
     const result = response[0];
     if (result && result.resultErrors && result.resultErrors.length > 0) {
-      return null;
+      // Log errors but still try to find an ID if it exists
+      console.error("Salesforce returned errors:", result.resultErrors);
     }
     return result?.leadResultId || null;
   };
-  
+
   const canProceedToNextStep = (step: number): boolean => {
     switch (step) {
       case 4:
@@ -148,9 +142,7 @@ export default function Home() {
       setSubmissionResponse(response);
       
       if (leadId) {
-        setLeadResult({ 
-          leadResultId: leadId, 
-        });
+        setLeadResult({ leadResultId: leadId });
         
         toast({
           title: "Paso 3 Exitoso",
@@ -202,12 +194,13 @@ export default function Home() {
       }
 
       const payload: any = {
-        ...updatedData, // Pass all form data
+        ...updatedData, // Pass all form data for the backend to reconstruct
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
-        leadResultId: leadResult.leadResultId,
+        leadResultId: leadResult.leadResultId, // This is the key for the update
       };
 
+      // Add agent-specific data for the update
       if (updatedData.agentType === 'APM') {
         payload.systemOrigin = '02';
         payload.origin = '02';
@@ -220,8 +213,8 @@ export default function Home() {
         payload.leadSource = '10';
       }
       
-      const response = await updateLead(payload);
-      setSubmissionResponse(response);
+      await updateLead(payload);
+      setSubmissionResponse(payload); // For display purposes
       
       toast({
         title: "Paso 4 Exitoso",

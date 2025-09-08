@@ -68,8 +68,8 @@ const upsertLeadFlow = ai.defineFlow(
   },
   async ({ formData, token }) => {
     const {
-      accessToken,
-      instanceUrl,
+      access_token,
+      instance_url,
       agentType, // Not sent to Salesforce
       ...payloadData
     } = { ...formData, ...token };
@@ -147,10 +147,10 @@ const upsertLeadFlow = ai.defineFlow(
 
     const finalPayload = { leadWrappers: [leadWrapper] };
 
-    const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
+    const leadResponse = await fetch(`${instance_url}/services/apexrest/core/lead/`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(finalPayload),

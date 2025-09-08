@@ -167,7 +167,7 @@ export const updateLeadFlow = ai.defineFlow(
 
       const leadWrapperBase: any = {
         id: id,
-        idFullOperation: idFullOperation,
+        idFullOperation: idFullOperation, // Ensure this is always passed
         firstName: updateData.firstName,
         lastName: updateData.lastName,
         documentType: updateData.documentType,
@@ -185,7 +185,7 @@ export const updateLeadFlow = ai.defineFlow(
             branch: 'XX_205',
             risk: JSON.stringify(riskObject),
             quotes: [{
-                id: 'TestWSConvertMIN',
+                id: 'TestWSConvertMIN', // ID for the quote is required by validation
                 effectiveDate: updateData.effectiveDate,
                 expirationDate: updateData.expirationDate,
                 productCode: 'PRD001',
@@ -198,20 +198,19 @@ export const updateLeadFlow = ai.defineFlow(
                 isSelected: true,
             }]
         },
-        sourceData: {},
-        utmData: {},
+        sourceData: {
+            sourceEvent: updateData.sourceEvent,
+            systemOrigin: updateData.systemOrigin,
+            origin: updateData.origin,
+            leadSource: updateData.leadSource,
+        },
+        utmData: {
+            utmCampaign: updateData.utmCampaign
+        },
       };
       
-      // Dynamically add fields for Step 4
-      if (updateData.sourceEvent) leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
-      if (updateData.systemOrigin) leadWrapperBase.sourceData.systemOrigin = updateData.systemOrigin;
-      if (updateData.origin) leadWrapperBase.sourceData.origin = updateData.origin;
-      if (updateData.leadSource) leadWrapperBase.sourceData.leadSource = updateData.leadSource;
-      if (updateData.utmCampaign) leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
-      
-      // Dynamically add fields for Step 5 (Emission)
       if (updateData.convertedStatus) {
-        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; // Add owner for conversion
+        leadWrapperBase.idOwner = '005D700000GSRhDIAX';
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus,
           policyNumber: updateData.policyNumber,
@@ -231,16 +230,19 @@ export const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(updatePayload)
       });
   
-      const responseData = await leadResponse.json();
+      const responseText = await leadResponse.text();
+      
+      // Handle empty response for success
+      if (leadResponse.status === 204 || responseText.length === 0) {
+        return { success: true, idFullOperation };
+      }
+
+      const responseData = JSON.parse(responseText);
 
       if (!leadResponse.ok) {
           const errorText = JSON.stringify(responseData);
           console.error("Salesforce Update Error Response:", errorText);
           throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
-      }
-    
-      if (leadResponse.status === 204) {
-          return { success: true, idFullOperation };
       }
   
       return responseData;

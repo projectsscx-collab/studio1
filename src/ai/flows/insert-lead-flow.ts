@@ -86,6 +86,7 @@ const UpdateLeadInputSchema = z.object({
     utmCampaign: z.string().optional(),
     leadSource: z.string().optional(),
     convertedStatus: z.string().optional(),
+    idOwner: z.string().optional(),
 });
 export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
@@ -260,6 +261,7 @@ export const updateLeadFlow = ai.defineFlow(
         risk: JSON.stringify(riskObject),
          quotes: [
             {
+                id: 'TestWSConvertMIN', // This is required by the validation rule.
                 effectiveDate: updateData.effectiveDate,
                 expirationDate: updateData.expirationDate,
                 productCode: 'PRD001',
@@ -307,12 +309,12 @@ export const updateLeadFlow = ai.defineFlow(
         leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
     }
     
-    // Handle the conversion step specifically
+    // Handle the conversion step specifically (Step 5)
+    // The Apex class requires an 'idOwner' to be passed in the wrapper for conversion.
     if (updateData.convertedStatus) {
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus
         };
-        // THIS IS THE FIX: The Apex class expects 'idOwner' at the root of the wrapper.
         leadWrapperBase.idOwner = '005D700000GSthDIAT';
     }
 

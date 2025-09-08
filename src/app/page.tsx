@@ -87,16 +87,24 @@ export default function Home() {
   const { toast } = useToast();
 
   const extractLeadId = (response: any): string | null => {
+    // Adjusted to check the new structure.
     if (!response || !Array.isArray(response) || response.length === 0) {
       return null;
     }
     const result = response[0];
     if (result && result.resultErrors && result.resultErrors.length > 0) {
-      // Log errors but still try to find an ID if it exists
-      console.error("Salesforce returned errors:", result.resultErrors);
+      const errorMessages = result.resultErrors.map((e: any) => e.errorMessage).join(', ');
+      console.error("Salesforce returned errors:", errorMessages);
+      // Even if there are errors, an ID might still be present in some cases.
+      if (result.leadResultId) {
+        return result.leadResultId;
+      }
+      // If there's no ID, we throw the error to be caught below.
+      throw new Error(errorMessages);
     }
     return result?.leadResultId || null;
   };
+
 
   const canProceedToNextStep = (step: number): boolean => {
     switch (step) {
@@ -130,7 +138,7 @@ export default function Home() {
         throw new Error("No se pudo obtener el token de Salesforce");
       }
 
-      const payload = { 
+      const payload: any = { 
         ...updatedData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url
@@ -265,7 +273,8 @@ export default function Home() {
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         leadResultId: leadResult.leadResultId,
-        convertedStatus: '01' // New data for this step
+        convertedStatus: '01', // New data for this step
+        idOwner: '005D700000GSthDIAT', // Required for conversion
       };
 
       const response = await updateLead(payload);

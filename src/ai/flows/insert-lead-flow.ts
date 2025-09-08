@@ -57,7 +57,7 @@ export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
-    leadResultId: z.string(), // This is the idFullOperation from the create step
+    leadResultId: z.string(), // This is the leadResultId from the create step
     
     // Pass the full original form data
     firstName: z.string(),

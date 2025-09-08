@@ -228,6 +228,7 @@ export const updateLeadFlow = ai.defineFlow(
         const updatePayload: any = {
             leadWrappers: [
                 {
+                    id: leadId, // Key change: ID inside the wrapper
                     firstName: rest.firstName,
                     lastName: rest.lastName,
                     birthdate: rest.birthdate,
@@ -306,8 +307,9 @@ export const updateLeadFlow = ai.defineFlow(
             }
         }
 
-        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
-            method: 'POST',
+        // Key change: Use generic endpoint, not specific one
+        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
+            method: 'POST', // The endpoint only allows POST
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'

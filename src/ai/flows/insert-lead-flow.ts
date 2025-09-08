@@ -232,7 +232,6 @@ export const updateLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl, ...updateData } = input;
     
-    // Re-create the full base payload to ensure all required fields are present
     const riskObject = {
         'Número de matrícula__c': updateData.numero_de_matricula,
         'Marca__c': updateData.marca,
@@ -242,9 +241,8 @@ export const updateLeadFlow = ai.defineFlow(
     };
     
     const leadWrapperBase: any = {
-      idFullOperation: updateData.leadResultId, // Use the stored ID for the update
+      idFullOperation: updateData.leadResultId, 
       
-      // Re-send all required data from the original object
       firstName: updateData.firstName,
       lastName: updateData.lastName,
       documentType: updateData.documentType,
@@ -269,15 +267,13 @@ export const updateLeadFlow = ai.defineFlow(
                 productName: 'Life Insurance',
                 netPremium: 1000.0,
                 paymentMethod: updateData.paymentMethod,
-                paymentPeriodicity: updateData.paymentPeriodicity,
-                paymentTerm: updateData.paymentTerm,
+                paymentPeriodicity: updateData.paymentTerm,
                 additionalInformation: 'test',
                 isSelected: true,
             },
         ],
       },
       
-      // Initialize with default/original sourceData
       sourceData: {
           sourceEvent: '01',
           eventReason: '01',
@@ -289,15 +285,12 @@ export const updateLeadFlow = ai.defineFlow(
           systemOrigin: '05', 
           ipData: {},
       },
-      // Initialize with default/original utmData
       utmData: {
           utmCampaign: 'ROPO_Auto',
       },
-      // Initialize empty conversionData
       conversionData: {},
     };
     
-    // Overwrite with the new data for the update if present
     if (updateData.sourceEvent) {
         leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
     }
@@ -314,11 +307,11 @@ export const updateLeadFlow = ai.defineFlow(
         leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
     }
     
-    // Add conversion data and ownerId ONLY when converting the lead
     if (updateData.convertedStatus) {
         leadWrapperBase.conversionData = {
-          convertedStatus: updateData.convertedStatus,
+          convertedStatus: updateData.convertedStatus
         };
+        // The ownerId MUST be at the root of the leadWrapper object for conversion
         leadWrapperBase.ownerId = '005D700000GSRhDIAX';
     }
 
@@ -341,7 +334,6 @@ export const updateLeadFlow = ai.defineFlow(
         throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
     }
     
-    // Update might return 204 No Content, so handle that case
     if (leadResponse.status === 204) {
         return { success: true, message: "Lead updated successfully." };
     }
@@ -349,7 +341,6 @@ export const updateLeadFlow = ai.defineFlow(
     try {
         return await leadResponse.json();
     } catch (e) {
-        // If parsing fails but status was OK, assume success.
         return { success: true, message: "Lead update processed." };
     }
   }

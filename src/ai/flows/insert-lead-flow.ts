@@ -54,20 +54,9 @@ const InsertLeadInputSchema = z.object({
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
 
-const UpdateLeadInputSchema = z.object({
-    accessToken: z.string(),
-    instanceUrl: z.string(),
-    leadResultId: z.string(), // Use leadResultId for updates
+const UpdateLeadInputSchema = InsertLeadInputSchema.extend({
+    leadResultId: z.string(),
     
-    // Include all necessary fields for update payload
-    firstName: z.string(),
-    lastName: z.string(),
-    documentType: z.string(),
-    documentNumber: z.string(),
-    mobilePhone: z.string(),
-    phone: z.string(),
-    email: z.string(),
-
     // Optional fields for updates
     sourceEvent: z.string().optional(),
     systemOrigin: z.string().optional(),
@@ -221,32 +210,69 @@ export const updateLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl, ...updateData } = input;
     
-    // Construct a payload with only the fields to be updated
+    // Re-create the full base payload
+    const riskObject = {
+        'Número de matrícula__c': updateData.numero_de_matricula,
+        'Marca__c': updateData.marca,
+        'Modelo__c': updateData.modelo,
+        'Año del vehículo__c': updateData.ano_del_vehiculo,
+        'Número de serie__c': updateData.numero_de_serie,
+    };
+    
     const updatePayload = {
       leadWrappers: [
         {
           idFullOperation: updateData.leadResultId, // We use the leadResultId as the idFullOperation
           
-          // Re-send required data
+          // Re-send all required data from the original object
           firstName: updateData.firstName,
           lastName: updateData.lastName,
           documentType: updateData.documentType,
           documentNumber: updateData.documentNumber,
+          birthdate: updateData.birthdate,
           contactData: {
             mobilePhone: updateData.mobilePhone,
             phone: updateData.phone,
             email: updateData.email,
           },
-
-          // Add the new data to be updated
+          interestProduct: {
+            businessLine: '01',
+            sector: 'XX_01',
+            subsector: 'XX_00',
+            branch: 'XX_205',
+            risk: JSON.stringify(riskObject),
+             quotes: [
+                {
+                    id: 'TestWSConvertMIN',
+                    effectiveDate: updateData.effectiveDate,
+                    expirationDate: updateData.expirationDate,
+                    productCode: 'PRD001',
+                    productName: 'Life Insurance',
+                    netPremium: 1000.0,
+                    paymentMethod: updateData.paymentMethod,
+                    paymentPeriodicity: updateData.paymentPeriodicity,
+                    paymentTerm: updateData.paymentTerm,
+                    additionalInformation: 'test',
+                    isSelected: true,
+                },
+            ],
+          },
+          
+          // Add/overwrite with the new data for the update
           sourceData: {
               sourceEvent: updateData.sourceEvent,
-              systemOrigin: updateData.systemOrigin,
-              origin: updateData.origin,
-              leadSource: updateData.leadSource,
+              systemOrigin: updateData.systemOrigin || '05', // Keep original if not provided
+              origin: updateData.origin || '01', // Keep original if not provided
+              leadSource: updateData.leadSource || '01', // Keep original if not provided
+              // Keep other sourceData fields from insert if needed
+              eventReason: '01',
+              sourceSite: 'Website',
+              deviceType: '01',
+              deviceModel: 'iPhone',
+              ipData: {},
           },
           utmData: {
-              utmCampaign: updateData.utmCampaign,
+              utmCampaign: updateData.utmCampaign || 'ROPO_Auto', // Keep original if not provided
           },
           conversionData: {
               convertedStatus: updateData.convertedStatus,

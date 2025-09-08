@@ -94,11 +94,14 @@ export default function Home() {
   const { toast } = useToast();
 
   const extractLeadId = (response: any): string | null => {
-      if (!response || !Array.isArray(response) || response.length === 0) {
-        return null;
-      }
-      const result = response[0];
-      return result?.leadResultId || null;
+    if (!response || !Array.isArray(response) || response.length === 0) {
+      return null;
+    }
+    const result = response[0];
+    if (result && result.resultErrors && result.resultErrors.length > 0) {
+      return null;
+    }
+    return result?.leadResultId || null;
   };
   
   const canProceedToNextStep = (step: number): boolean => {
@@ -156,8 +159,9 @@ export default function Home() {
         
         handleNext(data); 
       } else {
+         const errorMessages = response?.[0]?.resultErrors?.map((e: any) => e.errorMessage).join(', ') || "La respuesta de Salesforce no contiene el ID de Lead necesario.";
          console.error("Salesforce response did not contain expected IDs:", response);
-         throw new Error("La respuesta de Salesforce no contiene el ID de Lead necesario.");
+         throw new Error(errorMessages);
       }
       
     } catch (error) {
@@ -198,22 +202,10 @@ export default function Home() {
       }
 
       const payload: any = {
-        // IDs and Auth
+        ...updatedData, // Pass all form data
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         leadResultId: leadResult.leadResultId,
-
-        // Required personal data for update
-        firstName: updatedData.firstName,
-        lastName: updatedData.lastName,
-        documentType: updatedData.documentType,
-        documentNumber: updatedData.documentNumber,
-        mobilePhone: updatedData.mobilePhone,
-        phone: updatedData.phone,
-        email: updatedData.email,
-        
-        // New data for this step
-        sourceEvent: updatedData.sourceEvent,
       };
 
       if (updatedData.agentType === 'APM') {
@@ -276,22 +268,11 @@ export default function Home() {
       }
 
       const payload: any = {
-        // IDs and Auth
+        ...updatedData, // Pass all form data
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         leadResultId: leadResult.leadResultId,
-
-        // Required personal data for update
-        firstName: updatedData.firstName,
-        lastName: updatedData.lastName,
-        documentType: updatedData.documentType,
-        documentNumber: updatedData.documentNumber,
-        mobilePhone: updatedData.mobilePhone,
-        phone: updatedData.phone,
-        email: updatedData.email,
-        
-        // New data for this step
-        convertedStatus: '01'
+        convertedStatus: '01' // New data for this step
       };
 
       const response = await updateLead(payload);

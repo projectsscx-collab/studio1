@@ -306,7 +306,7 @@ export const updateLeadFlow = ai.defineFlow(
         };
     }
 
-    const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
+    const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${accessToken}`,

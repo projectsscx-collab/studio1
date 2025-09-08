@@ -242,7 +242,6 @@ export const updateLeadFlow = ai.defineFlow(
     
     const leadWrapperBase: any = {
       idFullOperation: updateData.leadResultId, 
-      
       firstName: updateData.firstName,
       lastName: updateData.lastName,
       documentType: updateData.documentType,
@@ -267,14 +266,13 @@ export const updateLeadFlow = ai.defineFlow(
                 productName: 'Life Insurance',
                 netPremium: 1000.0,
                 paymentMethod: updateData.paymentMethod,
-                paymentPeriodicity: updateData.paymentTerm,
+                paymentPeriodicity: updateData.paymentPeriodicity,
                 paymentTerm: updateData.paymentTerm,
                 additionalInformation: 'test',
                 isSelected: true,
             },
         ],
       },
-      
       sourceData: {
           sourceEvent: '01',
           eventReason: '01',
@@ -292,6 +290,7 @@ export const updateLeadFlow = ai.defineFlow(
       conversionData: {},
     };
     
+    // Apply dynamic updates from the form
     if (updateData.sourceEvent) {
         leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
     }
@@ -312,12 +311,12 @@ export const updateLeadFlow = ai.defineFlow(
       leadWrappers: [leadWrapperBase]
     };
     
+    // Handle the conversion step specifically
     if (updateData.convertedStatus) {
         leadWrapperBase.conversionData = {
-          convertedStatus: updateData.convertedStatus
+          convertedStatus: updateData.convertedStatus,
+          ownerId: '005D700000GSRhDIAX' // This is the crucial part for conversion
         };
-        // The ownerId MUST be passed at the root of the update payload for conversion
-        leadWrapperBase.ownerId = '005D700000GSRhDIAX';
     }
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
@@ -335,6 +334,7 @@ export const updateLeadFlow = ai.defineFlow(
         throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
     }
     
+    // Update might return 204 No Content, so handle that case
     if (leadResponse.status === 204) {
         return { success: true, message: "Lead updated successfully." };
     }
@@ -342,6 +342,7 @@ export const updateLeadFlow = ai.defineFlow(
     try {
         return await leadResponse.json();
     } catch (e) {
+        // Handle cases where the response is not a valid JSON but still successful
         return { success: true, message: "Lead update processed." };
     }
   }
@@ -360,5 +361,3 @@ export async function insertLead(input: InsertLeadInput): Promise<any> {
 export async function updateLead(input: UpdateLeadInput): Promise<any> {
     return updateLeadFlow(input);
 }
-
-    

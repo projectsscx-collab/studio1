@@ -263,7 +263,6 @@ export const updateLeadFlow = ai.defineFlow(
         risk: JSON.stringify(riskObject),
          quotes: [
             {
-                id: 'TestWSConvertMIN',
                 effectiveDate: updateData.effectiveDate,
                 expirationDate: updateData.expirationDate,
                 productCode: 'PRD001',

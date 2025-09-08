@@ -151,9 +151,9 @@ export const insertLeadFlow = ai.defineFlow(
       leadWrappers: [{
         firstName: formData.firstName,
         lastName: formData.lastName,
-        birthdate: formData.birthdate,
         documentType: formData.documentType,
         documentNumber: formData.documentNumber,
+        birthdate: formData.birthdate,
         contactData: {
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,

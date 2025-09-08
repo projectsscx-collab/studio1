@@ -76,7 +76,7 @@ export default function Home() {
         
         const response = await insertLead(payload);
         
-        // Robustly find leadResultId and idFullOperation
+        // Robustly find leadResultId and idFullOperation from various possible response structures
         const leadId = response?.[0]?.leadResultId || response?.[0]?.result?.leadResultId;
         const fullOperationId = response?.[0]?.idFullOperation || response?.[0]?.result?.idFullOperation;
 
@@ -84,12 +84,13 @@ export default function Home() {
             setLeadResult({ leadResultId: leadId, idFullOperation: fullOperationId });
             setSubmissionResponse(response); // Store initial response
             toast({
-                title: "Lead Creado Exitosamente (Paso 3)",
-                description: `Su solicitud ha sido procesada. ID de Operación: ${fullOperationId}`,
+                title: "Paso 3 Exitoso",
+                description: `Lead creado. ID de Operación: ${fullOperationId}`,
             });
             handleNext(data); // Advance to step 4
         } else {
-            console.error("Response from Salesforce:", response);
+            // This case handles when the API call is successful but doesn't return the expected IDs.
+            console.error("Salesforce response did not contain expected IDs:", response);
             throw new Error("No se pudo obtener el ID del Lead o el ID de Operación de Salesforce.");
         }
 
@@ -114,7 +115,7 @@ export default function Home() {
       if (!leadResult.idFullOperation) {
           toast({
               variant: "destructive",
-              title: "Error",
+              title: "Error Crítico",
               description: "No se ha encontrado el ID de Operación para actualizar. Por favor, vuelva a empezar.",
           });
           setIsSubmitting(false);
@@ -143,13 +144,12 @@ export default function Home() {
               payload.leadSource = '10';
           }
           
+          // If the API call doesn't throw an error, we can consider it a success.
           const response = await updateLead(payload);
 
-          // For updates, a successful call might not return a detailed body.
-          // If the API call doesn't throw an error, we can consider it a success.
           setSubmissionResponse(response); // Store update response
            toast({
-              title: "Preferencia Guardada (Paso 4)",
+              title: "Paso 4 Exitoso",
               description: `Su preferencia de contacto ha sido guardada.`,
           });
           handleNext(data); // Advance to step 5
@@ -171,10 +171,11 @@ export default function Home() {
       setIsSubmitting(true);
       const updatedData = { ...formData, ...data };
       setFormData(updatedData);
+
        if (!leadResult.idFullOperation) {
           toast({
               variant: "destructive",
-              title: "Error",
+              title: "Error Crítico",
               description: "No se ha encontrado el ID de Operación para emitir. Por favor, vuelva a empezar.",
           });
           setIsSubmitting(false);
@@ -190,10 +191,11 @@ export default function Home() {
               convertedStatus: '01' // Mark as won/emitted
           };
 
+          // If the API call doesn't throw an error, we can consider it a success.
           const response = await updateLead(payload);
           setSubmissionResponse(response);
           toast({
-              title: "Póliza Emitida Exitosamente (Paso 5)",
+              title: "Paso 5 Exitoso",
               description: `Su póliza ha sido emitida en Salesforce.`,
           });
           handleNext(data); // Advance to confirmation screen

@@ -3,7 +3,7 @@
 import { useForm, FormProvider } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { documentTypes, paymentMethods, paymentPeriodicities, paymentTerms } from '@/lib/schemas';
 
 interface EmissionFormProps {
@@ -35,7 +35,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }:
           <CardContent className="space-y-6">
             <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Detalles de la Cotización</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm p-4 border rounded-md">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm p-4 border rounded-md bg-gray-50/50">
                     <p><strong>Fecha de Efectividad:</strong> {initialData.effectiveDate}</p>
                     <p><strong>Fecha de Expiración:</strong> {initialData.expirationDate}</p>
                     <p><strong>Prima Neta:</strong> 1000.00</p>
@@ -47,7 +47,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }:
 
              <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Información Personal</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm p-4 border rounded-md">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm p-4 border rounded-md bg-gray-50/50">
                     <p><strong>Nombre Completo:</strong> {initialData.firstName} {initialData.lastName}</p>
                     <p><strong>Documento:</strong> {documentTypes[initialData.documentType] || 'N/A'} - {initialData.documentNumber}</p>
                     <p><strong>Fecha de Nacimiento:</strong> {initialData.birthdate}</p>
@@ -59,7 +59,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }:
 
             <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Datos del Vehículo</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm p-4 border rounded-md">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm p-4 border rounded-md bg-gray-50/50">
                     <p><strong>Nº de Matrícula:</strong> {initialData.numero_de_matricula}</p>
                     <p><strong>Marca:</strong> {initialData.marca}</p>
                     <p><strong>Modelo:</strong> {initialData.modelo}</p>
@@ -79,13 +79,13 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }:
 
 
           </CardContent>
-          <div className="flex justify-between pt-8">
+          <CardFooter className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
             <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Emitiendo...' : 'Emitir'}
+                {isSubmitting ? 'Emitiendo...' : 'Emitir Póliza'}
             </Button>
-          </div>
+          </CardFooter>
         </Card>
       </form>
     </FormProvider>

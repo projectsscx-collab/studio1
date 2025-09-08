@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Input } from '../ui/input';
 import { SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface QuoteFormProps {
   onGetToken: () => void;
@@ -51,8 +52,11 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)}>
-        <div className="space-y-8">
-            <h2 className="text-xl font-semibold">Detalles de la Cotización</h2>
+        <Card className="border-0 shadow-none">
+          <CardHeader>
+            <CardTitle>Detalles de la Cotización</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                     control={form.control}
@@ -184,14 +188,15 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
                     </pre>
                 </div>
              )}
-            <div className="flex justify-between pt-8">
-                <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
-                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSubmitting ? 'Procesando...' : (tokenResponse ? 'Crear Lead' : 'Obtener Token')}
-                </Button>
-            </div>
-        </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
+              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting ? 'Procesando...' : (tokenResponse ? 'Crear Lead' : 'Obtener Token')}
+              </Button>
+          </CardFooter>
+        </Card>
       </form>
     </FormProvider>
   );

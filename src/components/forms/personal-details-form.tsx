@@ -12,6 +12,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface PersonalDetailsFormProps {
   onSubmit: (data: any) => void;
@@ -39,7 +40,8 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
   return (
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="space-y-8">
+          <Card className="border-0 shadow-none">
+            <CardContent className="space-y-8 pt-6">
                 <div>
                     <h2 className="text-xl font-semibold mb-6">Información Personal</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -172,12 +174,13 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                         />
                     </div>
                 </div>
-                 <div className="flex justify-end pt-8">
-                    <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-                        CONTINUAR >
-                    </Button>
-                </div>
-            </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                    CONTINUAR >
+                </Button>
+            </CardFooter>
+          </Card>
         </form>
       </FormProvider>
   );

@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;
@@ -32,8 +33,11 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting, re
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="space-y-8">
-            <h2 className="text-xl font-semibold mb-6">¿Quiere que le contactemos?</h2>
+        <Card className="border-0 shadow-none">
+          <CardHeader>
+            <CardTitle>Preferencia de Contacto</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
              <FormField
                 control={form.control}
                 name="sourceEvent"
@@ -87,15 +91,15 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting, re
                   </pre>
               </div>
             )}
-            
-            <div className="flex justify-between pt-8">
-                <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSubmitting ? 'Actualizando...' : 'CONTINUAR >'}
-                </Button>
-            </div>
-        </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting ? 'Actualizando...' : 'CONTINUAR >'}
+              </Button>
+          </CardFooter>
+        </Card>
       </form>
     </FormProvider>
   );

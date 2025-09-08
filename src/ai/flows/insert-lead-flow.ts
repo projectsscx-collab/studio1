@@ -58,7 +58,7 @@ const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
     leadId: z.string(),
-    idFullOperation: z.string().nullable().optional(),
+    idFullOperation: z.string().nullable(),
 
     // Form data from subsequent steps
     sourceEvent: z.string().optional(),

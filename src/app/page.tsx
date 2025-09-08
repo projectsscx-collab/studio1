@@ -121,14 +121,14 @@ export default function Home() {
 
         const response = await updateLead(payload);
 
-        if (response[0]?.isSuccess) {
+        if (response && response[0]?.isSuccess) {
             toast({
                 title: "Lead Actualizado Exitosamente",
                 description: `El lead ha sido actualizado con sus preferencias.`,
             });
             handleNext(data);
         } else {
-             const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido durante la actualización.";
+             const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error desconocido durante la actualización.";
              throw new Error(errorMessage);
         }
 

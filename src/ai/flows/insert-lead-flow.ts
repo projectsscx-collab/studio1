@@ -99,7 +99,7 @@ export const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// Flow to insert the lead, now receiving token and instanceUrl
+// Flow to insert the lead
 export const insertLeadFlow = ai.defineFlow(
   {
     name: 'insertLeadFlow',
@@ -169,10 +169,10 @@ export const insertLeadFlow = ai.defineFlow(
                     productName: 'Life Insurance',
                     netPremium: 1000.0,
                     paymentMethod: formData.paymentMethod,
-                    isSelected: true,
                     paymentPeriodicity: formData.paymentPeriodicity,
                     paymentTerm: formData.paymentTerm,
                     additionalInformation: 'test',
+                    isSelected: true,
                 },
             ],
         },

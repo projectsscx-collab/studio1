@@ -1,10 +1,11 @@
 'use server';
 
 /**
- * @fileoverview A Genkit flow to insert a lead in Salesforce.
+ * @fileoverview Genkit flows to insert and update a lead in Salesforce.
  *
- * - insertLead - A function that orchestrates data submission to Salesforce for new leads.
- * - getSalesforceToken - A function that handles authentication.
+ * - insertLead - Creates a new lead in Salesforce.
+ * - updateLead - Updates an existing lead in Salesforce.
+ * - getSalesforceToken - Handles authentication.
  */
 
 import { ai } from '@/ai/genkit';
@@ -51,6 +52,20 @@ const InsertLeadInputSchema = z.object({
 });
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
+
+
+const UpdateLeadInputSchema = z.object({
+    accessToken: z.string(),
+    instanceUrl: z.string(),
+    idFullOperation: z.string(),
+    sourceEvent: z.string().optional(),
+    systemOrigin: z.string().optional(),
+    origin: z.string().optional(),
+    utmCampaign: z.string().optional(),
+    leadSource: z.string().optional(),
+    convertedStatus: z.string().optional(),
+});
+export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
 
 // Flow to get the authentication token
@@ -185,6 +200,62 @@ export const insertLeadFlow = ai.defineFlow(
 );
 
 
+// Flow to update the lead
+export const updateLeadFlow = ai.defineFlow(
+  {
+    name: 'updateLeadFlow',
+    inputSchema: UpdateLeadInputSchema,
+    outputSchema: z.any(),
+  },
+  async (input) => {
+    const { accessToken, instanceUrl, ...updateData } = input;
+    
+    // Construct a payload with only the fields to be updated
+    const updatePayload = {
+      leadWrappers: [
+        {
+          idFullOperation: updateData.idFullOperation,
+          sourceData: {
+              sourceEvent: updateData.sourceEvent,
+              systemOrigin: updateData.systemOrigin,
+              origin: updateData.origin,
+              leadSource: updateData.leadSource,
+          },
+          utmData: {
+              utmCampaign: updateData.utmCampaign,
+          },
+          conversionData: {
+              convertedStatus: updateData.convertedStatus,
+          }
+        }
+      ]
+    };
+    
+    const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
+        method: 'PATCH', // Use PATCH for updates
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatePayload)
+    });
+
+    if (!leadResponse.ok) {
+        const errorText = await leadResponse.text();
+        console.error("Salesforce Update Error Response:", errorText);
+        throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+    }
+    
+    // Update might return 204 No Content, so handle that case
+    if (leadResponse.status === 204) {
+        return { success: true, message: "Lead updated successfully." };
+    }
+
+    return await leadResponse.json();
+  }
+);
+
+
 // Exported functions to be called from the frontend
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
     return getSalesforceTokenFlow();
@@ -192,4 +263,8 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);
+}
+
+export async function updateLead(input: UpdateLeadInput): Promise<any> {
+    return updateLeadFlow(input);
 }

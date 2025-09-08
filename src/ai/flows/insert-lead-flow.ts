@@ -58,6 +58,18 @@ const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
     leadResultId: z.string(), // Use leadResultId for updates
+    
+    // Include all necessary fields for update payload
+    firstName: z.string(),
+    lastName: z.string(),
+    documentType: z.string(),
+    documentNumber: z.string(),
+    birthdate: z.string(),
+    mobilePhone: z.string(),
+    phone: z.string(),
+    email: z.string(),
+
+    // Optional fields for updates
     sourceEvent: z.string().optional(),
     systemOrigin: z.string().optional(),
     origin: z.string().optional(),
@@ -214,8 +226,18 @@ export const updateLeadFlow = ai.defineFlow(
     const updatePayload = {
       leadWrappers: [
         {
-          // We use the leadResultId from the creation step as the idFullOperation for updates
-          idFullOperation: updateData.leadResultId, 
+          idFullOperation: updateData.leadResultId, // We use the leadResultId as the idFullOperation
+          
+          // Re-send required data
+          documentType: updateData.documentType,
+          documentNumber: updateData.documentNumber,
+          contactData: {
+            mobilePhone: updateData.mobilePhone,
+            phone: updateData.phone,
+            email: updateData.email,
+          },
+
+          // Add the new data to be updated
           sourceData: {
               sourceEvent: updateData.sourceEvent,
               systemOrigin: updateData.systemOrigin,
@@ -233,7 +255,7 @@ export const updateLeadFlow = ai.defineFlow(
     };
     
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-        method: 'POST', // Use POST for updates as specified by the API
+        method: 'POST',
         headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'

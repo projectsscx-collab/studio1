@@ -45,10 +45,6 @@ interface LeadResult {
   leadResultId: string | null;
 }
 
-interface SalesforceLeadResponse {
-    leadResultId?: string;
-}
-
 const TOTAL_STEPS = 5; // Pasos del formulario (sin contar la confirmación)
 const TOTAL_SCREENS = 6; // Total de pantallas incluyendo confirmación
 
@@ -94,10 +90,10 @@ export default function Home() {
     if (!response || !Array.isArray(response) || response.length === 0) {
       return null;
     }
-    const result: SalesforceLeadResponse = response[0];
+    const result = response[0];
     return result?.leadResultId || null;
   };
-
+  
   const canProceedToNextStep = (step: number): boolean => {
     switch (step) {
       case 4:
@@ -118,7 +114,6 @@ export default function Home() {
     }
   };
   
-  // Step 3: Create Lead
   const handleQuoteSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
     const updatedData = { ...formData, ...data };
@@ -139,14 +134,9 @@ export default function Home() {
       
       const response = await insertLead(payload);
       
-      // La llamada fue exitosa si no lanzó un error.
-      // Ahora, intentamos extraer el ID de forma robusta.
       const leadId = extractLeadId(response);
-
-      // Guardamos la respuesta completa para mostrarla al final.
       setSubmissionResponse(response);
       
-      // Solo si obtenemos el ID de operación, podemos continuar.
       if (leadId) {
         setLeadResult({ 
           leadResultId: leadId, 
@@ -157,9 +147,8 @@ export default function Home() {
           description: "Lead creado correctamente en Salesforce.",
         });
         
-        handleNext(data); // Avanzar al siguiente paso.
+        handleNext(data); 
       } else {
-        // Si no viene el ID de operación, es un problema real
          console.error("Salesforce response did not contain expected IDs:", response);
          throw new Error("La respuesta de Salesforce no contiene el ID de Lead necesario.");
       }
@@ -180,7 +169,6 @@ export default function Home() {
     }
   };
 
-  // Step 4: Update Lead with Contact Preferences
   const handleUpdateSubmit = async (data: Partial<FormData>) => {
     if (!canProceedToNextStep(4)) {
       toast({
@@ -203,13 +191,12 @@ export default function Home() {
       }
 
       const payload: any = {
+        ...updatedData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
-        leadResultId: leadResult.leadResultId, // Usamos el ID del lead
-        sourceEvent: updatedData.sourceEvent
+        leadResultId: leadResult.leadResultId,
       };
 
-      // Add agent-specific data
       if (updatedData.agentType === 'APM') {
         payload.systemOrigin = '02';
         payload.origin = '02';
@@ -223,7 +210,6 @@ export default function Home() {
       }
       
       const response = await updateLead(payload);
-      // Si la llamada no lanza error, es un éxito.
       setSubmissionResponse(response);
       
       toast({
@@ -231,7 +217,7 @@ export default function Home() {
         description: "Su preferencia de contacto ha sido guardada.",
       });
       
-      handleNext(data); // Advance to step 5
+      handleNext(data);
           
     } catch (error) {
       console.error("Error in handleUpdateSubmit:", error);
@@ -249,7 +235,6 @@ export default function Home() {
     }
   };
 
-  // Step 5: Final Update (Emission)
   const handleFinalSubmit = async (data: Partial<FormData>) => {
     if (!canProceedToNextStep(5)) {
       toast({
@@ -272,14 +257,14 @@ export default function Home() {
       }
 
       const payload = {
+        ...updatedData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
-        leadResultId: leadResult.leadResultId, // Usamos el ID del lead
-        convertedStatus: '01' // Mark as won/emitted
+        leadResultId: leadResult.leadResultId,
+        convertedStatus: '01'
       };
 
       const response = await updateLead(payload);
-      // Si la llamada no lanza error, es un éxito.
       setSubmissionResponse(response);
       
       toast({
@@ -287,7 +272,7 @@ export default function Home() {
         description: "Su póliza ha sido emitida en Salesforce.",
       });
       
-      handleNext(data); // Advance to confirmation screen
+      handleNext(data);
           
     } catch (error) {
       console.error("Error in handleFinalSubmit:", error);

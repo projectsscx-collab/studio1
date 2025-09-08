@@ -48,8 +48,18 @@ const InsertLeadInputSchema = z.object({
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
 });
 
-
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
+
+const UpdateLeadInputSchema = z.object({
+  accessToken: z.string(),
+  instanceUrl: z.string(),
+  leadId: z.string(),
+  sourceEvent: z.string().optional(),
+  agentType: z.string().optional(),
+  convertedStatus: z.string().optional(),
+});
+export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
+
 
 // Flow to get the authentication token
 export const getSalesforceTokenFlow = ai.defineFlow(
@@ -183,6 +193,68 @@ export const insertLeadFlow = ai.defineFlow(
 );
 
 
+export const updateLeadFlow = ai.defineFlow(
+    {
+        name: 'updateLeadFlow',
+        inputSchema: UpdateLeadInputSchema,
+        outputSchema: z.any(),
+    },
+    async (input) => {
+        const { accessToken, instanceUrl, leadId, agentType, sourceEvent, convertedStatus } = input;
+
+        const updatePayload: any = {
+            leadWrappers: [
+                {
+                    id: leadId,
+                    sourceData: {
+                        sourceEvent: sourceEvent,
+                    }
+                }
+            ]
+        };
+        
+        if (agentType) {
+            updatePayload.leadWrappers[0].utmData = {};
+            if (agentType === 'APM') {
+                updatePayload.leadWrappers[0].sourceData.systemOrigin = '02';
+                updatePayload.leadWrappers[0].sourceData.origin = '02';
+                updatePayload.leadWrappers[0].utmData.utmCampaign = 'ROPO_APMCampaign';
+                updatePayload.leadWrappers[0].sourceData.leadSource = '02';
+            } else if (agentType === 'ADM') {
+                updatePayload.leadWrappers[0].sourceData.systemOrigin = '06';
+                updatePayload.leadWrappers[0].sourceData.origin = '02';
+                updatePayload.leadWrappers[0].utmData.utmCampaign = 'ROPO_ADMCampaign';
+                updatePayload.leadWrappers[0].sourceData.leadSource = '10';
+            }
+        }
+
+        if (convertedStatus) {
+            updatePayload.leadWrappers[0].conversionData = {
+                convertedStatus: convertedStatus
+            }
+        }
+
+
+        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
+            method: 'PATCH', // Use PATCH for updates
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatePayload)
+        });
+
+        if (!leadResponse.ok) {
+            const errorText = await leadResponse.text();
+            console.error("Salesforce Update Error Response:", errorText);
+            throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+        }
+
+        return await leadResponse.json();
+    }
+);
+
+
 // Exported functions to be called from the frontend
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
     return getSalesforceTokenFlow();
@@ -190,4 +262,8 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);
+}
+
+export async function updateLead(input: UpdateLeadInput): Promise<any> {
+    return updateLeadFlow(input);
 }

@@ -26,6 +26,18 @@ export const paymentTerms = {
     "03": "36 meses"
 };
 
+export const sourceEvents = {
+    "01": "Manual",
+    "02": "Call me back",
+    "03": "Call me now",
+};
+
+export const agentTypes = {
+    "CC": "Contact Center (CC)",
+    "APM": "Agente (APM)",
+    "ADM": "Agente (ADM)",
+};
+
 export const leadSchema = z.object({
   // Step 1
   firstName: z.string().min(1, 'El nombre es requerido.'),
@@ -50,6 +62,10 @@ export const leadSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
+
+  // Step 4
+  sourceEvent: z.string().min(1, 'Seleccione un evento.'),
+  agentType: z.string().min(1, 'Seleccione un tipo de agente.'),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

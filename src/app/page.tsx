@@ -5,13 +5,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
 import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
 import QuoteForm from '@/components/forms/quote-form';
+import ContactPreferenceForm from '@/components/forms/contact-preference-form';
+import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken, SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken, SalesforceTokenResponse, updateLead } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 5;
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -37,6 +39,11 @@ export default function Home() {
       paymentMethod: '',
       paymentPeriodicity: '',
       paymentTerm: '',
+      // Step 4
+      sourceEvent: '',
+      agentType: '',
+      // Step 5
+      convertedStatus: '',
   });
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +51,7 @@ export default function Home() {
   const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
   const { toast } = useToast();
 
-  const handleNext = async (data: object) => {
+  const handleNext = (data: object) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
@@ -52,8 +59,8 @@ export default function Home() {
       setCurrentStep((prev) => prev + 1);
     }
   };
-
-  const handleFinalSubmit = async (data: object) => {
+  
+  const handleLeadInsert = async (data: object) => {
     if (!tokenResponse) {
         toast({
             variant: "destructive",
@@ -74,14 +81,74 @@ export default function Home() {
             instanceUrl: tokenResponse.instance_url
         };
         const response = await insertLead(payload);
-        setSubmissionResponse(response);
-        setCurrentStep(prev => prev + 1);
+        setSubmissionResponse(response); // Save the initial lead creation response
+        
+        // Add the leadResultId to the form data for the next steps
+        const leadId = response[0]?.leadResultId;
+        if (leadId) {
+            setFormData(prev => ({...prev, leadResultId: leadId}));
+        }
+
+        handleNext(data); // Move to next step
     } catch (e) {
         console.error("Failed to insert lead", e);
         const errorMessage = e instanceof Error ? e.message : "There was an error submitting your form. Please try again.";
         toast({
             variant: "destructive",
             title: "Submission Failed",
+            description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
+
+  const handleLeadUpdate = async (data: object) => {
+     if (!tokenResponse || !submissionResponse) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Authentication token or Lead ID is missing."
+        });
+        return;
+    }
+    
+    setIsSubmitting(true);
+    const updatedFormData = { ...formData, ...data };
+    setFormData(updatedFormData);
+
+    try {
+        const leadId = submissionResponse[0]?.leadResultId;
+        if (!leadId) {
+            throw new Error("Could not find leadResultId in the submission response.");
+        }
+        
+        const payload: any = { 
+            accessToken: tokenResponse.access_token,
+            instanceUrl: tokenResponse.instance_url,
+            leadId: leadId,
+        };
+        
+        // Add fields specific to the update step
+        if (data.hasOwnProperty('agentType')) {
+            payload.sourceEvent = updatedFormData.sourceEvent;
+            payload.agentType = updatedFormData.agentType;
+        }
+
+        if (data.hasOwnProperty('convertedStatus')) {
+            payload.convertedStatus = updatedFormData.convertedStatus;
+        }
+
+        const response = await updateLead(payload);
+        // Optionally update the submission response if needed
+        // setSubmissionResponse(response);
+        handleNext(data);
+    } catch (e) {
+        console.error("Failed to update lead", e);
+        const errorMessage = e instanceof Error ? e.message : "There was an error updating your form. Please try again.";
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
             description: errorMessage,
         });
     } finally {
@@ -110,14 +177,12 @@ export default function Home() {
 
   const handlePrev = () => {
     setDirection(-1);
-    setTokenResponse(null);
     setCurrentStep((prev) => prev - 1);
   };
   
   const handleStartOver = () => {
     setDirection(1);
     setFormData({
-      // Step 1
       firstName: '',
       lastName: '',
       documentType: '',
@@ -126,18 +191,19 @@ export default function Home() {
       mobilePhone: '',
       phone: '',
       email: '',
-      // Step 2
       numero_de_matricula: '',
       marca: '',
       modelo: '',
       ano_del_vehiculo: '',
       numero_de_serie: '',
-      // Step 3
       effectiveDate: '',
       expirationDate: '',
       paymentMethod: '',
       paymentPeriodicity: '',
       paymentTerm: '',
+      sourceEvent: '',
+      agentType: '',
+      convertedStatus: '',
     });
     setSubmissionResponse(null);
     setTokenResponse(null);
@@ -168,8 +234,12 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onGetToken={handleGetToken} onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} tokenResponse={tokenResponse}/>;
+        return <QuoteForm onGetToken={handleGetToken} onSubmit={handleLeadInsert} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} tokenResponse={tokenResponse}/>;
       case 4:
+        return <ContactPreferenceForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
+      case 5:
+        return <EmissionForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
+      case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
         return null;

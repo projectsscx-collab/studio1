@@ -39,78 +39,14 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
     mode: 'onChange'
   });
   
-  const currentValues = form.watch();
-  
-  const finalData = { ...initialData, ...currentValues };
-  
   const handleFormSubmit = (data: any) => {
-      // If we have a token, submit the lead. Otherwise, get the token.
+      // If we have a token, submit the lead. Otherwise, get the token first.
       if(tokenResponse) {
         onSubmit(data);
       } else {
         onGetToken();
       }
   }
-
-  const leadPayload = {
-    leadWrappers: [
-        {
-            firstName: finalData.firstName,
-            lastName: finalData.lastName,
-            documentType: finalData.documentType,
-            documentNumber: finalData.documentNumber,
-            birthdate: finalData.birthdate,
-            contactData: {
-                mobilePhone: finalData.mobilePhone,
-                phone: finalData.phone,
-                email: finalData.email,
-            },
-            interestProduct: {
-                businessLine: "01",
-                sector: "XX_01",
-                subsector: "XX_00",
-                branch: "XX_205",
-                risk: JSON.stringify({
-                    "Número de matrícula__c": finalData.numero_de_matricula,
-                    "Marca__c": finalData.marca,
-                    "Modelo__c": finalData.modelo,
-                    "Año del vehículo__c": finalData.ano_del_vehiculo,
-                    "Número de serie__c": finalData.numero_de_serie
-                }),
-                quotes: [
-                    {
-                        id: "TestWSConvertMIN",
-                        effectiveDate: finalData.effectiveDate,
-                        expirationDate: finalData.expirationDate,
-                        productCode: "PRD001",
-                        productName: "Life Insurance",
-                        netPremium: 1000.00,
-                        paymentMethod: finalData.paymentMethod,
-                        isSelected: true,
-                        paymentPeriodicity: finalData.paymentPeriodicity,
-                        paymentTerm: finalData.paymentTerm,
-                        additionalInformation: "test"
-                    }
-                ]
-            },
-            utmData: {
-                utmCampaign: "ROPO_Auto"
-            },
-            sourceData: {
-                sourceEvent: "01",
-                eventReason: "01",
-                sourceSite: "Website",
-                deviceType: "01",
-                deviceModel: "iPhone",
-                leadSource: "01",
-                origin: "01",
-                systemOrigin: "05",
-                ipData: {}
-            },
-        },
-    ],
-  };
-
 
   return (
     <FormProvider {...form}>
@@ -240,19 +176,19 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
                   )}
                 />
             </div>
-             <div className="space-y-2 pt-4">
-                  <label className="text-sm font-medium">
-                    {tokenResponse ? "Respuesta de Autenticación" : "JSON a Enviar (datos del lead)"}
-                  </label>
-                  <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                      {JSON.stringify(tokenResponse || leadPayload, null, 2)}
-                  </pre>
-              </div>
+             {tokenResponse && (
+                <div className="space-y-2 pt-4">
+                    <label className="text-sm font-medium">Respuesta de Autenticación</label>
+                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
+                        {JSON.stringify(tokenResponse, null, 2)}
+                    </pre>
+                </div>
+             )}
             <div className="flex justify-between pt-8">
                 <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
                 <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSubmitting ? 'Procesando...' : (tokenResponse ? 'Enviar Lead' : 'Obtener Token')}
+                    {isSubmitting ? 'Procesando...' : (tokenResponse ? 'Crear Lead' : 'Obtener Token')}
                 </Button>
             </div>
         </div>

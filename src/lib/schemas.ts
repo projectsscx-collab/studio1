@@ -67,7 +67,7 @@ export const leadSchema = z.object({
   sourceEvent: z.string().min(1, 'Seleccione un evento.'),
   agentType: z.string().min(1, 'Seleccione un tipo de agente.'),
 
-  // Step 5 (Not a user-facing field, but part of the schema)
+  // Step 5
   convertedStatus: z.string().optional(),
 });
 

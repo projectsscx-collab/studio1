@@ -4,7 +4,6 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { leadSchema, paymentMethods, paymentPeriodicities, paymentTerms } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -40,60 +39,13 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
   const currentValues = form.watch();
   const fullData = { ...initialData, ...currentValues };
   
+  // This payload is just for display purposes
   const leadPayload = {
       leadWrappers: [{
         firstName: fullData.firstName,
         lastName: fullData.lastName,
         birthdate: fullData.birthdate,
-        documentType: fullData.documentType,
-        documentNumber: fullData.documentNumber,
-        contactData: {
-            mobilePhone: fullData.mobilePhone,
-            phone: fullData.phone,
-            email: fullData.email,
-        },
-        interestProduct: {
-            businessLine: '01',
-            sector: 'XX_01',
-            subsector: 'XX_00',
-            branch: 'XX_205',
-            risk: JSON.stringify({
-                'Número de matrícula__c': fullData.numero_de_matricula,
-                'Marca__c': fullData.marca,
-                'Modelo__c': fullData.modelo,
-                'Año del vehículo__c': fullData.ano_del_vehiculo,
-                'Número de serie__c': fullData.numero_de_serie,
-            }),
-            quotes: [
-                {
-                    id: 'TestWSConvertMIN',
-                    effectiveDate: fullData.effectiveDate,
-                    expirationDate: fullData.expirationDate,
-                    productCode: 'PRD001',
-                    productName: 'Life Insurance',
-                    netPremium: 1000.0,
-                    paymentMethod: fullData.paymentMethod,
-                    paymentPeriodicity: fullData.paymentPeriodicity,
-                    paymentTerm: fullData.paymentTerm,
-                    additionalInformation: 'test',
-                    isSelected: true,
-                },
-            ],
-        },
-        sourceData: {
-            sourceEvent: '01',
-            eventReason: '01',
-            sourceSite: 'Website',
-            deviceType: '01',
-            deviceModel: 'iPhone',
-            leadSource: '01',
-            origin: '01',
-            systemOrigin: '05',
-            ipData: {},
-        },
-        utmData: {
-            utmCampaign: 'ROPO_Auto',
-        },
+        // ... all other data from previous steps
       }],
     };
 
@@ -234,9 +186,9 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
             />
             </div>
              <div className="space-y-2 pt-4">
-                <label className="text-sm font-medium">JSON a Enviar (Creación)</label>
+                <label className="text-sm font-medium">Datos Acumulados (Paso 3)</label>
                 <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-96">
-                    {JSON.stringify(leadPayload, null, 2)}
+                    {JSON.stringify(fullData, null, 2)}
                 </pre>
             </div>
         </div>

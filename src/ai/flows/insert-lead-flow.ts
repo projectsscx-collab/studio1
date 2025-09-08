@@ -166,8 +166,8 @@ export const updateLeadFlow = ai.defineFlow(
       };
 
       const leadWrapperBase: any = {
-        id: id, // Pass the record ID for the upsert operation
-        idFullOperation: idFullOperation, // Pass the external ID
+        id: id,
+        idFullOperation: idFullOperation,
         firstName: updateData.firstName,
         lastName: updateData.lastName,
         documentType: updateData.documentType,
@@ -185,7 +185,7 @@ export const updateLeadFlow = ai.defineFlow(
             branch: 'XX_205',
             risk: JSON.stringify(riskObject),
             quotes: [{
-                id: 'TestWSConvertMIN', // This ID is required by the validation rule
+                id: 'TestWSConvertMIN',
                 effectiveDate: updateData.effectiveDate,
                 expirationDate: updateData.expirationDate,
                 productCode: 'PRD001',
@@ -211,7 +211,7 @@ export const updateLeadFlow = ai.defineFlow(
       
       // Dynamically add fields for Step 5 (Emission)
       if (updateData.convertedStatus) {
-        leadWrapperBase.idOwner = updateData.idOwner; // Add owner for conversion
+        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; // Add owner for conversion
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus,
           policyNumber: updateData.policyNumber,

@@ -54,6 +54,11 @@ const UpdateLeadInputSchema = z.object({
   accessToken: z.string(),
   instanceUrl: z.string(),
   leadId: z.string(),
+  documentType: z.string(),
+  documentNumber: z.string(),
+  mobilePhone: z.string(),
+  phone: z.string(),
+  email: z.string(),
   sourceEvent: z.string().optional(),
   agentType: z.string().optional(),
   convertedStatus: z.string().optional(),
@@ -200,12 +205,19 @@ export const updateLeadFlow = ai.defineFlow(
         outputSchema: z.any(),
     },
     async (input) => {
-        const { accessToken, instanceUrl, leadId, agentType, sourceEvent, convertedStatus } = input;
+        const { accessToken, instanceUrl, leadId, agentType, sourceEvent, convertedStatus, ...rest } = input;
 
         const updatePayload: any = {
             leadWrappers: [
                 {
                     id: leadId,
+                    documentType: rest.documentType,
+                    documentNumber: rest.documentNumber,
+                    contactData: {
+                        mobilePhone: rest.mobilePhone,
+                        phone: rest.phone,
+                        email: rest.email,
+                    },
                     sourceData: {
                         sourceEvent: sourceEvent,
                     }

@@ -131,6 +131,11 @@ export default function Home() {
             accessToken: tokenResponse.access_token,
             instanceUrl: tokenResponse.instance_url,
             leadId: leadId,
+            documentType: updatedFormData.documentType,
+            documentNumber: updatedFormData.documentNumber,
+            mobilePhone: updatedFormData.mobilePhone,
+            phone: updatedFormData.phone,
+            email: updatedFormData.email,
         };
         
         if (data.hasOwnProperty('agentType')) {

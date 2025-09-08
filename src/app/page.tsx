@@ -45,6 +45,13 @@ interface LeadResult {
   leadResultId: string | null;
 }
 
+interface SalesforceResponse {
+  leadResultId?: string;
+  result?: {
+    leadResultId?: string;
+  };
+}
+
 const TOTAL_STEPS = 5; // Pasos del formulario (sin contar la confirmación)
 const TOTAL_SCREENS = 6; // Total de pantallas incluyendo confirmación
 
@@ -87,11 +94,11 @@ export default function Home() {
   const { toast } = useToast();
 
   const extractLeadId = (response: any): string | null => {
-    if (!response || !Array.isArray(response) || response.length === 0) {
-      return null;
-    }
-    const result = response[0];
-    return result?.leadResultId || null;
+      if (!response || !Array.isArray(response) || response.length === 0) {
+        return null;
+      }
+      const result = response[0];
+      return result?.leadResultId || null;
   };
   
   const canProceedToNextStep = (step: number): boolean => {
@@ -191,10 +198,22 @@ export default function Home() {
       }
 
       const payload: any = {
-        ...updatedData,
+        // IDs and Auth
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         leadResultId: leadResult.leadResultId,
+
+        // Required personal data for update
+        firstName: updatedData.firstName,
+        lastName: updatedData.lastName,
+        documentType: updatedData.documentType,
+        documentNumber: updatedData.documentNumber,
+        mobilePhone: updatedData.mobilePhone,
+        phone: updatedData.phone,
+        email: updatedData.email,
+        
+        // New data for this step
+        sourceEvent: updatedData.sourceEvent,
       };
 
       if (updatedData.agentType === 'APM') {
@@ -256,11 +275,22 @@ export default function Home() {
         throw new Error("No se pudo obtener el token de Salesforce");
       }
 
-      const payload = {
-        ...updatedData,
+      const payload: any = {
+        // IDs and Auth
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         leadResultId: leadResult.leadResultId,
+
+        // Required personal data for update
+        firstName: updatedData.firstName,
+        lastName: updatedData.lastName,
+        documentType: updatedData.documentType,
+        documentNumber: updatedData.documentNumber,
+        mobilePhone: updatedData.mobilePhone,
+        phone: updatedData.phone,
+        email: updatedData.email,
+        
+        // New data for this step
         convertedStatus: '01'
       };
 

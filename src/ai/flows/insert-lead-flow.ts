@@ -64,7 +64,6 @@ const UpdateLeadInputSchema = z.object({
     lastName: z.string(),
     documentType: z.string(),
     documentNumber: z.string(),
-    birthdate: z.string(),
     mobilePhone: z.string(),
     phone: z.string(),
     email: z.string(),
@@ -229,6 +228,8 @@ export const updateLeadFlow = ai.defineFlow(
           idFullOperation: updateData.leadResultId, // We use the leadResultId as the idFullOperation
           
           // Re-send required data
+          firstName: updateData.firstName,
+          lastName: updateData.lastName,
           documentType: updateData.documentType,
           documentNumber: updateData.documentNumber,
           contactData: {

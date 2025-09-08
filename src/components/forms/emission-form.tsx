@@ -11,14 +11,12 @@ interface EmissionFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  response: any;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionFormProps) => {
   const form = useForm({
     defaultValues: {
       ...initialData,
-      convertedStatus: '01'
     },
   });
 
@@ -67,17 +65,6 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }:
                     <p><strong>Nº de Serie:</strong> {initialData.numero_de_serie}</p>
                 </div>
             </div>
-
-             {response && (
-                <div className="space-y-2 pt-4">
-                    <label className="text-sm font-medium">Respuesta de la última actualización</label>
-                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-48">
-                        {JSON.stringify(response, null, 2)}
-                    </pre>
-                </div>
-             )}
-
-
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>

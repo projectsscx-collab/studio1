@@ -7,24 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Input } from '../ui/input';
-import { SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface QuoteFormProps {
-  onGetToken: () => void;
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
-  isSubmitting: boolean;
-  tokenResponse: SalesforceTokenResponse | null;
 }
 
-const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, tokenResponse }: QuoteFormProps) => {
+const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         effectiveDate: true,
@@ -39,19 +35,10 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
     },
     mode: 'onChange'
   });
-  
-  const handleFormSubmit = (data: any) => {
-      // If we have a token, submit the lead. Otherwise, get the token first.
-      if(tokenResponse) {
-        onSubmit(data);
-      } else {
-        onGetToken();
-      }
-  }
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card className="border-0 shadow-none">
           <CardHeader>
             <CardTitle>Detalles de la Cotización</CardTitle>
@@ -180,20 +167,11 @@ const QuoteForm = ({ onGetToken, onSubmit, onBack, initialData, isSubmitting, to
                   )}
                 />
             </div>
-             {tokenResponse && (
-                <div className="space-y-2 pt-4">
-                    <label className="text-sm font-medium">Respuesta de Autenticación</label>
-                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                        {JSON.stringify(tokenResponse, null, 2)}
-                    </pre>
-                </div>
-             )}
           </CardContent>
           <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
-              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isSubmitting ? 'Procesando...' : (tokenResponse ? 'Crear Lead' : 'Obtener Token')}
+              <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                  CONTINUAR >
               </Button>
           </CardFooter>
         </Card>

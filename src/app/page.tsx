@@ -9,7 +9,7 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken, SalesforceTokenResponse, updateLead, UpdateLeadInput } from '@/ai/flows/insert-lead-flow';
+import { insertLead, getSalesforceToken, SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -43,31 +43,31 @@ export default function Home() {
       sourceEvent: '',
       agentType: '',
       // Step 5
-      convertedStatus: '',
+      convertedStatus: '01', // Pre-set for the final step
   });
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
-  const [lastUpdateResponse, setLastUpdateResponse] = useState<any>(null);
   const { toast } = useToast();
 
   const handleNext = (data: object) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
-    if (currentStep <= TOTAL_STEPS) {
+    if (currentStep < TOTAL_STEPS + 1) { // Allow moving to confirmation screen
       setCurrentStep((prev) => prev + 1);
     }
   };
   
-  const handleLeadInsert = async (data: object) => {
+  const handleFinalSubmit = async (data: object) => {
     if (!tokenResponse) {
         toast({
             variant: "destructive",
             title: "Error de Autenticación",
-            description: "El token de Salesforce no está disponible. Por favor, autentíquese primero."
+            description: "El token de Salesforce no está disponible. Por favor, inténtelo de nuevo."
         });
+        setIsSubmitting(false);
         return;
     }
     
@@ -86,17 +86,16 @@ export default function Home() {
         
         const leadId = response[0]?.leadResultId;
         if (leadId) {
-            setFormData(prev => ({...prev, leadResultId: leadId}));
              toast({
-                title: "Lead Creado Exitosamente",
-                description: `El lead con ID: ${leadId} ha sido creado.`,
+                title: "Lead Creado y Convertido Exitosamente",
+                description: `El lead con ID: ${leadId} ha sido procesado.`,
             });
+             handleNext(data); // Move to confirmation screen
         } else {
-           const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido.";
+           const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido durante el envío.";
             throw new Error(errorMessage);
         }
 
-        handleNext(data);
     } catch (e) {
         console.error("Failed to insert lead", e);
         const errorMessage = e instanceof Error ? e.message : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";
@@ -110,88 +109,23 @@ export default function Home() {
     }
   }
 
-  const handleLeadUpdate = async (data: object) => {
-     if (!tokenResponse || !submissionResponse) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "El token de autenticación o el ID del Lead no están disponibles."
-        });
-        return;
-    }
-    
+  const handleGetTokenAndSubmit = async (data: object) => {
     setIsSubmitting(true);
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
 
     try {
-        const leadId = submissionResponse[0]?.leadResultId;
-        if (!leadId) {
-            throw new Error("No se pudo encontrar el leadResultId en la respuesta de envío.");
-        }
-        
-        const payload: UpdateLeadInput = { 
-            accessToken: tokenResponse.access_token,
-            instanceUrl: tokenResponse.instance_url,
-            leadId: leadId,
-            ...updatedFormData,
-        };
-        
-        if (data.hasOwnProperty('agentType')) {
-            payload.sourceEvent = updatedFormData.sourceEvent;
-            payload.agentType = updatedFormData.agentType;
-        }
-
-        if (data.hasOwnProperty('convertedStatus')) {
-            payload.convertedStatus = updatedFormData.convertedStatus;
-        }
-
-        const response = await updateLead(payload);
-        setLastUpdateResponse(response);
-        
-        if (response[0]?.leadResultId) {
-             toast({
-                title: "Lead Actualizado Exitosamente",
-                description: `El lead con ID: ${leadId} ha sido actualizado.`,
-            });
-        } else {
-            const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido al actualizar.";
-            throw new Error(errorMessage);
-        }
-       
-        handleNext(data);
-    } catch (e) {
-        console.error("Failed to update lead", e);
-        const errorMessage = e instanceof Error ? e.message : "Hubo un error al actualizar su formulario. Por favor, inténtelo de nuevo.";
-        toast({
-            variant: "destructive",
-            title: "Fallo en la Actualización",
-            description: errorMessage,
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
-  }
-
-
-  const handleGetToken = async () => {
-    setIsSubmitting(true);
-    setTokenResponse(null);
-    try {
         const token = await getSalesforceToken();
         setTokenResponse(token);
-        toast({
-            title: "Autenticación Exitosa",
-            description: "Token de Salesforce obtenido correctamente.",
-        });
+        // Now that we have the token, call the final submit function
+        await handleFinalSubmit({ ...updatedFormData, accessToken: token.access_token, instanceUrl: token.instance_url });
     } catch (e) {
-         console.error("Failed to get token", e);
+        console.error("Failed to get token", e);
         toast({
             variant: "destructive",
             title: "Fallo de Autenticación",
             description: "No se pudo obtener el token de autenticación de Salesforce."
         });
-    } finally {
         setIsSubmitting(false);
     }
   }
@@ -224,11 +158,10 @@ export default function Home() {
       paymentTerm: '',
       sourceEvent: '',
       agentType: '',
-      convertedStatus: '',
+      convertedStatus: '01',
     });
     setSubmissionResponse(null);
     setTokenResponse(null);
-    setLastUpdateResponse(null);
     setCurrentStep(1);
   }
 
@@ -256,13 +189,13 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onGetToken={handleGetToken} onSubmit={handleLeadInsert} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} tokenResponse={tokenResponse}/>;
+        return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} response={lastUpdateResponse}/>;
+        return <ContactPreferenceForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 5:
-        return <EmissionForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} response={lastUpdateResponse}/>;
+        return <EmissionForm onSubmit={handleGetTokenAndSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:
-        return <SubmissionConfirmation onStartOver={handleStartOver} response={lastUpdateResponse || submissionResponse} />;
+        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
         return null;
     }

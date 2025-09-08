@@ -46,41 +46,14 @@ const InsertLeadInputSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
+  
+  // Optional fields for the final submission
+  sourceEvent: z.string().optional(),
+  agentType: z.string().optional(),
+  convertedStatus: z.string().optional(),
 });
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
-
-const UpdateLeadInputSchema = z.object({
-    accessToken: z.string(),
-    instanceUrl: z.string(),
-    leadId: z.string(),
-    // Full data for resubmission
-    firstName: z.string(),
-    lastName: z.string(),
-    birthdate: z.string(),
-    documentType: z.string(),
-    documentNumber: z.string(),
-    mobilePhone: z.string(),
-    phone: z.string(),
-    email: z.string(),
-    // Vehicle data for interestProduct
-    numero_de_matricula: z.string(),
-    marca: z.string(),
-    modelo: z.string(),
-    ano_del_vehiculo: z.string(),
-    numero_de_serie: z.string(),
-    // Quote data for interestProduct
-    effectiveDate: z.string(),
-    expirationDate: z.string(),
-    paymentMethod: z.string(),
-    paymentPeriodicity: z.string(),
-    paymentTerm: z.string(),
-    // Conditional fields for update type
-    sourceEvent: z.string().optional(),
-    agentType: z.string().optional(),
-    convertedStatus: z.string().optional(),
-});
-export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
 
 // Flow to get the authentication token
@@ -136,63 +109,85 @@ export const insertLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl, ...formData } = input;
     
-    const leadPayload = {
-      leadWrappers: [
-        {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          birthdate: formData.birthdate,
-          documentType: formData.documentType,
-          documentNumber: formData.documentNumber,
-          contactData: {
+    const sourceData: any = {
+        sourceEvent: formData.sourceEvent || '01',
+        eventReason: '01',
+        sourceSite: 'Website',
+        deviceType: '01',
+        deviceModel: 'iPhone',
+        leadSource: '01',
+        origin: '01',
+        systemOrigin: '05', // Default
+        ipData: {},
+    };
+
+    const utmData: any = {
+        utmCampaign: 'ROPO_Auto', // Default
+    };
+
+    if (formData.agentType === 'APM') {
+        sourceData.systemOrigin = '02';
+        sourceData.origin = '02';
+        sourceData.leadSource = '02';
+        utmData.utmCampaign = 'ROPO_APMCampaign';
+    } else if (formData.agentType === 'ADM') {
+        sourceData.systemOrigin = '06';
+        sourceData.origin = '02';
+        sourceData.leadSource = '10';
+        utmData.utmCampaign = 'ROPO_ADMCampaign';
+    }
+
+    const leadWrapper: any = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        birthdate: formData.birthdate,
+        documentType: formData.documentType,
+        documentNumber: formData.documentNumber,
+        contactData: {
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,
             email: formData.email,
-          },
-          interestProduct: {
+        },
+        interestProduct: {
             businessLine: '01',
             sector: 'XX_01',
             subsector: 'XX_00',
             branch: 'XX_205',
             risk: JSON.stringify({
-              'Número de matrícula__c': formData.numero_de_matricula,
-              'Marca__c': formData.marca,
-              'Modelo__c': formData.modelo,
-              'Año del vehículo__c': formData.ano_del_vehiculo,
-              'Número de serie__c': formData.numero_de_serie,
+                'Número de matrícula__c': formData.numero_de_matricula,
+                'Marca__c': formData.marca,
+                'Modelo__c': formData.modelo,
+                'Año del vehículo__c': formData.ano_del_vehiculo,
+                'Número de serie__c': formData.numero_de_serie,
             }),
             quotes: [
-              {
-                id: 'TestWSConvertMIN',
-                effectiveDate: formData.effectiveDate,
-                expirationDate: formData.expirationDate,
-                productCode: 'PRD001',
-                productName: 'Life Insurance',
-                netPremium: 1000.0,
-                paymentMethod: formData.paymentMethod,
-                isSelected: true,
-                paymentPeriodicity: formData.paymentPeriodicity,
-                paymentTerm: formData.paymentTerm,
-                additionalInformation: 'test',
-              },
+                {
+                    id: 'TestWSConvertMIN',
+                    effectiveDate: formData.effectiveDate,
+                    expirationDate: formData.expirationDate,
+                    productCode: 'PRD001',
+                    productName: 'Life Insurance',
+                    netPremium: 1000.0,
+                    paymentMethod: formData.paymentMethod,
+                    isSelected: true,
+                    paymentPeriodicity: formData.paymentPeriodicity,
+                    paymentTerm: formData.paymentTerm,
+                    additionalInformation: 'test',
+                },
             ],
-          },
-          utmData: {
-            utmCampaign: 'ROPO_Auto',
-          },
-          sourceData: {
-            sourceEvent: '01',
-            eventReason: '01',
-            sourceSite: 'Website',
-            deviceType: '01',
-            deviceModel: 'iPhone',
-            leadSource: '01',
-            origin: '01',
-            systemOrigin: '05',
-            ipData: {},
-          },
         },
-      ],
+        sourceData,
+        utmData,
+    };
+    
+    if (formData.convertedStatus) {
+        leadWrapper.conversionData = {
+            convertedStatus: formData.convertedStatus
+        };
+    }
+
+    const leadPayload = {
+      leadWrappers: [leadWrapper],
     };
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
@@ -215,116 +210,6 @@ export const insertLeadFlow = ai.defineFlow(
 );
 
 
-export const updateLeadFlow = ai.defineFlow(
-    {
-        name: 'updateLeadFlow',
-        inputSchema: UpdateLeadInputSchema,
-        outputSchema: z.any(),
-    },
-    async (input) => {
-        const { accessToken, instanceUrl, leadId, ...rest } = input;
-
-        const sourceData: any = {
-            sourceEvent: rest.sourceEvent || '01',
-            eventReason: '01',
-            sourceSite: 'Website',
-            deviceType: '01',
-            deviceModel: 'iPhone',
-            leadSource: '01',
-            origin: '01',
-            systemOrigin: '05',
-            ipData: {},
-        };
-
-        const utmData: any = {
-            utmCampaign: 'ROPO_Auto',
-        };
-
-        if (rest.agentType === 'APM') {
-            sourceData.systemOrigin = '02';
-            sourceData.origin = '02';
-            sourceData.leadSource = '02';
-            utmData.utmCampaign = 'ROPO_APMCampaign';
-        } else if (rest.agentType === 'ADM') {
-            sourceData.systemOrigin = '06';
-            sourceData.origin = '02';
-            sourceData.leadSource = '10';
-            utmData.utmCampaign = 'ROPO_ADMCampaign';
-        }
-
-        const leadWrapper: any = {
-            firstName: rest.firstName,
-            lastName: rest.lastName,
-            birthdate: rest.birthdate,
-            documentType: rest.documentType,
-            documentNumber: rest.documentNumber,
-            contactData: {
-                mobilePhone: rest.mobilePhone,
-                phone: rest.phone,
-                email: rest.email,
-            },
-            interestProduct: {
-                businessLine: '01',
-                sector: 'XX_01',
-                subsector: 'XX_00',
-                branch: 'XX_205',
-                risk: JSON.stringify({
-                    'Número de matrícula__c': rest.numero_de_matricula,
-                    'Marca__c': rest.marca,
-                    'Modelo__c': rest.modelo,
-                    'Año del vehículo__c': rest.ano_del_vehiculo,
-                    'Número de serie__c': rest.numero_de_serie,
-                }),
-                quotes: [
-                    {
-                        id: 'TestWSConvertMIN',
-                        effectiveDate: rest.effectiveDate,
-                        expirationDate: rest.expirationDate,
-                        productCode: 'PRD001',
-                        productName: 'Life Insurance',
-                        netPremium: 1000.0,
-                        paymentMethod: rest.paymentMethod,
-                        isSelected: true,
-                        paymentPeriodicity: rest.paymentPeriodicity,
-                        paymentTerm: rest.paymentTerm,
-                        additionalInformation: 'test',
-                    },
-                ],
-            },
-            sourceData,
-            utmData,
-        };
-
-        if (rest.convertedStatus) {
-            leadWrapper.conversionData = {
-                convertedStatus: rest.convertedStatus
-            };
-        }
-
-        const updatePayload = {
-            leadWrappers: [leadWrapper]
-        };
-
-        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(updatePayload)
-        });
-
-        if (!leadResponse.ok) {
-            const errorText = await leadResponse.text();
-            console.error("Salesforce Update Error Response:", errorText);
-            throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
-        }
-
-        return await leadResponse.json();
-    }
-);
-
-
 // Exported functions to be called from the frontend
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
     return getSalesforceTokenFlow();
@@ -332,8 +217,4 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);
-}
-
-export async function updateLead(input: UpdateLeadInput): Promise<any> {
-    return updateLeadFlow(input);
 }

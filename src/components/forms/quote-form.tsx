@@ -4,10 +4,11 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { leadSchema, paymentMethods, paymentPeriodicities, paymentTerms } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -17,9 +18,10 @@ interface QuoteFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
+  isSubmitting: boolean;
 }
 
-const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
+const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         effectiveDate: true,
@@ -38,9 +40,11 @@ const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-         <div>
-            <h2 className="text-xl font-semibold mb-6">Detalles de la Cotización</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Detalles de la Cotización</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                     control={form.control}
                     name="effectiveDate"
@@ -152,7 +156,8 @@ const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
                   name="paymentTerm"
                   render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Plazo de Pago</FormLabel>                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Plazo de Pago</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plazo" /></SelectTrigger></FormControl>
                       <SelectContent>
                           {Object.entries(paymentTerms).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
@@ -162,15 +167,14 @@ const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
                   </FormItem>
                   )}
                 />
-            </div>
-        </div>
-
-        <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-            CONTINUAR >
-            </Button>
-        </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+                <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CONTINUAR >'}
+                </Button>
+            </CardFooter>
+        </Card>
       </form>
     </FormProvider>
   );

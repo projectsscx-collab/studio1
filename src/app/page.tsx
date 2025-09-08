@@ -9,7 +9,7 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import { insertLead, updateLead, getSalesforceToken, type SalesforceTokenResponse } from '@/ai/flows/insert-lead-flow';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -48,39 +48,126 @@ export default function Home() {
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
+  const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
+  const [leadId, setLeadId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleNext = (data: object) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
-    if (currentStep < TOTAL_STEPS + 1) { // Allow moving to confirmation screen
+    if (currentStep < TOTAL_STEPS + 1) { 
       setCurrentStep((prev) => prev + 1);
     }
   };
+
+  const handleQuoteSubmit = async (data: object) => {
+    setIsSubmitting(true);
+    const updatedFormData = { ...formData, ...data };
+    setFormData(updatedFormData);
+    
+    try {
+        const token = await getSalesforceToken();
+        setTokenResponse(token);
+        
+        const payload = { 
+            ...updatedFormData,
+            accessToken: token.access_token,
+            instanceUrl: token.instance_url
+        };
+        
+        const response = await insertLead(payload);
+        const newLeadId = response[0]?.leadResultId;
+
+        if (newLeadId) {
+            setLeadId(newLeadId);
+            toast({
+                title: "Lead Creado Exitosamente",
+                description: `Su lead con ID: ${newLeadId} ha sido creado. Continúe con los siguientes pasos.`,
+            });
+            handleNext(data);
+        } else {
+            const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido durante el envío.";
+            throw new Error(errorMessage);
+        }
+    } catch (e) {
+        console.error("Failed to insert lead", e);
+        const errorMessage = e instanceof Error ? e.message : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";
+        toast({
+            variant: "destructive",
+            title: "Fallo en la Creación del Lead",
+            description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateSubmit = async (data: object) => {
+      setIsSubmitting(true);
+      const updatedFormData = { ...formData, ...data };
+      setFormData(updatedFormData);
+
+      if (!tokenResponse) {
+          toast({ variant: "destructive", title: "Error de Autenticación", description: "El token de Salesforce no está disponible." });
+          setIsSubmitting(false);
+          return;
+      }
+      
+      try {
+          const payload = { 
+              ...updatedFormData,
+              leadId: leadId,
+              accessToken: tokenResponse.access_token,
+              instanceUrl: tokenResponse.instance_url
+          };
+
+          await updateLead(payload);
+          toast({
+              title: "Lead Actualizado",
+              description: "Sus preferencias han sido guardadas exitosamente.",
+          });
+          handleNext(data);
+      } catch (e) {
+          console.error("Failed to update lead", e);
+          const errorMessage = e instanceof Error ? e.message : "Hubo un error al actualizar su información.";
+          toast({
+              variant: "destructive",
+              title: "Fallo en la Actualización",
+              description: errorMessage,
+          });
+      } finally {
+          setIsSubmitting(false);
+      }
+  }
   
   const handleFinalSubmit = async (data: object) => {
     setIsSubmitting(true);
     const finalData = { ...formData, ...data };
     setFormData(finalData);
 
+    if (!tokenResponse) {
+        toast({ variant: "destructive", title: "Error de Autenticación", description: "El token de Salesforce no está disponible." });
+        setIsSubmitting(false);
+        return;
+    }
+
     try {
-        const token = await getSalesforceToken();
-        
         const payload = { 
             ...finalData,
-            accessToken: token.access_token,
-            instanceUrl: token.instance_url
+            leadId: leadId,
+            accessToken: tokenResponse.access_token,
+            instanceUrl: tokenResponse.instance_url,
         };
 
-        const response = await insertLead(payload);
+        const response = await updateLead(payload);
         setSubmissionResponse(response);
         
-        const leadId = response[0]?.leadResultId;
-        if (leadId) {
+        const updatedLeadId = response[0]?.leadResultId;
+        if (updatedLeadId) {
              toast({
-                title: "Lead Creado y Convertido Exitosamente",
-                description: `El lead con ID: ${leadId} ha sido procesado.`,
+                title: "Lead Convertido Exitosamente",
+                description: `El lead con ID: ${updatedLeadId} ha sido procesado.`,
             });
              handleNext(data); // Move to confirmation screen
         } else {
@@ -89,7 +176,7 @@ export default function Home() {
         }
 
     } catch (e) {
-        console.error("Failed to insert lead", e);
+        console.error("Failed to update lead", e);
         const errorMessage = e instanceof Error ? e.message : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";
         toast({
             variant: "destructive",
@@ -132,6 +219,8 @@ export default function Home() {
       convertedStatus: '01',
     });
     setSubmissionResponse(null);
+    setTokenResponse(null);
+    setLeadId(null);
     setCurrentStep(1);
   }
 
@@ -159,9 +248,9 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+        return <QuoteForm onSubmit={handleQuoteSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleNext} onBack={handlePrev} initialData={formData} />;
+        return <ContactPreferenceForm onSubmit={handleUpdateSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:

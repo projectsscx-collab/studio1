@@ -4,17 +4,20 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { leadSchema, sourceEvents, agentTypes } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Loader2 } from 'lucide-react';
 
 interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
+  isSubmitting: boolean;
 }
 
-const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPreferenceFormProps) => {
+const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         sourceEvent: true,
@@ -29,9 +32,11 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPrefere
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div>
-            <h2 className="text-xl font-semibold mb-6">Preferencia de Contacto</h2>
-             <div className="space-y-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Preferencia de Contacto</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
                 <FormField
                     control={form.control}
                     name="sourceEvent"
@@ -76,15 +81,14 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPrefere
                     </FormItem>
                 )}
                 />
-             </div>
-        </div>
-
-        <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-                CONTINUAR >
-            </Button>
-        </div>
+             </CardContent>
+             <CardFooter className="flex justify-between">
+                <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CONTINUAR >'}
+                </Button>
+            </CardFooter>
+        </Card>
       </form>
     </FormProvider>
   );

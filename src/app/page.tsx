@@ -121,7 +121,7 @@ export default function Home() {
     switch (step) {
       case 4:
       case 5:
-        // Permitir avanzar si tenemos el ID de operación O si el paso anterior fue exitoso (el ID podría no ser necesario)
+        // Permitir avanzar si tenemos el ID de operación.
         return !!leadResult.idFullOperation;
       default:
         return true;
@@ -160,30 +160,17 @@ export default function Home() {
       const response = await insertLead(payload);
       const { leadId, fullOperationId } = extractLeadIds(response);
       
-      // Lógica corregida: si la llamada fue exitosa, guardamos lo que tengamos y avanzamos
+      // Si la llamada fue exitosa (no lanzó error), guardamos la respuesta y avanzamos.
+      // Guardamos los IDs que encontremos, pero no bloqueamos si faltan.
       setSubmissionResponse(response);
-      if (leadId && fullOperationId) {
-        setLeadResult({ 
-          leadResultId: leadId, 
-          idFullOperation: fullOperationId 
-        });
-      } else {
-        // Aún si no vienen los IDs, guardamos el que sí venga para el siguiente paso.
-        // El idFullOperation es el más importante para las actualizaciones.
-        if(fullOperationId) {
-          setLeadResult({ leadResultId: leadId, idFullOperation: fullOperationId });
-        } else {
-          // Si no viene el ID de operación, es un problema real
-           throw new Error("La respuesta de Salesforce no contiene el ID de Operación necesario.");
-        }
-      }
+      setLeadResult({ leadId, idFullOperation: fullOperationId });
       
       toast({
         title: "Paso 3 Exitoso",
         description: "Lead creado correctamente en Salesforce.",
       });
       
-      handleNext(data); // Avanzar siempre que no haya un error
+      handleNext(data); // Avanzar siempre que no haya un error de la API
 
     } catch (error) {
       console.error("Error in handleQuoteSubmit:", error);
@@ -244,7 +231,7 @@ export default function Home() {
       }
       
       const response = await updateLead(payload);
-      // Lógica corregida: si no hay error, es un éxito.
+      // Si la llamada no lanza error, es un éxito.
       setSubmissionResponse(response);
       
       toast({
@@ -300,7 +287,7 @@ export default function Home() {
       };
 
       const response = await updateLead(payload);
-      // Lógica corregida: si no hay error, es un éxito.
+      // Si la llamada no lanza error, es un éxito.
       setSubmissionResponse(response);
       
       toast({
@@ -447,3 +434,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

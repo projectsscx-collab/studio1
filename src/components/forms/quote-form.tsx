@@ -36,6 +36,66 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
     },
     mode: 'onChange'
   });
+  
+  const currentValues = form.watch();
+  const fullData = { ...initialData, ...currentValues };
+  
+  const leadPayload = {
+      leadWrappers: [{
+        firstName: fullData.firstName,
+        lastName: fullData.lastName,
+        birthdate: fullData.birthdate,
+        documentType: fullData.documentType,
+        documentNumber: fullData.documentNumber,
+        contactData: {
+            mobilePhone: fullData.mobilePhone,
+            phone: fullData.phone,
+            email: fullData.email,
+        },
+        interestProduct: {
+            businessLine: '01',
+            sector: 'XX_01',
+            subsector: 'XX_00',
+            branch: 'XX_205',
+            risk: JSON.stringify({
+                'Número de matrícula__c': fullData.numero_de_matricula,
+                'Marca__c': fullData.marca,
+                'Modelo__c': fullData.modelo,
+                'Año del vehículo__c': fullData.ano_del_vehiculo,
+                'Número de serie__c': fullData.numero_de_serie,
+            }),
+            quotes: [
+                {
+                    id: 'TestWSConvertMIN',
+                    effectiveDate: fullData.effectiveDate,
+                    expirationDate: fullData.expirationDate,
+                    productCode: 'PRD001',
+                    productName: 'Life Insurance',
+                    netPremium: 1000.0,
+                    paymentMethod: fullData.paymentMethod,
+                    paymentPeriodicity: fullData.paymentPeriodicity,
+                    paymentTerm: fullData.paymentTerm,
+                    additionalInformation: 'test',
+                    isSelected: true,
+                },
+            ],
+        },
+        sourceData: {
+            sourceEvent: '01',
+            eventReason: '01',
+            sourceSite: 'Website',
+            deviceType: '01',
+            deviceModel: 'iPhone',
+            leadSource: '01',
+            origin: '01',
+            systemOrigin: '05',
+            ipData: {},
+        },
+        utmData: {
+            utmCampaign: 'ROPO_Auto',
+        },
+      }],
+    };
 
   return (
     <FormProvider {...form}>
@@ -44,129 +104,137 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
             <CardHeader>
                 <CardTitle>Detalles de la Cotización</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <FormField
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="effectiveDate"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Fecha de Efectividad</FormLabel>
+                                <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                    <Button
+                                        variant={'outline'}
+                                        className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>Seleccione una fecha</span>}
+                                    </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        captionLayout="dropdown-buttons"
+                                        fromYear={new Date().getFullYear()}
+                                        toYear={new Date().getFullYear() + 10}
+                                        selected={field.value ? new Date(field.value) : undefined}
+                                        onSelect={(date) => form.setValue('expirationDate', date ? format(new Date(date.setFullYear(date.getFullYear() + 1)), 'yyyy-MM-dd') : '', { shouldValidate: true }) && field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="expirationDate"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Fecha de Expiración</FormLabel>
+                                <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                    <Button
+                                        variant={'outline'}
+                                        className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>Seleccione una fecha</span>}
+                                    </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        captionLayout="dropdown-buttons"
+                                        fromYear={new Date().getFullYear()}
+                                        toYear={new Date().getFullYear() + 10}
+                                        selected={field.value ? new Date(field.value) : undefined}
+                                        onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormItem>
+                        <FormLabel>Prima Neta</FormLabel>
+                        <FormControl>
+                            <Input readOnly value="1000.00" />
+                        </FormControl>
+                    </FormItem>
+                    <FormField
                     control={form.control}
-                    name="effectiveDate"
+                    name="paymentMethod"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Fecha de Efectividad</FormLabel>
-                            <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                <Button
-                                    variant={'outline'}
-                                    className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>Seleccione una fecha</span>}
-                                </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    captionLayout="dropdown-buttons"
-                                    fromYear={new Date().getFullYear()}
-                                    toYear={new Date().getFullYear() + 10}
-                                    selected={field.value ? new Date(field.value) : undefined}
-                                    onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
+                    <FormItem>
+                        <FormLabel>Método de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un método" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            {Object.entries(paymentMethods).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="paymentPeriodicity"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Periodicidad de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una periodicidad" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            {Object.entries(paymentPeriodicities).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="paymentTerm"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Plazo de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plazo" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            {Object.entries(paymentTerms).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="expirationDate"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Fecha de Expiración</FormLabel>
-                            <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                <Button
-                                    variant={'outline'}
-                                    className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>Seleccione una fecha</span>}
-                                </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    captionLayout="dropdown-buttons"
-                                    fromYear={new Date().getFullYear()}
-                                    toYear={new Date().getFullYear() + 10}
-                                    selected={field.value ? new Date(field.value) : undefined}
-                                    onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormItem>
-                    <FormLabel>Prima Neta</FormLabel>
-                    <FormControl>
-                        <Input readOnly value="1000.00" />
-                    </FormControl>
-                </FormItem>
-                <FormField
-                  control={form.control}
-                  name="paymentMethod"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Método de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un método" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                          {Object.entries(paymentMethods).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
-                      </SelectContent>
-                      </Select>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="paymentPeriodicity"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Periodicidad de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una periodicidad" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                          {Object.entries(paymentPeriodicities).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
-                      </SelectContent>
-                      </Select>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="paymentTerm"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Plazo de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plazo" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                          {Object.entries(paymentTerms).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
-                      </SelectContent>
-                      </Select>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-                />
+                </div>
+                 <div className="space-y-2 pt-4">
+                    <label className="text-sm font-medium">JSON a Enviar (Creación)</label>
+                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-96">
+                        {JSON.stringify(leadPayload, null, 2)}
+                    </pre>
+                </div>
             </CardContent>
             <CardFooter className="flex justify-between">
                 <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>

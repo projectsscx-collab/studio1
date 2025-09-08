@@ -16,8 +16,90 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
   const form = useForm({
     defaultValues: {
       ...initialData,
+      // Hardcode convertedStatus for the final submission
+      convertedStatus: '01',
     },
   });
+
+  const fullData = { ...initialData, convertedStatus: '01' };
+
+  let utmCampaign = 'ROPO_Auto';
+  if (fullData.agentType === 'APM') {
+      utmCampaign = 'ROPO_APMCampaign';
+  } else if (fullData.agentType === 'ADM') {
+      utmCampaign = 'ROPO_ADMCampaign';
+  }
+  
+  const finalPayload: any = {
+      leadWrappers: [{
+          // Data from all previous steps
+          firstName: fullData.firstName,
+          lastName: fullData.lastName,
+          birthdate: fullData.birthdate,
+          documentType: fullData.documentType,
+          documentNumber: fullData.documentNumber,
+          contactData: {
+              mobilePhone: fullData.mobilePhone,
+              phone: fullData.phone,
+              email: fullData.email,
+          },
+          interestProduct: {
+              businessLine: '01',
+              sector: 'XX_01',
+              subsector: 'XX_00',
+              branch: 'XX_205',
+              risk: JSON.stringify({
+                  'Número de matrícula__c': fullData.numero_de_matricula,
+                  'Marca__c': fullData.marca,
+                  'Modelo__c': fullData.modelo,
+                  'Año del vehículo__c': fullData.ano_del_vehiculo,
+                  'Número de serie__c': fullData.numero_de_serie,
+              }),
+              quotes: [{
+                  id: 'TestWSConvertMIN',
+                  effectiveDate: fullData.effectiveDate,
+                  expirationDate: fullData.expirationDate,
+                  productCode: 'PRD001',
+                  productName: 'Life Insurance',
+                  netPremium: 1000.0,
+                  paymentMethod: fullData.paymentMethod,
+                  paymentPeriodicity: fullData.paymentPeriodicity,
+                  paymentTerm: fullData.paymentTerm,
+                  additionalInformation: 'test',
+                  isSelected: true,
+              }],
+          },
+          sourceData: {
+              sourceEvent: fullData.sourceEvent,
+              eventReason: '01',
+              sourceSite: 'Website',
+              deviceType: '01',
+              deviceModel: 'iPhone',
+              leadSource: '01',
+              origin: '01',
+              systemOrigin: '05', 
+              ipData: {},
+          },
+          utmData: {
+              utmCampaign: utmCampaign,
+          },
+          conversionData: {
+              convertedStatus: fullData.convertedStatus
+          }
+      }],
+  };
+  
+  const leadWrapper = finalPayload.leadWrappers[0];
+
+  if (fullData.agentType === 'APM') {
+      leadWrapper.sourceData.systemOrigin = '02';
+      leadWrapper.sourceData.origin = '02';
+      leadWrapper.sourceData.leadSource = '02';
+  } else if (fullData.agentType === 'ADM') {
+      leadWrapper.sourceData.systemOrigin = '06';
+      leadWrapper.sourceData.origin = '02';
+      leadWrapper.sourceData.leadSource = '10';
+  }
 
   return (
     <FormProvider {...form}>
@@ -62,6 +144,12 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
                         <p><strong>Año:</strong> {initialData.ano_del_vehiculo}</p>
                         <p><strong>Nº de Serie:</strong> {initialData.numero_de_serie}</p>
                     </div>
+                </div>
+                 <div className="space-y-2 pt-4">
+                    <label className="text-sm font-medium">JSON a Enviar (Actualización Final - Emisión)</label>
+                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-96">
+                        {JSON.stringify(finalPayload, null, 2)}
+                    </pre>
                 </div>
             </div>
         </div>

@@ -233,7 +233,7 @@ export const updateLeadFlow = ai.defineFlow(
     };
     
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-        method: 'PATCH', // Use PATCH for updates
+        method: 'POST', // Use POST for updates as specified by the API
         headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'

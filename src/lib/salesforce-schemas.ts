@@ -1,13 +1,7 @@
 import { z } from 'zod';
 
-// This schema represents the full data structure expected by the Salesforce Apex class.
-// It includes all possible fields from all steps of the form.
-// Optional fields are used because not all data is available at every step.
-export const LeadWrapperSchema = z.object({
-  // IDs - will be populated after the first API call
-  id: z.string().optional().nullable(),
-  idFullOperation: z.string().optional().nullable(),
-
+// This schema is used for the INITIAL CREATION of the Lead (Step 3)
+export const InsertLeadInputSchema = z.object({
   // Step 1: Personal Details
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),
@@ -31,22 +25,32 @@ export const LeadWrapperSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
-
-  // Step 4: Contact Preference
-  sourceEvent: z.string().optional(),
-  agentType: z.string().optional(), // Used in frontend only to determine other values
-  systemOrigin: z.string().optional(),
-  origin: z.string().optional(),
-  utmCampaign: z.string().optional(),
-  leadSource: z.string().optional(),
-  
-  // Step 5: Emission
-  idOwner: z.string().optional(),
-  convertedStatus: z.string().optional(),
-  policyNumber: z.string().optional(),
 });
+export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
-export type LeadWrapperData = z.infer<typeof LeadWrapperSchema>;
+
+// This schema is used for SUBSEQUENT UPDATES of the Lead (Steps 4 and 5)
+// It requires the IDs from the initial creation and includes all previous fields
+// as optional, so they can be passed along for validation, plus the new fields.
+export const UpdateLeadInputSchema = InsertLeadInputSchema.extend({
+    // IDs from the creation step are now required
+    id: z.string().min(1, "El ID del Lead es requerido para la actualización."),
+    idFullOperation: z.string().min(1, "El ID de la Operación es requerido para la actualización."),
+
+    // Step 4: Contact Preference
+    sourceEvent: z.string().optional(),
+    agentType: z.string().optional(), // Used in frontend only to determine other values
+    systemOrigin: z.string().optional(),
+    origin: z.string().optional(),
+    utmCampaign: z.string().optional(),
+    leadSource: z.string().optional(),
+    
+    // Step 5: Emission
+    idOwner: z.string().optional(),
+    convertedStatus: z.string().optional(),
+    policyNumber: z.string().optional(),
+});
+export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
 
 // Schema for the authentication token response

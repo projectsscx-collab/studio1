@@ -1,23 +1,23 @@
 'use server';
 
 /**
- * @fileoverview Genkit flow to upsert a lead in Salesforce.
- *
- * This file contains a unified flow for both creating and updating a lead.
- * The term "upsert" means it will create a new record if one doesn't exist,
- * or update an existing one if it does, based on the FullOperationId__c field.
+ * @fileoverview Genkit flows to create and update a lead in Salesforce.
+ * - insertLead: Creates a new lead with initial data.
+ * - updateLead: Updates an existing lead with additional data from subsequent steps.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import {
-  LeadWrapperSchema,
   SalesforceTokenResponseSchema,
-  type LeadWrapperData,
+  InsertLeadInputSchema,
+  UpdateLeadInputSchema,
   type SalesforceTokenResponse,
+  type InsertLeadInput,
+  type UpdateLeadInput,
 } from '@/lib/salesforce-schemas';
 
-// Flow to get the authentication token
+// --- Flow to get the authentication token ---
 const getSalesforceTokenFlow = ai.defineFlow(
   {
     name: 'getSalesforceTokenFlow',
@@ -56,50 +56,39 @@ const getSalesforceTokenFlow = ai.defineFlow(
   }
 );
 
-// Unified flow to create or update the lead
-const upsertLeadFlow = ai.defineFlow(
+
+// --- Flow to CREATE the lead (called from Step 3) ---
+const insertLeadFlow = ai.defineFlow(
   {
-    name: 'upsertLeadFlow',
+    name: 'insertLeadFlow',
     inputSchema: z.object({
-      formData: LeadWrapperSchema,
+      formData: InsertLeadInputSchema,
       token: SalesforceTokenResponseSchema,
     }),
     outputSchema: z.any(),
   },
   async ({ formData, token }) => {
-    const {
-      access_token,
-      instance_url,
-      agentType, // Not sent to Salesforce
-      ...payloadData
-    } = { ...formData, ...token };
-
     const riskObject = {
-      'Número de matrícula__c': payloadData.numero_de_matricula,
-      'Marca__c': payloadData.marca,
-      'Modelo__c': payloadData.modelo,
-      'Año del vehículo__c': payloadData.ano_del_vehiculo,
-      'Número de serie__c': payloadData.numero_de_serie,
+      'Número de matrícula__c': formData.numero_de_matricula,
+      'Marca__c': formData.marca,
+      'Modelo__c': formData.modelo,
+      'Año del vehículo__c': formData.ano_del_vehiculo,
+      'Número de serie__c': formData.numero_de_serie,
     };
 
     const leadWrapper = {
-      id: payloadData.id,
-      idFullOperation: payloadData.idFullOperation,
-      idOwner: payloadData.idOwner,
-
-      // Personal & Contact Data
-      firstName: payloadData.firstName,
-      lastName: payloadData.lastName,
-      documentType: payloadData.documentType,
-      documentNumber: payloadData.documentNumber,
-      birthdate: payloadData.birthdate,
+      // Personal & Contact Data from Step 1
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      documentType: formData.documentType,
+      documentNumber: formData.documentNumber,
+      birthdate: formData.birthdate,
       contactData: {
-        mobilePhone: payloadData.mobilePhone,
-        phone: payloadData.phone,
-        email: payloadData.email,
+        mobilePhone: formData.mobilePhone,
+        phone: formData.phone,
+        email: formData.email,
       },
-
-      // Product & Quote Data
+      // Product & Quote Data from Step 3
       interestProduct: {
         businessLine: '01',
         sector: 'XX_01',
@@ -108,79 +97,147 @@ const upsertLeadFlow = ai.defineFlow(
         risk: JSON.stringify(riskObject),
         quotes: [{
           id: 'TestWSConvertMIN', // Static ID for validation
-          effectiveDate: payloadData.effectiveDate,
-          expirationDate: payloadData.expirationDate,
+          effectiveDate: formData.effectiveDate,
+          expirationDate: formData.expirationDate,
           productCode: 'PRD001',
           productName: 'Life Insurance',
           netPremium: 1000.0,
-          paymentMethod: payloadData.paymentMethod,
-          paymentPeriodicity: payloadData.paymentPeriodicity,
-          paymentTerm: payloadData.paymentTerm,
+          paymentMethod: formData.paymentMethod,
+          paymentPeriodicity: formData.paymentPeriodicity,
+          paymentTerm: formData.paymentTerm,
           additionalInformation: 'test',
           isSelected: true,
         }],
       },
-
-      // Source & Campaign Data
+      // Default Source & Campaign Data
       sourceData: {
-        sourceEvent: payloadData.sourceEvent,
-        leadSource: payloadData.leadSource,
-        origin: payloadData.origin,
-        systemOrigin: payloadData.systemOrigin,
-        // Default values for creation
+        sourceEvent: '01',
         eventReason: '01',
         sourceSite: 'Website',
         deviceType: '01',
         deviceModel: 'iPhone',
+        leadSource: '01',
+        origin: '01',
+        systemOrigin: '05',
         ipData: {},
       },
       utmData: {
-        utmCampaign: payloadData.utmCampaign,
+        utmCampaign: 'ROPO_Auto',
       },
-
-      // Conversion Data
-      conversionData: payloadData.convertedStatus ? {
-        convertedStatus: payloadData.convertedStatus,
-        policyNumber: payloadData.policyNumber,
-      } : undefined,
     };
 
     const finalPayload = { leadWrappers: [leadWrapper] };
 
-    const leadResponse = await fetch(`${instance_url}/services/apexrest/core/lead/`, {
+    const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${access_token}`,
+        'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(finalPayload),
     });
     
-    const responseText = await leadResponse.text();
-
-    // Handle empty response for success (e.g., HTTP 204 No Content)
-    if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
-        // If it was an update with no content, we must return the ID we already have
-        return { success: true, idFullOperation: payloadData.idFullOperation };
-    }
-    
-    const responseData = JSON.parse(responseText);
+    const responseData = await leadResponse.json();
 
     if (!leadResponse.ok) {
       const errorText = JSON.stringify(responseData);
-      console.error("Salesforce Error Response:", errorText);
-      throw new Error(`Failed to upsert lead: ${leadResponse.status} ${errorText}`);
+      console.error("Salesforce Insert Error Response:", errorText);
+      throw new Error(`Failed to create lead: ${leadResponse.status} ${errorText}`);
     }
 
     return responseData;
   }
 );
 
-// Exported functions to be called from the frontend
+// --- Flow to UPDATE the lead (called from Steps 4 & 5) ---
+const updateLeadFlow = ai.defineFlow(
+    {
+      name: 'updateLeadFlow',
+      inputSchema: z.object({
+        formData: UpdateLeadInputSchema,
+        token: SalesforceTokenResponseSchema,
+      }),
+      outputSchema: z.any(),
+    },
+    async ({ formData, token }) => {
+
+      // Base structure with the IDs to identify the record
+      const leadWrapperBase = {
+        id: formData.id,
+        idFullOperation: formData.idFullOperation,
+        // Always include basic identification data for validation
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        documentType: formData.documentType,
+        documentNumber: formData.documentNumber,
+        contactData: {
+          mobilePhone: formData.mobilePhone,
+          phone: formData.phone,
+          email: formData.email,
+        },
+      };
+      
+      // Dynamically add data based on what's available in the formData
+      const sourceData: any = {};
+      if (formData.sourceEvent) sourceData.sourceEvent = formData.sourceEvent;
+      if (formData.systemOrigin) sourceData.systemOrigin = formData.systemOrigin;
+      if (formData.origin) sourceData.origin = formData.origin;
+      if (formData.leadSource) sourceData.leadSource = formData.leadSource;
+
+      const utmData: any = {};
+      if (formData.utmCampaign) utmData.utmCampaign = formData.utmCampaign;
+
+      const conversionData: any = {};
+      if (formData.convertedStatus) conversionData.convertedStatus = formData.convertedStatus;
+      if (formData.policyNumber) conversionData.policyNumber = formData.policyNumber;
+       
+      const leadWrapper = {
+        ...leadWrapperBase,
+        ...(Object.keys(sourceData).length > 0 && { sourceData: { ...sourceData, eventReason: '01', sourceSite: 'Website', deviceType: '01', deviceModel: 'iPhone', ipData: {} } }),
+        ...(Object.keys(utmData).length > 0 && { utmData }),
+        ...(Object.keys(conversionData).length > 0 && { conversionData }),
+        ...(formData.idOwner && { idOwner: formData.idOwner }),
+      };
+
+      const finalPayload = { leadWrappers: [leadWrapper] };
+
+      const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(finalPayload),
+      });
+
+      // Handle potential empty response for success
+      const responseText = await leadResponse.text();
+      if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
+          return { success: true, idFullOperation: formData.idFullOperation };
+      }
+
+      const responseData = JSON.parse(responseText);
+
+      if (!leadResponse.ok) {
+          const errorText = JSON.stringify(responseData);
+          console.error("Salesforce Update Error Response:", errorText);
+          throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+      }
+    
+      return responseData;
+    }
+  );
+
+
+// --- Exported functions to be called from the frontend ---
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
   return getSalesforceTokenFlow();
 }
 
-export async function upsertLead(formData: LeadWrapperData, token: SalesforceTokenResponse): Promise<any> {
-  return upsertLeadFlow({ formData, token });
+export async function insertLead(formData: InsertLeadInput, token: SalesforceTokenResponse): Promise<any> {
+  return insertLeadFlow({ formData, token });
+}
+
+export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
+  return updateLeadFlow({ formData, token });
 }

@@ -9,14 +9,15 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { upsertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
-import type { LeadWrapperData } from '@/lib/salesforce-schemas';
+import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
 const TOTAL_STEPS = 5;
 
-const initialFormData: LeadWrapperData = {
+// This represents the full data structure across all steps
+const initialFormData: InsertLeadInput & UpdateLeadInput = {
   // Step 1
   firstName: '',
   lastName: '',
@@ -40,7 +41,7 @@ const initialFormData: LeadWrapperData = {
   paymentTerm: '',
   // Step 4
   sourceEvent: '01', // Default value
-  agentType: '',
+  agentType: '', // This is frontend-only logic
   systemOrigin: '05',
   origin: '01',
   utmCampaign: 'ROPO_Auto',
@@ -53,7 +54,7 @@ const initialFormData: LeadWrapperData = {
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<LeadWrapperData>(initialFormData);
+  const [formData, setFormData] = useState<InsertLeadInput & UpdateLeadInput>(initialFormData);
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
@@ -63,76 +64,162 @@ export default function Home() {
   const [leadId, setLeadId] = useState<string | null>(null); 
 
   const { toast } = useToast();
+  
+  // Helper to find a key in a nested object/array structure
+  const findKey = (obj: any, keyToFind: string): string | null => {
+      if (obj === null || typeof obj !== 'object') {
+          return null;
+      }
+      if (keyToFind in obj) {
+          return obj[keyToFind];
+      }
+      for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+              const found = findKey(obj[key], keyToFind);
+              if (found) {
+                  return found;
+              }
+          }
+      }
+      return null;
+  };
 
-  const handleNextStep = (data: Partial<LeadWrapperData>) => {
+  const handleNextStep = (data: Partial<typeof formData>) => {
     setDirection(1);
-    const updatedFormData = { ...formData, ...data };
-    setFormData(updatedFormData);
+    setFormData(prev => ({ ...prev, ...data }));
     if (currentStep <= TOTAL_STEPS) {
       setCurrentStep((prev) => prev + 1);
     }
   };
-
-  const handleSubmit = async (data: Partial<LeadWrapperData>) => {
+  
+  // Called by Step 3 to create the initial Lead
+  const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
-    
-    // Merge current step data with existing form data
-    let updatedData = { ...formData, ...data };
-
-    // Logic from Step 4 (Contact Preference)
-    if (data.agentType === 'APM') {
-      updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
-    } else if (data.agentType === 'ADM') {
-      updatedData = { ...updatedData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
-    }
-    
-    // Logic from Step 5 (Emission)
-    if (data.convertedStatus === '02') {
-        updatedData = { ...updatedData, idOwner: '005D700000GSRhDIAX' };
-    }
-
+    const updatedData = { ...formData, ...data };
     setFormData(updatedData);
 
     try {
       const token = await getSalesforceToken();
-      
-      const payload: LeadWrapperData = {
-        ...updatedData,
-        // Add existing IDs if they exist
-        id: leadId, 
-        idFullOperation: idFullOperation,
-      };
-      
-      const response = await upsertLead(payload, token);
-      
+      const response = await insertLead(updatedData, token);
+
       const leadResult = response?.[0] ?? {};
-      const newIdFullOperation = leadResult.idFullOperation ?? findKey(response, 'idFullOperation') ?? idFullOperation;
-      const newLeadId = leadResult.leadResultId ?? findKey(response, 'leadResultId') ?? leadId;
+      const newIdFullOperation = leadResult.idFullOperation ?? findKey(response, 'idFullOperation');
+      const newLeadId = leadResult.leadResultId ?? findKey(response, 'leadResultId');
       const error = leadResult.resultErrors?.[0];
 
       if (error) {
-        throw new Error(error.errorMessage ?? 'An unknown error occurred during the upsert operation.');
+        throw new Error(error.errorMessage ?? 'An unknown error occurred during lead creation.');
       }
       
+      if (!newIdFullOperation || !newLeadId) {
+        throw new Error("Could not retrieve required IDs from Salesforce after creation.");
+      }
+
       // Persist IDs for subsequent steps
-      if (newIdFullOperation) setIdFullOperation(newIdFullOperation);
-      if (newLeadId) setLeadId(newLeadId);
+      setIdFullOperation(newIdFullOperation);
+      setLeadId(newLeadId);
       
       setSubmissionResponse(response);
-      handleNextStep(updatedData); // Move to the next screen
+      handleNextStep(updatedData); // Move to step 4
 
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error creating lead:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       toast({
         variant: 'destructive',
-        title: 'Error en el Envío',
+        title: 'Error en la Creación del Lead',
         description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Called by Step 4 to update contact preferences
+  const handleUpdate = async (data: Partial<UpdateLeadInput>) => {
+    setIsSubmitting(true);
+    let updatedData = { ...formData, ...data };
+    
+    // Logic from Step 4 (Contact Preference)
+    if (data.agentType === 'APM') {
+      updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
+    } else if (data.agentType === 'ADM') {
+      updatedData = { ...updatedData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
+    }
+
+    setFormData(updatedData);
+    
+    try {
+        const token = await getSalesforceToken();
+        const payload: UpdateLeadInput = {
+            ...updatedData,
+            id: leadId,
+            idFullOperation: idFullOperation,
+        };
+        const response = await updateLead(payload, token);
+
+        const error = findKey(response, 'errorMessage');
+        if (error) {
+            throw new Error(error);
+        }
+
+        setSubmissionResponse(response);
+        handleNextStep(updatedData); // Move to Step 5
+    } catch(error) {
+        console.error('Error updating lead:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        toast({
+          variant: 'destructive',
+          title: 'Error en la Actualización',
+          description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+  
+  // Called by Step 5 to finalize and emit
+  const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
+    setIsSubmitting(true);
+    let updatedData = { ...formData, ...data };
+    
+    // Logic from Step 5 (Emission)
+    if (data.convertedStatus === '02') {
+        updatedData = { ...updatedData, idOwner: '005D700000GSRhDIAX' };
+    }
+    
+    setFormData(updatedData);
+    
+    try {
+        const token = await getSalesforceToken();
+        const payload: UpdateLeadInput = {
+            ...updatedData,
+            id: leadId,
+            idFullOperation: idFullOperation,
+        };
+        const response = await updateLead(payload, token);
+
+        const error = findKey(response, 'errorMessage');
+        if (error) {
+            throw new Error(error);
+        }
+
+        setSubmissionResponse(response);
+        handleNextStep(updatedData); // Move to final confirmation screen
+
+    } catch(error) {
+        console.error('Error finalizing lead:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        toast({
+          variant: 'destructive',
+          title: 'Error en la Emisión',
+          description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
 
   const handlePrev = () => {
     if (currentStep > 1) {
@@ -151,27 +238,6 @@ export default function Home() {
     setIsSubmitting(false);
   };
   
-    // Helper function to find a key in a nested object/array structure
-    const findKey = (obj: any, keyToFind: string): string | null => {
-        if (obj === null || typeof obj !== 'object') {
-            return null;
-        }
-
-        if (keyToFind in obj) {
-            return obj[keyToFind];
-        }
-
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                const found = findKey(obj[key], keyToFind);
-                if (found) {
-                    return found;
-                }
-            }
-        }
-        return null;
-    };
-
   const formVariants = {
     hidden: (direction: number) => ({
       x: direction > 0 ? '100%' : '-100%',
@@ -196,11 +262,11 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onSubmit={handleSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 5:
-        return <EmissionForm onSubmit={handleSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:

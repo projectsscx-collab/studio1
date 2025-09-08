@@ -274,7 +274,7 @@ export const updateLeadFlow = ai.defineFlow(
                         deviceModel: 'iPhone',
                         leadSource: '01',
                         origin: '01',
-                        systemOrigin: '05',
+                        systemOrigin: '05', // Default systemOrigin
                         ipData: {},
                     },
                     utmData: {

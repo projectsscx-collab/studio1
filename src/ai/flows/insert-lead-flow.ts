@@ -155,7 +155,7 @@ export const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async (input) => {
-      const { accessToken, instanceUrl, idFullOperation, ...updateData } = input;
+      const { accessToken, instanceUrl, idFullOperation, id, ...updateData } = input;
       
       const riskObject = {
         'Número de matrícula__c': updateData.numero_de_matricula,
@@ -166,8 +166,8 @@ export const updateLeadFlow = ai.defineFlow(
       };
 
       const leadWrapperBase: any = {
-        idFullOperation: idFullOperation, // Ensure this is always present
-        // Always include basic data
+        id: id, // Pass the record ID for the upsert operation
+        idFullOperation: idFullOperation, // Pass the external ID
         firstName: updateData.firstName,
         lastName: updateData.lastName,
         documentType: updateData.documentType,
@@ -178,7 +178,6 @@ export const updateLeadFlow = ai.defineFlow(
             phone: updateData.phone,
             email: updateData.email,
         },
-        // Base interest product data
         interestProduct: {
             businessLine: '01',
             sector: 'XX_01',
@@ -199,30 +198,20 @@ export const updateLeadFlow = ai.defineFlow(
                 isSelected: true,
             }]
         },
-        sourceData: {}, // Initialize sourceData
-        utmData: {}, // Initialize utmData
+        sourceData: {},
+        utmData: {},
       };
-
-      // Add contact preference data if present (Step 4)
-      if (updateData.sourceEvent) {
-        leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
-      }
-       if (updateData.systemOrigin) {
-        leadWrapperBase.sourceData.systemOrigin = updateData.systemOrigin;
-       }
-       if (updateData.origin) {
-        leadWrapperBase.sourceData.origin = updateData.origin;
-       }
-       if (updateData.leadSource) {
-        leadWrapperBase.sourceData.leadSource = updateData.leadSource;
-       }
-       if (updateData.utmCampaign) {
-        leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
-       }
-
-      // Add emission data if present (Step 5)
+      
+      // Dynamically add fields for Step 4
+      if (updateData.sourceEvent) leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
+      if (updateData.systemOrigin) leadWrapperBase.sourceData.systemOrigin = updateData.systemOrigin;
+      if (updateData.origin) leadWrapperBase.sourceData.origin = updateData.origin;
+      if (updateData.leadSource) leadWrapperBase.sourceData.leadSource = updateData.leadSource;
+      if (updateData.utmCampaign) leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
+      
+      // Dynamically add fields for Step 5 (Emission)
       if (updateData.convertedStatus) {
-        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; // Hardcoded as per requirement
+        leadWrapperBase.idOwner = updateData.idOwner; // Add owner for conversion
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus,
           policyNumber: updateData.policyNumber,
@@ -234,7 +223,7 @@ export const updateLeadFlow = ai.defineFlow(
       };
   
       const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-          method: 'POST', // Salesforce uses POST for this upsert logic
+          method: 'POST',
           headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json'
@@ -242,18 +231,17 @@ export const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(updatePayload)
       });
   
-        const responseData = await leadResponse.json();
+      const responseData = await leadResponse.json();
 
-        if (!leadResponse.ok) {
-            const errorText = JSON.stringify(responseData);
-            console.error("Salesforce Update Error Response:", errorText);
-            throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
-        }
-      
-        // Handle no-content response
-        if (leadResponse.status === 204) {
-            return { success: true, idFullOperation };
-        }
+      if (!leadResponse.ok) {
+          const errorText = JSON.stringify(responseData);
+          console.error("Salesforce Update Error Response:", errorText);
+          throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+      }
+    
+      if (leadResponse.status === 204) {
+          return { success: true, idFullOperation };
+      }
   
       return responseData;
     }

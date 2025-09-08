@@ -89,6 +89,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   const [idFullOperation, setIdFullOperation] = useState<string | null>(null);
+  const [leadId, setLeadId] = useState<string | null>(null); // State for the Lead's record ID
   const { toast } = useToast();
 
   const handleNext = (data: Partial<FormData>) => {
@@ -107,14 +108,14 @@ export default function Home() {
     setFormData(finalData);
 
     try {
-      // It's the final step (Emission), so we call updateLead
       const token = await getSalesforceToken();
       const payload: UpdateLeadInput = {
-        ...finalData, // Pass all form data
+        ...finalData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         idFullOperation: idFullOperation!,
-        idOwner: '005D700000GSRhDIAX', // Hardcoded as per requirement
+        id: leadId!, // Pass the lead record ID
+        idOwner: '005D700000GSRhDIAX', 
       };
       
       const response = await updateLead(payload);
@@ -138,41 +139,26 @@ export default function Home() {
     setIsSubmitting(true);
     let updatedData = { ...formData, ...data };
     
-    // Logic for agent type specific fields
     if (data.agentType === 'APM') {
-        updatedData = {
-            ...updatedData,
-            systemOrigin: '02',
-            origin: '02',
-            utmCampaign: 'ROPO_APMCampaign',
-            leadSource: '02'
-        };
+        updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
     } else if (data.agentType === 'ADM') {
-        updatedData = {
-            ...updatedData,
-            systemOrigin: '06',
-            origin: '02',
-            utmCampaign: 'ROPO_ADMCampaign',
-            leadSource: '10'
-        };
+        updatedData = { ...updatedData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
     }
     
     setFormData(updatedData);
 
     try {
       const token = await getSalesforceToken();
-      if (!token?.access_token || !token?.instance_url) {
-        throw new Error('No se pudo obtener el token de Salesforce');
-      }
-      if (!idFullOperation) {
-        throw new Error('ID de operación no encontrado para la actualización.');
+      if (!idFullOperation || !leadId) {
+        throw new Error('ID de operación o ID de Lead no encontrado para la actualización.');
       }
 
       const payload: UpdateLeadInput = {
-        ...updatedData, // Pass all form data for validation
+        ...updatedData,
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         idFullOperation: idFullOperation,
+        id: leadId, // Pass the lead record ID
       };
       
       const response = await updateLead(payload);
@@ -182,11 +168,7 @@ export default function Home() {
 
     } catch (error) {
       console.error('Error updating form:', error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Hubo un error al actualizar su formulario.';
-      
+      const errorMessage = error instanceof Error ? error.message : 'Hubo un error al actualizar su formulario.';
       toast({
         variant: 'destructive',
         title: 'Fallo en la Actualización',
@@ -204,51 +186,73 @@ export default function Home() {
 
     try {
       const token = await getSalesforceToken();
-      if (!token?.access_token || !token?.instance_url) {
-        throw new Error('No se pudo obtener el token de Salesforce');
-      }
-
-      const payload: InsertLeadInput = {
-        ...updatedData,
-        accessToken: token.access_token,
-        instanceUrl: token.instance_url,
-      };
-      
+      const payload: InsertLeadInput = { ...updatedData, accessToken: token.access_token, instanceUrl: token.instance_url };
       const response = await insertLead(payload);
       
-      // Handle potential variations in the response structure
       const leadResult = response[0] ?? {};
-      const operationId = leadResult.leadResultId ?? leadResult.idFullOperation;
+      const operationId = leadResult.leadResultId ?? leadResult.idFullOperation; // Assuming idFullOperation might be in the root of the result object
+      const newLeadId = leadResult.leadResultId; // The actual record ID
       const error = leadResult.resultErrors?.[0];
 
       if (error) {
         throw new Error(error.errorMessage ?? 'Ocurrió un error desconocido durante la creación del lead.');
       }
       if (!operationId) {
-        throw new Error('No se recibió un ID de operación de Salesforce.');
+         // Attempt to find idFullOperation in the response, even if the structure is unexpected
+         const foundIdFullOp = findKey(response, 'idFullOperation');
+         if(foundIdFullOp){
+            setIdFullOperation(foundIdFullOp);
+         } else {
+            throw new Error('No se recibió un ID de operación de Salesforce.');
+         }
+      } else {
+        setIdFullOperation(operationId);
+      }
+
+      if (!newLeadId) {
+        // Fallback to search for any key that looks like a Salesforce ID
+        const foundLeadId = findKey(response, 'leadResultId');
+         if(foundLeadId){
+            setLeadId(foundLeadId);
+         } else {
+            throw new Error('No se recibió un ID de registro de Lead de Salesforce.');
+         }
+      } else {
+          setLeadId(newLeadId);
       }
       
-      setIdFullOperation(operationId);
       setSubmissionResponse(response);
-      
       handleNext(data);
 
     } catch (error) {
       console.error('Error submitting form:', error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.';
-      
-      toast({
-        variant: 'destructive',
-        title: 'Fallo en el Envío',
-        description: errorMessage,
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.';
+      toast({ variant: 'destructive', title: 'Fallo en el Envío', description: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Helper function to find a key in a nested object/array structure
+    const findKey = (obj: any, keyToFind: string): string | null => {
+        if (obj === null || typeof obj !== 'object') {
+            return null;
+        }
+
+        if (keyToFind in obj) {
+            return obj[keyToFind];
+        }
+
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const found = findKey(obj[key], keyToFind);
+                if (found) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    };
 
 
   const handlePrev = () => {
@@ -263,6 +267,7 @@ export default function Home() {
     setFormData(initialFormData);
     setSubmissionResponse(null);
     setIdFullOperation(null);
+    setLeadId(null);
     setCurrentStep(1);
     setIsSubmitting(false);
   };

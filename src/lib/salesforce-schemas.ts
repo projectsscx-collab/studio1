@@ -47,6 +47,7 @@ export const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
     idFullOperation: z.string(),
+    id: z.string(), // The Salesforce record ID (e.g., 00Q...)
     
     // Step 1 data (optional but needed for validation)
     firstName: z.string().optional(),

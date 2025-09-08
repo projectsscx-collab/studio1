@@ -41,12 +41,37 @@ export const InsertLeadInputSchema = z.object({
 });
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
-// Schema for the update flow. It's more flexible as fields are optional.
+// Schema for the update flow. It includes all previous fields as optional
+// because they are needed for validation on the Salesforce side, even if not changed.
 export const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
-    idFullOperation: z.string(), // This is the key to find the lead
+    idFullOperation: z.string(),
     
+    // Step 1 data (optional but needed for validation)
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    documentType: z.string().optional(),
+    documentNumber: z.string().optional(),
+    birthdate: z.string().optional(),
+    mobilePhone: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().optional(),
+
+    // Step 2 data (optional but needed for validation)
+    numero_de_matricula: z.string().optional(),
+    marca: z.string().optional(),
+    modelo: z.string().optional(),
+    ano_del_vehiculo: z.string().optional(),
+    numero_de_serie: z.string().optional(),
+
+    // Step 3 data (optional but needed for validation)
+    effectiveDate: z.string().optional(),
+    expirationDate: z.string().optional(),
+    paymentMethod: z.string().optional(),
+    paymentPeriodicity: z.string().optional(),
+    paymentTerm: z.string().optional(),
+
     // Fields from step 4
     sourceEvent: z.string().optional(),
     systemOrigin: z.string().optional(),
@@ -58,11 +83,5 @@ export const UpdateLeadInputSchema = z.object({
     idOwner: z.string().optional(),
     convertedStatus: z.string().optional(),
     policyNumber: z.string().optional(),
-    // We also need the quote details for the final emission step
-    effectiveDate: z.string().optional(),
-    expirationDate: z.string().optional(),
-    paymentMethod: z.string().optional(),
-    paymentPeriodicity: z.string().optional(),
-    paymentTerm: z.string().optional(),
 });
 export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;

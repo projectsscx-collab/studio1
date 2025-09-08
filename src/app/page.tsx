@@ -110,18 +110,11 @@ export default function Home() {
       // It's the final step (Emission), so we call updateLead
       const token = await getSalesforceToken();
       const payload: UpdateLeadInput = {
+        ...finalData, // Pass all form data
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         idFullOperation: idFullOperation!,
-        convertedStatus: finalData.convertedStatus,
-        policyNumber: finalData.policyNumber,
         idOwner: '005D700000GSRhDIAX', // Hardcoded as per requirement
-        // Pass other necessary fields for the final update
-        effectiveDate: finalData.effectiveDate,
-        expirationDate: finalData.expirationDate,
-        paymentMethod: finalData.paymentMethod,
-        paymentPeriodicity: finalData.paymentPeriodicity,
-        paymentTerm: finalData.paymentTerm,
       };
       
       const response = await updateLead(payload);
@@ -176,7 +169,7 @@ export default function Home() {
       }
 
       const payload: UpdateLeadInput = {
-        ...updatedData,
+        ...updatedData, // Pass all form data for validation
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
         idFullOperation: idFullOperation,
@@ -223,15 +216,16 @@ export default function Home() {
       
       const response = await insertLead(payload);
       
-      const operationId = response[0]?.leadResultId ?? response[0]?.resultErrors?.[0]?.leadErrorId;
+      // Handle potential variations in the response structure
+      const leadResult = response[0] ?? {};
+      const operationId = leadResult.leadResultId ?? leadResult.idFullOperation;
+      const error = leadResult.resultErrors?.[0];
 
-      if (!operationId) {
-        const errorMessage = response[0]?.resultErrors?.[0]?.errorMessage ?? 'No se recibió un ID de operación de Salesforce.';
-        throw new Error(errorMessage);
+      if (error) {
+        throw new Error(error.errorMessage ?? 'Ocurrió un error desconocido durante la creación del lead.');
       }
-      if (response[0]?.resultErrors) {
-         const errorMessage = response[0]?.resultErrors?.[0]?.errorMessage ?? 'Ocurrió un error desconocido durante la creación del lead.';
-         throw new Error(errorMessage);
+      if (!operationId) {
+        throw new Error('No se recibió un ID de operación de Salesforce.');
       }
       
       setIdFullOperation(operationId);

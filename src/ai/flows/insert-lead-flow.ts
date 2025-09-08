@@ -157,58 +157,76 @@ export const updateLeadFlow = ai.defineFlow(
     async (input) => {
       const { accessToken, instanceUrl, idFullOperation, ...updateData } = input;
       
-      const leadWrapperBase: any = {
-        idFullOperation: idFullOperation,
+      const riskObject = {
+        'Número de matrícula__c': updateData.numero_de_matricula,
+        'Marca__c': updateData.marca,
+        'Modelo__c': updateData.modelo,
+        'Año del vehículo__c': updateData.ano_del_vehiculo,
+        'Número de serie__c': updateData.numero_de_serie,
       };
 
-      // Add contact preference data if present (Step 4)
-      if (updateData.sourceEvent) {
-        leadWrapperBase.sourceData = {
-          sourceEvent: updateData.sourceEvent,
-        };
-      }
-       if (updateData.systemOrigin) {
-            leadWrapperBase.sourceData = {
-                ...leadWrapperBase.sourceData,
-                systemOrigin: updateData.systemOrigin,
-            };
-       }
-       if (updateData.origin) {
-            leadWrapperBase.sourceData = {
-                ...leadWrapperBase.sourceData,
-                origin: updateData.origin,
-            };
-       }
-       if (updateData.leadSource) {
-           leadWrapperBase.sourceData = {
-               ...leadWrapperBase.sourceData,
-               leadSource: updateData.leadSource,
-           };
-       }
-       if (updateData.utmCampaign) {
-            leadWrapperBase.utmData = {
-                utmCampaign: updateData.utmCampaign
-            };
-       }
-
-      // Add emission data if present (Step 5)
-      if (updateData.convertedStatus) {
-        leadWrapperBase.idOwner = updateData.idOwner;
-        leadWrapperBase.conversionData = {
-          convertedStatus: updateData.convertedStatus,
-          policyNumber: updateData.policyNumber,
-        };
-        // Re-add quote details for the emission step
-        leadWrapperBase.interestProduct = {
+      const leadWrapperBase: any = {
+        idFullOperation: idFullOperation,
+        // Always include basic data
+        firstName: updateData.firstName,
+        lastName: updateData.lastName,
+        documentType: updateData.documentType,
+        documentNumber: updateData.documentNumber,
+        birthdate: updateData.birthdate,
+        contactData: {
+            mobilePhone: updateData.mobilePhone,
+            phone: updateData.phone,
+            email: updateData.email,
+        },
+        // Base interest product data
+        interestProduct: {
+            businessLine: '01',
+            sector: 'XX_01',
+            subsector: 'XX_00',
+            branch: 'XX_205',
+            risk: JSON.stringify(riskObject),
             quotes: [{
                 id: 'TestWSConvertMIN', // This ID is required by the validation rule
                 effectiveDate: updateData.effectiveDate,
                 expirationDate: updateData.expirationDate,
+                productCode: 'PRD001',
+                productName: 'Life Insurance',
+                netPremium: 1000.0,
                 paymentMethod: updateData.paymentMethod,
                 paymentPeriodicity: updateData.paymentPeriodicity,
                 paymentTerm: updateData.paymentTerm,
+                additionalInformation: 'test',
+                isSelected: true,
             }]
-        }
+        },
+        sourceData: {}, // Initialize sourceData
+        utmData: {}, // Initialize utmData
+      };
+
+      // Add contact preference data if present (Step 4)
+      if (updateData.sourceEvent) {
+        leadWrapperBase.sourceData.sourceEvent = updateData.sourceEvent;
+      }
+       if (updateData.systemOrigin) {
+        leadWrapperBase.sourceData.systemOrigin = updateData.systemOrigin;
+       }
+       if (updateData.origin) {
+        leadWrapperBase.sourceData.origin = updateData.origin;
+       }
+       if (updateData.leadSource) {
+        leadWrapperBase.sourceData.leadSource = updateData.leadSource;
+       }
+       if (updateData.utmCampaign) {
+        leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
+       }
+
+      // Add emission data if present (Step 5)
+      if (updateData.convertedStatus) {
+        leadWrapperBase.idOwner = updateData.idOwner; // Add idOwner for conversion
+        leadWrapperBase.conversionData = {
+          convertedStatus: updateData.convertedStatus,
+          policyNumber: updateData.policyNumber,
+        };
       }
   
       const updatePayload = {
@@ -232,6 +250,7 @@ export const updateLeadFlow = ai.defineFlow(
             throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
         }
       
+        // Handle no-content response
         if (leadResponse.status === 204) {
             return { success: true, idFullOperation };
         }

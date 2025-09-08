@@ -76,9 +76,9 @@ export default function Home() {
         
         const response = await insertLead(payload);
         
-        if (response && response[0]?.leadResultId) {
+        if (response && response[0]?.leadResultId && response[0]?.idFullOperation) {
             setLeadId(response[0].leadResultId);
-            setIdFullOperation(response[0].idFullOperation); // Store idFullOperation
+            setIdFullOperation(response[0].idFullOperation);
             toast({
                 title: "Lead Creado Exitosamente",
                 description: `Su lead con ID: ${response[0].leadResultId} ha sido creado.`,
@@ -101,8 +101,8 @@ export default function Home() {
   };
   
   const handleUpdateSubmit = async (data: object) => {
-    if (!leadId) {
-        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID del lead para actualizar." });
+    if (!leadId || !idFullOperation) {
+        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID del lead o el ID de Operación para actualizar." });
         return;
     }
     setIsSubmitting(true);
@@ -145,8 +145,8 @@ export default function Home() {
   };
 
   const handleFinalSubmit = async (data: object) => {
-    if (!leadId) {
-        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID del lead para finalizar." });
+    if (!leadId || !idFullOperation) {
+        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID del lead o el ID de Operación para finalizar." });
         return;
     }
     setIsSubmitting(true);
@@ -250,9 +250,9 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleQuoteSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdateSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} idFullOperation={idFullOperation} leadId={leadId} />;
+        return <ContactPreferenceForm onSubmit={handleUpdateSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} idFullOperation={idFullOperation} leadId={leadId} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
@@ -289,5 +289,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

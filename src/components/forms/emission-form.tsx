@@ -10,27 +10,14 @@ interface EmissionFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  idFullOperation: string | null;
-  leadId: string | null;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, idFullOperation, leadId }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionFormProps) => {
   const form = useForm({
     defaultValues: {
       ...initialData,
     },
   });
-
-  const finalPayload = {
-        leadWrappers: [{
-            idFullOperation: idFullOperation,
-            leadId: leadId,
-            ...initialData,
-            conversionData: {
-              convertedStatus: '01'
-            }
-        }],
-    };
 
   return (
     <FormProvider {...form}>
@@ -76,13 +63,6 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, idFullOpera
                         <p><strong>Nº de Serie:</strong> {initialData.numero_de_serie}</p>
                     </div>
                 </div>
-
-                 <div className="mt-8 space-y-2">
-                    <label className="text-sm font-medium">JSON a Enviar (Conversión Final)</label>
-                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-64">
-                        {JSON.stringify(finalPayload, null, 2)}
-                    </pre>
-                </div>
             </div>
         </div>
         <div className="flex justify-between">
@@ -98,5 +78,3 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, idFullOpera
 };
 
 export default EmissionForm;
-
-    

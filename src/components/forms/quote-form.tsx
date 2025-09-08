@@ -35,6 +35,65 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
     },
     mode: 'onChange'
   });
+
+  const allData = { ...initialData, ...form.watch() };
+  
+  const leadPayload = {
+      leadWrappers: [{
+        firstName: allData.firstName,
+        lastName: allData.lastName,
+        birthdate: allData.birthdate,
+        documentType: allData.documentType,
+        documentNumber: allData.documentNumber,
+        contactData: {
+            mobilePhone: allData.mobilePhone,
+            phone: allData.phone,
+            email: allData.email,
+        },
+        interestProduct: {
+            businessLine: '01',
+            sector: 'XX_01',
+            subsector: 'XX_00',
+            branch: 'XX_205',
+            risk: JSON.stringify({
+                'Número de matrícula__c': allData.numero_de_matricula,
+                'Marca__c': allData.marca,
+                'Modelo__c': allData.modelo,
+                'Año del vehículo__c': allData.ano_del_vehiculo,
+                'Número de serie__c': allData.numero_de_serie,
+            }),
+            quotes: [
+                {
+                    id: 'TestWSConvertMIN',
+                    effectiveDate: allData.effectiveDate,
+                    expirationDate: allData.expirationDate,
+                    productCode: 'PRD001',
+                    productName: 'Life Insurance',
+                    netPremium: 1000.0,
+                    paymentMethod: allData.paymentMethod,
+                    paymentPeriodicity: allData.paymentPeriodicity,
+                    paymentTerm: allData.paymentTerm,
+                    additionalInformation: 'test',
+                    isSelected: true,
+                },
+            ],
+        },
+        sourceData: {
+            sourceEvent: '01',
+            eventReason: '01',
+            sourceSite: 'Website',
+            deviceType: '01',
+            deviceModel: 'iPhone',
+            leadSource: '01',
+            origin: '01',
+            systemOrigin: '05', 
+            ipData: {},
+        },
+        utmData: {
+            utmCampaign: 'ROPO_Auto',
+        },
+      }],
+    };
   
   return (
     <FormProvider {...form}>
@@ -173,10 +232,17 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
             />
             </div>
         </div>
+
+        <div className="space-y-2">
+            <label className="text-sm font-medium">JSON a Enviar (Creación)</label>
+            <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
+                {JSON.stringify(leadPayload, null, 2)}
+            </pre>
+        </div>
         
         <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CONTINUAR >'}
             </Button>
         </div>

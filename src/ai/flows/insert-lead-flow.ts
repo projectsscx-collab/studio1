@@ -214,11 +214,9 @@ export const updateLeadFlow = ai.defineFlow(
             leadWrappers: [
                 {
                     id: leadId,
-                    personLead: {
-                      firstName: rest.firstName,
-                      lastName: rest.lastName,
-                      birthdate: rest.birthdate,
-                    },
+                    firstName: rest.firstName,
+                    lastName: rest.lastName,
+                    birthdate: rest.birthdate,
                     documentType: rest.documentType,
                     documentNumber: rest.documentNumber,
                     contactData: {

@@ -43,7 +43,10 @@ interface FormData {
 
 interface LeadResult {
   leadResultId: string | null;
-  idFullOperation: string | null;
+}
+
+interface SalesforceLeadResponse {
+    leadResultId?: string;
 }
 
 const TOTAL_STEPS = 5; // Pasos del formulario (sin contar la confirmación)
@@ -84,39 +87,22 @@ export default function Home() {
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   const [leadResult, setLeadResult] = useState<LeadResult>({
     leadResultId: null,
-    idFullOperation: null
   });
   const { toast } = useToast();
 
-  // Función helper para extraer IDs de la respuesta de Salesforce de forma robusta
-  const extractLeadIds = (response: any): { leadId: string | null; fullOperationId: string | null } => {
-    // Si la respuesta no es un objeto o está vacía, no hay nada que hacer.
-    if (!response || typeof response !== 'object') {
-      return { leadId: null, fullOperationId: null };
+  const extractLeadId = (response: any): string | null => {
+    if (!response || !Array.isArray(response) || response.length === 0) {
+      return null;
     }
-  
-    // Salesforce a menudo devuelve un array, incluso con un solo resultado.
-    const result = Array.isArray(response) ? response[0] : response;
-  
-    // Si después de desempaquetar el array no tenemos un objeto, salimos.
-    if (!result || typeof result !== 'object') {
-      return { leadId: null, fullOperationId: null };
-    }
-  
-    // Buscar los IDs en múltiples ubicaciones posibles
-    const leadId = result.leadResultId || result.result?.leadResultId || null;
-    const fullOperationId = result.idFullOperation || result.result?.idFullOperation || null;
-  
-    return { leadId, fullOperationId };
+    const result: SalesforceLeadResponse = response[0];
+    return result?.leadResultId || null;
   };
 
-  // Función helper para validar que se puede proceder al siguiente paso
   const canProceedToNextStep = (step: number): boolean => {
     switch (step) {
       case 4:
       case 5:
-        // Permitir avanzar si tenemos el ID de operación.
-        return !!leadResult.idFullOperation;
+        return !!leadResult.leadResultId;
       default:
         return true;
     }
@@ -154,17 +140,16 @@ export default function Home() {
       const response = await insertLead(payload);
       
       // La llamada fue exitosa si no lanzó un error.
-      // Ahora, intentamos extraer los IDs de forma robusta.
-      const { leadId, fullOperationId } = extractLeadIds(response);
+      // Ahora, intentamos extraer el ID de forma robusta.
+      const leadId = extractLeadId(response);
 
       // Guardamos la respuesta completa para mostrarla al final.
       setSubmissionResponse(response);
       
       // Solo si obtenemos el ID de operación, podemos continuar.
-      if (fullOperationId) {
+      if (leadId) {
         setLeadResult({ 
-          leadId: leadId, 
-          idFullOperation: fullOperationId 
+          leadResultId: leadId, 
         });
         
         toast({
@@ -175,7 +160,8 @@ export default function Home() {
         handleNext(data); // Avanzar al siguiente paso.
       } else {
         // Si no viene el ID de operación, es un problema real
-         throw new Error("La respuesta de Salesforce no contiene el ID de Operación necesario.");
+         console.error("Salesforce response did not contain expected IDs:", response);
+         throw new Error("La respuesta de Salesforce no contiene el ID de Lead necesario.");
       }
       
     } catch (error) {
@@ -200,7 +186,7 @@ export default function Home() {
       toast({
         variant: "destructive",
         title: "Error Crítico",
-        description: "No se ha encontrado el ID de Operación para actualizar. Por favor, vuelva a empezar.",
+        description: "No se ha encontrado el ID del Lead para actualizar. Por favor, vuelva a empezar.",
       });
       return;
     }
@@ -219,7 +205,7 @@ export default function Home() {
       const payload: any = {
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
-        idFullOperation: leadResult.idFullOperation,
+        leadResultId: leadResult.leadResultId, // Usamos el ID del lead
         sourceEvent: updatedData.sourceEvent
       };
 
@@ -269,7 +255,7 @@ export default function Home() {
       toast({
         variant: "destructive",
         title: "Error Crítico",
-        description: "No se ha encontrado el ID de Operación para emitir. Por favor, vuelva a empezar.",
+        description: "No se ha encontrado el ID del Lead para emitir. Por favor, vuelva a empezar.",
       });
       return;
     }
@@ -288,7 +274,7 @@ export default function Home() {
       const payload = {
         accessToken: token.access_token,
         instanceUrl: token.instance_url,
-        idFullOperation: leadResult.idFullOperation,
+        leadResultId: leadResult.leadResultId, // Usamos el ID del lead
         convertedStatus: '01' // Mark as won/emitted
       };
 
@@ -330,7 +316,7 @@ export default function Home() {
     setDirection(1);
     setFormData(initialFormData);
     setSubmissionResponse(null);
-    setLeadResult({ leadResultId: null, idFullOperation: null });
+    setLeadResult({ leadResultId: null });
     setCurrentStep(1);
     setIsSubmitting(false);
   };

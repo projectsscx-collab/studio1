@@ -57,7 +57,7 @@ export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
-    idFullOperation: z.string(),
+    leadResultId: z.string(), // Use leadResultId for updates
     sourceEvent: z.string().optional(),
     systemOrigin: z.string().optional(),
     origin: z.string().optional(),
@@ -214,7 +214,8 @@ export const updateLeadFlow = ai.defineFlow(
     const updatePayload = {
       leadWrappers: [
         {
-          idFullOperation: updateData.idFullOperation,
+          // We use the leadResultId from the creation step as the idFullOperation for updates
+          idFullOperation: updateData.leadResultId, 
           sourceData: {
               sourceEvent: updateData.sourceEvent,
               systemOrigin: updateData.systemOrigin,

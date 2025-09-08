@@ -210,6 +210,7 @@ export const updateLeadFlow = ai.defineFlow(
     async (input) => {
         const { accessToken, instanceUrl, leadId, agentType, sourceEvent, convertedStatus, ...rest } = input;
 
+        // Start with a base payload that includes all required fields for an update.
         const updatePayload: any = {
             leadWrappers: [
                 {
@@ -224,15 +225,27 @@ export const updateLeadFlow = ai.defineFlow(
                         phone: rest.phone,
                         email: rest.email,
                     },
+                    // Include source and utm data shells to be populated if needed
                     sourceData: {
-                        sourceEvent: sourceEvent,
+                        sourceEvent: sourceEvent || '01', // Default if not provided
+                        eventReason: '01',
+                        sourceSite: 'Website',
+                        deviceType: '01',
+                        deviceModel: 'iPhone',
+                        leadSource: '01',
+                        origin: '01',
+                        systemOrigin: '05',
+                        ipData: {},
+                    },
+                    utmData: {
+                         utmCampaign: 'ROPO_Auto',
                     }
                 }
             ]
         };
         
+        // Modify the payload based on the agentType
         if (agentType) {
-            updatePayload.leadWrappers[0].utmData = {};
             if (agentType === 'APM') {
                 updatePayload.leadWrappers[0].sourceData.systemOrigin = '02';
                 updatePayload.leadWrappers[0].sourceData.origin = '02';
@@ -246,15 +259,15 @@ export const updateLeadFlow = ai.defineFlow(
             }
         }
 
+        // Add conversion data if provided
         if (convertedStatus) {
             updatePayload.leadWrappers[0].conversionData = {
                 convertedStatus: convertedStatus
             }
         }
 
-
         const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-            method: 'POST', // Use POST for updates as required by the endpoint
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'

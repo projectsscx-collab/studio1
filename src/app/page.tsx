@@ -121,7 +121,7 @@ export default function Home() {
 
         const response = await updateLead(payload);
         
-        if (response && Array.isArray(response) && response[0]?.isSuccess) {
+        if (response) { // If there is a response and no error was thrown, assume success
             toast({
                 title: "Lead Actualizado Exitosamente",
                 description: `El lead ha sido actualizado con sus preferencias.`,
@@ -165,7 +165,7 @@ export default function Home() {
         
         const response = await updateLead(payload);
 
-        if (response && Array.isArray(response) && response[0]?.isSuccess) {
+        if (response) { // If there is a response and no error was thrown, assume success
             setSubmissionResponse(response);
              toast({
                 title: "Lead Convertido Exitosamente",

@@ -214,7 +214,6 @@ export const updateLeadFlow = ai.defineFlow(
         const updatePayload: any = {
             leadWrappers: [
                 {
-                    id: leadId,
                     firstName: rest.firstName,
                     lastName: rest.lastName,
                     birthdate: rest.birthdate,
@@ -266,8 +265,8 @@ export const updateLeadFlow = ai.defineFlow(
             }
         }
 
-        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
-            method: 'POST',
+        const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
+            method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'

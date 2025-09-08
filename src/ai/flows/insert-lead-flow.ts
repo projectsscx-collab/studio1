@@ -237,6 +237,7 @@ export const updateLeadFlow = ai.defineFlow(
         // Base structure for the update payload
         const updatePayload: any = {
             leadWrappers: [{
+                id: leadId,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 birthdate: formData.birthdate,

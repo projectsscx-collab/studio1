@@ -229,10 +229,20 @@ export const updateLeadFlow = ai.defineFlow(
         const { accessToken, instanceUrl, leadId, ...formData } = input;
         
         let utmCampaign = 'ROPO_Auto';
+        let systemOrigin = '05'; // Default
+        let origin = '01'; // Default
+        let leadSource = '01'; // Default
+
         if (formData.agentType === 'APM') {
             utmCampaign = 'ROPO_APMCampaign';
+            systemOrigin = '02';
+            origin = '02';
+            leadSource = '02';
         } else if (formData.agentType === 'ADM') {
             utmCampaign = 'ROPO_ADMCampaign';
+            systemOrigin = '06';
+            origin = '02';
+            leadSource = '10';
         }
 
         // Base structure for the update payload
@@ -281,9 +291,9 @@ export const updateLeadFlow = ai.defineFlow(
                     sourceSite: 'Website',
                     deviceType: '01',
                     deviceModel: 'iPhone',
-                    leadSource: '01',
-                    origin: '01',
-                    systemOrigin: '05', 
+                    leadSource: leadSource,
+                    origin: origin,
+                    systemOrigin: systemOrigin, 
                     ipData: {},
                 },
                 utmData: {
@@ -291,23 +301,10 @@ export const updateLeadFlow = ai.defineFlow(
                 },
             }],
         };
-
-        const leadWrapper = updatePayload.leadWrappers[0];
-
-        // Dynamically adjust sourceData based on agentType
-        if (formData.agentType === 'APM') {
-            leadWrapper.sourceData.systemOrigin = '02';
-            leadWrapper.sourceData.origin = '02';
-            leadWrapper.sourceData.leadSource = '02';
-        } else if (formData.agentType === 'ADM') {
-            leadWrapper.sourceData.systemOrigin = '06';
-            leadWrapper.sourceData.origin = '02';
-            leadWrapper.sourceData.leadSource = '10';
-        }
         
         // Add conversionData only if convertedStatus is provided
         if (formData.convertedStatus) {
-            leadWrapper.conversionData = {
+            updatePayload.leadWrappers[0].conversionData = {
                 convertedStatus: formData.convertedStatus
             };
         }

@@ -318,8 +318,8 @@ export const updateLeadFlow = ai.defineFlow(
     if (updateData.convertedStatus) {
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus,
-          ownerId: '005D700000GSRhDIAX'
         };
+        leadWrapperBase.ownerId = '005D700000GSRhDIAX';
     }
 
     const updatePayload = {

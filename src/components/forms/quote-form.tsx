@@ -12,7 +12,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Input } from '../ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface QuoteFormProps {
   onSubmit: (data: any) => void;
@@ -38,12 +37,9 @@ const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className="border-0 shadow-none">
-          <CardHeader>
-            <CardTitle>Detalles de la Cotización</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+         <div>
+            <h2 className="text-xl font-semibold mb-6">Detalles de la Cotización</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                     control={form.control}
@@ -167,14 +163,14 @@ const QuoteForm = ({ onSubmit, onBack, initialData }: QuoteFormProps) => {
                   )}
                 />
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-                  CONTINUAR >
-              </Button>
-          </CardFooter>
-        </Card>
+        </div>
+
+        <div className="flex justify-between">
+            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+            CONTINUAR >
+            </Button>
+        </div>
       </form>
     </FormProvider>
   );

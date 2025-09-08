@@ -6,7 +6,6 @@ import { leadSchema } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface VehicleDetailsFormProps {
   onSubmit: (data: any) => void;
@@ -30,12 +29,9 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className="border-0 shadow-none">
-          <CardHeader>
-            <CardTitle>Datos del Vehículo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div>
+            <h2 className="text-xl font-semibold mb-6">Datos del Vehículo</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                     control={form.control}
@@ -93,14 +89,13 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
                     )}
                 />
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-              CONTINUAR >
-              </Button>
-          </CardFooter>
-        </Card>
+        </div>
+        <div className="flex justify-between">
+            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+            CONTINUAR >
+            </Button>
+        </div>
       </form>
     </FormProvider>
   );

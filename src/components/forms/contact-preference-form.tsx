@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;
@@ -29,64 +28,63 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPrefere
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className="border-0 shadow-none">
-          <CardHeader>
-            <CardTitle>Preferencia de Contacto</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-8">
-             <FormField
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div>
+            <h2 className="text-xl font-semibold mb-6">Preferencia de Contacto</h2>
+             <div className="space-y-6">
+                <FormField
+                    control={form.control}
+                    name="sourceEvent"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>¿Cómo prefieres que te contactemos?</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una opción" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            {Object.entries(sourceEvents).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
                 control={form.control}
-                name="sourceEvent"
+                name="agentType"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>¿Cómo prefieres que te contactemos?</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una opción" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                        {Object.entries(sourceEvents).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
+                    <FormItem className="space-y-3">
+                    <FormLabel>¿Quiere ser gestionado por un agente CC, APM o ADM?</FormLabel>
+                    <FormControl>
+                        <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                        >
+                        {Object.entries(agentTypes).map(([key, value]) => (
+                            <FormItem key={key} className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value={key} />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                {value}
+                                </FormLabel>
+                            </FormItem>
+                        ))}
+                        </RadioGroup>
+                    </FormControl>
                     <FormMessage />
-                </FormItem>
+                    </FormItem>
                 )}
-            />
-            <FormField
-              control={form.control}
-              name="agentType"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>¿Quiere ser gestionado por un agente CC, APM o ADM?</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      {Object.entries(agentTypes).map(([key, value]) => (
-                         <FormItem key={key} className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={key} />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              {value}
-                            </FormLabel>
-                        </FormItem>
-                      ))}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-              <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
-                  CONTINUAR >
-              </Button>
-          </CardFooter>
-        </Card>
+                />
+             </div>
+        </div>
+
+        <div className="flex justify-between">
+            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                CONTINUAR >
+            </Button>
+        </div>
       </form>
     </FormProvider>
   );

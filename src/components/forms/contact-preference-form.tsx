@@ -4,7 +4,6 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { leadSchema, sourceEvents, agentTypes } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -28,9 +27,6 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
     },
     mode: 'onChange',
   });
-
-  const currentValues = form.watch();
-  const fullData = { ...initialData, ...currentValues };
   
   return (
     <FormProvider {...form}>
@@ -82,13 +78,6 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
                     </FormItem>
                 )}
                 />
-
-                <div className="space-y-2 pt-4">
-                    <label className="text-sm font-medium">Datos Acumulados (Paso 4)</label>
-                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-96">
-                        {JSON.stringify(fullData, null, 2)}
-                    </pre>
-                </div>
             </div>
         </div>
          <div className="flex justify-between">

@@ -4,6 +4,7 @@
  * @fileoverview A Genkit flow to insert and update a lead in Salesforce.
  *
  * - insertLead - A function that orchestrates data submission to Salesforce for new leads.
+ * - updateLead - A function that orchestrates data updates for existing leads.
  * - getSalesforceToken - A function that handles authentication.
  */
 
@@ -27,7 +28,7 @@ const InsertLeadInputSchema = z.object({
   accessToken: z.string(),
   instanceUrl: z.string(),
 
-  // Form data from all steps
+  // Form data from steps 1-3
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
@@ -48,13 +49,44 @@ const InsertLeadInputSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
-  
-  sourceEvent: z.string().optional(),
-  agentType: z.string().optional(),
-  convertedStatus: z.string().optional(),
 });
 
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
+
+const UpdateLeadInputSchema = z.object({
+    // Token, instance URL, and lead ID from previous steps
+    accessToken: z.string(),
+    instanceUrl: z.string(),
+    leadId: z.string(),
+    idFullOperation: z.string().nullable().optional(),
+
+    // Form data from subsequent steps
+    sourceEvent: z.string().optional(),
+    agentType: z.string().optional(),
+    convertedStatus: z.string().optional(),
+    
+    // Include all other fields from the form to pass through if needed
+    firstName: z.string(),
+    lastName: z.string(),
+    birthdate: z.string(),
+    documentType: z.string(),
+    documentNumber: z.string(),
+    mobilePhone: z.string(),
+    phone: z.string(),
+    email: z.string(),
+    numero_de_matricula: z.string(),
+    marca: z.string(),
+    modelo: z.string(),
+    ano_del_vehiculo: z.string(),
+    numero_de_serie: z.string(),
+    effectiveDate: z.string(),
+    expirationDate: z.string(),
+    paymentMethod: z.string(),
+    paymentPeriodicity: z.string(),
+    paymentTerm: z.string(),
+});
+
+export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
 // Flow to get the authentication token
 export const getSalesforceTokenFlow = ai.defineFlow(
@@ -109,24 +141,7 @@ export const insertLeadFlow = ai.defineFlow(
   async (input) => {
     const { accessToken, instanceUrl, ...formData } = input;
     
-    let utmCampaign = 'ROPO_Auto';
-    let systemOrigin = '05';
-    let origin = '01';
-    let leadSource = '01';
-
-    if (formData.agentType === 'APM') {
-        utmCampaign = 'ROPO_APMCampaign';
-        systemOrigin = '02';
-        origin = '02';
-        leadSource = '02';
-    } else if (formData.agentType === 'ADM') {
-        utmCampaign = 'ROPO_ADMCampaign';
-        systemOrigin = '06';
-        origin = '02';
-        leadSource = '10';
-    }
-
-    const leadPayload: any = {
+    const leadPayload = {
       leadWrappers: [{
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -167,27 +182,21 @@ export const insertLeadFlow = ai.defineFlow(
             ],
         },
         sourceData: {
-            sourceEvent: formData.sourceEvent || '01',
+            sourceEvent: '01',
             eventReason: '01',
             sourceSite: 'Website',
             deviceType: '01',
             deviceModel: 'iPhone',
-            leadSource: leadSource,
-            origin: origin,
-            systemOrigin: systemOrigin, 
+            leadSource: '01',
+            origin: '01',
+            systemOrigin: '05', 
             ipData: {},
         },
         utmData: {
-            utmCampaign: utmCampaign,
+            utmCampaign: 'ROPO_Auto',
         },
       }],
     };
-
-    if (formData.convertedStatus) {
-        leadPayload.leadWrappers[0].conversionData = {
-            convertedStatus: formData.convertedStatus
-        };
-    }
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
         method: 'POST',
@@ -208,6 +217,115 @@ export const insertLeadFlow = ai.defineFlow(
   }
 );
 
+// Flow to update the lead
+export const updateLeadFlow = ai.defineFlow(
+  {
+    name: 'updateLeadFlow',
+    inputSchema: UpdateLeadInputSchema,
+    outputSchema: z.any(),
+  },
+  async (input) => {
+    const { accessToken, instanceUrl, leadId, ...formData } = input;
+    
+    let utmCampaign = 'ROPO_Auto';
+    let systemOrigin = '05';
+    let origin = '01';
+    let leadSource = '01';
+
+    if (formData.agentType === 'APM') {
+        utmCampaign = 'ROPO_APMCampaign';
+        systemOrigin = '02';
+        origin = '02';
+        leadSource = '02';
+    } else if (formData.agentType === 'ADM') {
+        utmCampaign = 'ROPO_ADMCampaign';
+        systemOrigin = '06';
+        origin = '02';
+        leadSource = '10';
+    }
+
+    const updatePayload: any = {
+        leadWrappers: [{
+            idFullOperation: formData.idFullOperation, // Crucial for linking operations
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            birthdate: formData.birthdate,
+            documentType: formData.documentType,
+            documentNumber: formData.documentNumber,
+            contactData: {
+                mobilePhone: formData.mobilePhone,
+                phone: formData.phone,
+                email: formData.email,
+            },
+            interestProduct: {
+                businessLine: '01',
+                sector: 'XX_01',
+                subsector: 'XX_00',
+                branch: 'XX_205',
+                risk: JSON.stringify({
+                    'Número de matrícula__c': formData.numero_de_matricula,
+                    'Marca__c': formData.marca,
+                    'Modelo__c': formData.modelo,
+                    'Año del vehículo__c': formData.ano_del_vehiculo,
+                    'Número de serie__c': formData.numero_de_serie,
+                }),
+                quotes: [{
+                    id: 'TestWSConvertMIN',
+                    effectiveDate: formData.effectiveDate,
+                    expirationDate: formData.expirationDate,
+                    productCode: 'PRD001',
+                    productName: 'Life Insurance',
+                    netPremium: 1000.00,
+                    paymentMethod: formData.paymentMethod,
+                    paymentPeriodicity: formData.paymentPeriodicity,
+                    paymentTerm: formData.paymentTerm,
+                    additionalInformation: 'test',
+                    isSelected: true,
+                }],
+            },
+            sourceData: {
+                sourceEvent: formData.sourceEvent || '01',
+                eventReason: '01',
+                sourceSite: 'Website',
+                deviceType: '01',
+                deviceModel: 'iPhone',
+                leadSource: leadSource,
+                origin: origin,
+                systemOrigin: systemOrigin,
+                ipData: {},
+            },
+            utmData: {
+                utmCampaign: utmCampaign,
+            },
+        }],
+    };
+
+    if (formData.convertedStatus) {
+        updatePayload.leadWrappers[0].conversionData = {
+            convertedStatus: formData.convertedStatus
+        };
+    }
+
+    const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatePayload)
+    });
+
+    if (!leadResponse.ok) {
+        const errorText = await leadResponse.text();
+        console.error("Salesforce Update Error Response:", errorText);
+        throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+    }
+
+    return await leadResponse.json();
+  }
+);
+
+
 // Exported functions to be called from the frontend
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
     return getSalesforceTokenFlow();
@@ -215,4 +333,8 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 
 export async function insertLead(input: InsertLeadInput): Promise<any> {
     return insertLeadFlow(input);
+}
+
+export async function updateLead(input: UpdateLeadInput): Promise<any> {
+    return updateLeadFlow(input);
 }

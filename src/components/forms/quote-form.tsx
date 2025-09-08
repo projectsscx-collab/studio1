@@ -36,19 +36,6 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
     mode: 'onChange'
   });
   
-  const currentValues = form.watch();
-  const fullData = { ...initialData, ...currentValues };
-  
-  // This payload is just for display purposes
-  const leadPayload = {
-      leadWrappers: [{
-        firstName: fullData.firstName,
-        lastName: fullData.lastName,
-        birthdate: fullData.birthdate,
-        // ... all other data from previous steps
-      }],
-    };
-
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -184,12 +171,6 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                 </FormItem>
                 )}
             />
-            </div>
-             <div className="space-y-2 pt-4">
-                <label className="text-sm font-medium">Datos Acumulados (Paso 3)</label>
-                <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-96">
-                    {JSON.stringify(fullData, null, 2)}
-                </pre>
             </div>
         </div>
         

@@ -14,9 +14,11 @@ interface ContactPreferenceFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  idFullOperation: string | null;
+  leadId: string | null;
 }
 
-const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
+const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting, idFullOperation, leadId }: ContactPreferenceFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         sourceEvent: true,
@@ -27,7 +29,48 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
     },
     mode: 'onChange',
   });
+
+  const { watch } = form;
+  const currentValues = watch();
+
+  let utmCampaign = 'ROPO_Auto';
+  let systemOrigin = '05';
+  let origin = '01';
+  let leadSource = '01';
+
+  if (currentValues.agentType === 'APM') {
+      utmCampaign = 'ROPO_APMCampaign';
+      systemOrigin = '02';
+      origin = '02';
+      leadSource = '02';
+  } else if (currentValues.agentType === 'ADM') {
+      utmCampaign = 'ROPO_ADMCampaign';
+      systemOrigin = '06';
+      origin = '02';
+      leadSource = '10';
+  }
   
+  const updatePayload = {
+      leadWrappers: [{
+          idFullOperation: idFullOperation,
+          leadId: leadId,
+          ...initialData,
+          ...currentValues,
+          sourceData: {
+              ...initialData.sourceData,
+              sourceEvent: currentValues.sourceEvent,
+              leadSource: leadSource,
+              origin: origin,
+              systemOrigin: systemOrigin,
+          },
+          utmData: {
+              ...initialData.utmData,
+              utmCampaign: utmCampaign,
+          },
+      }],
+  };
+
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -79,10 +122,16 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
                 )}
                 />
             </div>
+            <div className="mt-8 space-y-2">
+                <label className="text-sm font-medium">JSON a Enviar (Actualización)</label>
+                <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto max-h-64">
+                    {JSON.stringify(updatePayload, null, 2)}
+                </pre>
+            </div>
         </div>
          <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CONTINUAR >'}
             </Button>
         </div>
@@ -92,3 +141,5 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
 };
 
 export default ContactPreferenceForm;
+
+    

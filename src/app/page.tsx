@@ -76,7 +76,7 @@ export default function Home() {
         
         const response = await insertLead(payload);
         
-        if (response[0]?.leadResultId) {
+        if (response && response[0]?.leadResultId) {
             setLeadId(response[0].leadResultId);
             setIdFullOperation(response[0].idFullOperation); // Store idFullOperation
             toast({
@@ -85,7 +85,7 @@ export default function Home() {
             });
             handleNext(data);
         } else {
-            const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error al crear el lead.";
+            const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error al crear el lead.";
             throw new Error(errorMessage);
         }
     } catch (e) {
@@ -114,13 +114,13 @@ export default function Home() {
         const payload = { 
             ...updatedData,
             leadId,
-            idFullOperation, // Pass idFullOperation
+            idFullOperation,
             accessToken: token.access_token,
             instanceUrl: token.instance_url
         };
 
         const response = await updateLead(payload);
-
+        
         if (response && response[0]?.isSuccess) {
             toast({
                 title: "Lead Actualizado Exitosamente",
@@ -158,14 +158,14 @@ export default function Home() {
         const payload = { 
             ...finalData,
             leadId,
-            idFullOperation, // Pass idFullOperation
+            idFullOperation,
             accessToken: token.access_token,
             instanceUrl: token.instance_url,
         };
         
         const response = await updateLead(payload);
 
-        if (response[0]?.isSuccess) {
+        if (response && response[0]?.isSuccess) {
             setSubmissionResponse(response);
              toast({
                 title: "Lead Convertido Exitosamente",
@@ -173,7 +173,7 @@ export default function Home() {
             });
             handleNext(finalData);
         } else {
-            const errorMessage = response[0]?.resultErrors[0]?.errorMessage || "Hubo un error desconocido durante la conversión.";
+            const errorMessage = response?.[0]?.resultErrors?.[0]?.errorMessage || "Hubo un error desconocido durante la conversión.";
             throw new Error(errorMessage);
         }
     } catch (e) {
@@ -250,9 +250,9 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleQuoteSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdateSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <ContactPreferenceForm onSubmit={handleUpdateSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} idFullOperation={idFullOperation} leadId={leadId} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} idFullOperation={idFullOperation} leadId={leadId} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
@@ -289,3 +289,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

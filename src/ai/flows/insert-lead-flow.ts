@@ -61,9 +61,6 @@ const UpdateLeadInputSchema = z.object({
     idFullOperation: z.string(),
 
     // Form data from all steps
-    sourceEvent: z.string().optional(),
-    agentType: z.string().optional(),
-    convertedStatus: z.string().optional(),
     firstName: z.string(),
     lastName: z.string(),
     birthdate: z.string(),
@@ -82,6 +79,9 @@ const UpdateLeadInputSchema = z.object({
     paymentMethod: z.string(),
     paymentPeriodicity: z.string(),
     paymentTerm: z.string(),
+    sourceEvent: z.string().optional(),
+    agentType: z.string().optional(),
+    convertedStatus: z.string().optional(),
 });
 
 export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;

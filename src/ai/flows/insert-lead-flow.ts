@@ -166,7 +166,7 @@ export const updateLeadFlow = ai.defineFlow(
       };
 
       const leadWrapperBase: any = {
-        idFullOperation: idFullOperation,
+        idFullOperation: idFullOperation, // Ensure this is always present
         // Always include basic data
         firstName: updateData.firstName,
         lastName: updateData.lastName,
@@ -222,7 +222,7 @@ export const updateLeadFlow = ai.defineFlow(
 
       // Add emission data if present (Step 5)
       if (updateData.convertedStatus) {
-        leadWrapperBase.idOwner = updateData.idOwner; // Add idOwner for conversion
+        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; // Hardcoded as per requirement
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus,
           policyNumber: updateData.policyNumber,

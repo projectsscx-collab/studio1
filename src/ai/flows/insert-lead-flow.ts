@@ -307,17 +307,18 @@ export const updateLeadFlow = ai.defineFlow(
         leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
     }
     
-    const updatePayload: any = {
-      leadWrappers: [leadWrapperBase]
-    };
-    
     // Handle the conversion step specifically
     if (updateData.convertedStatus) {
         leadWrapperBase.conversionData = {
-          convertedStatus: updateData.convertedStatus,
-          ownerId: '005D700000GSRhDIAX' // This is the crucial part for conversion
+          convertedStatus: updateData.convertedStatus
         };
+        // THIS IS THE FIX: The Apex class expects 'idOwner' at the root of the wrapper.
+        leadWrapperBase.idOwner = '005D700000GSthDIAT';
     }
+
+    const updatePayload: any = {
+      leadWrappers: [leadWrapperBase]
+    };
 
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
         method: 'POST',

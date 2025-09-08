@@ -76,12 +76,17 @@ export default function Home() {
         
         const response = await insertLead(payload);
         
-        if (response && Array.isArray(response) && response[0]?.leadResultId && response[0]?.idFullOperation) {
-            setLeadId(response[0].leadResultId);
-            setIdFullOperation(response[0].idFullOperation);
+        // If the response is valid and doesn't contain errors, proceed.
+        if (response && (!response[0] || !response[0].resultErrors)) {
+            const leadResultId = response[0]?.leadResultId;
+            const fullOperationId = response[0]?.idFullOperation;
+            
+            setLeadId(leadResultId || null);
+            setIdFullOperation(fullOperationId || null);
+            
             toast({
                 title: "Lead Creado Exitosamente",
-                description: `Su lead con ID: ${response[0].leadResultId} ha sido creado.`,
+                description: `Su lead ha sido creado. ${leadResultId ? `ID: ${leadResultId}` : ''}`,
             });
             handleNext(data);
         } else {
@@ -101,8 +106,8 @@ export default function Home() {
   };
   
   const handleUpdateSubmit = async (data: object) => {
-    if (!leadId || !idFullOperation) {
-        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID del lead o el ID de Operación para actualizar." });
+    if (!idFullOperation) {
+        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID de Operación para actualizar." });
         return;
     }
     setIsSubmitting(true);
@@ -145,8 +150,8 @@ export default function Home() {
   };
 
   const handleFinalSubmit = async (data: object) => {
-    if (!leadId || !idFullOperation) {
-        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID del lead o el ID de Operación para finalizar." });
+    if (!idFullOperation) {
+        toast({ variant: "destructive", title: "Error", description: "No se ha encontrado el ID de Operación para finalizar." });
         return;
     }
     setIsSubmitting(true);

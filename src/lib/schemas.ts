@@ -39,6 +39,7 @@ export const agentTypes = {
 };
 
 export const leadSchema = z.object({
+  idFullOperation: z.string().optional(), // Optional in the form, but required in the final payload
   // Step 1
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),

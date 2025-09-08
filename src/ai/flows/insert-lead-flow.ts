@@ -157,7 +157,6 @@ export const updateLeadFlow = ai.defineFlow(
     async (input) => {
       const { accessToken, instanceUrl, idFullOperation, ...updateData } = input;
       
-      // Base wrapper for the update payload
       const leadWrapperBase: any = {
         idFullOperation: idFullOperation,
       };
@@ -168,19 +167,33 @@ export const updateLeadFlow = ai.defineFlow(
           sourceEvent: updateData.sourceEvent,
         };
       }
-      if (updateData.agentId || updateData.agentType) {
-          leadWrapperBase.commercialStructureData = {
-              idIntermediary: updateData.agentId,
-              // You might need to map agentType to a specific field if necessary
-          };
-      }
-      if (updateData.additionalInformation) {
-        leadWrapperBase.additionalInformation = updateData.additionalInformation;
-      }
-      
+       if (updateData.systemOrigin) {
+            leadWrapperBase.sourceData = {
+                ...leadWrapperBase.sourceData,
+                systemOrigin: updateData.systemOrigin,
+            };
+       }
+       if (updateData.origin) {
+            leadWrapperBase.sourceData = {
+                ...leadWrapperBase.sourceData,
+                origin: updateData.origin,
+            };
+       }
+       if (updateData.leadSource) {
+           leadWrapperBase.sourceData = {
+               ...leadWrapperBase.sourceData,
+               leadSource: updateData.leadSource,
+           };
+       }
+       if (updateData.utmCampaign) {
+            leadWrapperBase.utmData = {
+                utmCampaign: updateData.utmCampaign
+            };
+       }
+
       // Add emission data if present (Step 5)
       if (updateData.convertedStatus) {
-        leadWrapperBase.idOwner = '005D700000GSRhDIAX'; // Hardcoded as per requirement
+        leadWrapperBase.idOwner = updateData.idOwner;
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus,
           policyNumber: updateData.policyNumber,
@@ -211,18 +224,19 @@ export const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(updatePayload)
       });
   
-      if (!leadResponse.ok) {
-          const errorText = await leadResponse.text();
-          console.error("Salesforce Update Error Response:", errorText);
-          throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
-      }
+        const responseData = await leadResponse.json();
+
+        if (!leadResponse.ok) {
+            const errorText = JSON.stringify(responseData);
+            console.error("Salesforce Update Error Response:", errorText);
+            throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+        }
       
-      // Update might return 204 No Content, so handle that case
-      if (leadResponse.status === 204) {
-          return { success: true, idFullOperation };
-      }
+        if (leadResponse.status === 204) {
+            return { success: true, idFullOperation };
+        }
   
-      return await leadResponse.json();
+      return responseData;
     }
   );
 

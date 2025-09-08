@@ -64,7 +64,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
               name="agentType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Agente</FormLabel>
+                  <FormLabel>¿Quiere ser gestionado por un agente?</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -77,36 +77,6 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="agentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ID del Agente</FormLabel>
-                  <FormControl>
-                    <Input placeholder="E.g. 12345" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="additionalInformation"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Información Adicional</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Añada cualquier otra información que considere relevante..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

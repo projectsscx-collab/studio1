@@ -46,12 +46,16 @@ export const UpdateLeadInputSchema = z.object({
     accessToken: z.string(),
     instanceUrl: z.string(),
     idFullOperation: z.string(), // This is the key to find the lead
+    
     // Fields from step 4
     sourceEvent: z.string().optional(),
-    agentType: z.string().optional(),
-    agentId: z.string().optional(),
-    additionalInformation: z.string().optional(),
+    systemOrigin: z.string().optional(),
+    origin: z.string().optional(),
+    utmCampaign: z.string().optional(),
+    leadSource: z.string().optional(),
+    
     // Fields from step 5
+    idOwner: z.string().optional(),
     convertedStatus: z.string().optional(),
     policyNumber: z.string().optional(),
     // We also need the quote details for the final emission step

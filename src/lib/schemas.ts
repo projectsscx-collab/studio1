@@ -65,13 +65,13 @@ export const leadSchema = z.object({
   
   // Step 4
   sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),
-  agentType: z.string().optional(),
+  agentType: z.string().min(1, 'Debe seleccionar un tipo de agente.'),
   agentId: z.string().optional(),
   additionalInformation: z.string().optional(),
 
   // Step 5
   convertedStatus: z.string().min(1, 'El estado de conversión es requerido.'),
-  policyNumber: z.string().min(1, 'El número de póliza es requerido.'),
+  policyNumber: z.string().optional(),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

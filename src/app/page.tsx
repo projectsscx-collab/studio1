@@ -115,6 +115,7 @@ export default function Home() {
         idFullOperation: idFullOperation!,
         convertedStatus: finalData.convertedStatus,
         policyNumber: finalData.policyNumber,
+        idOwner: '005D700000GSRhDIAX', // Hardcoded as per requirement
         // Pass other necessary fields for the final update
         effectiveDate: finalData.effectiveDate,
         expirationDate: finalData.expirationDate,
@@ -142,7 +143,27 @@ export default function Home() {
   
   const handleUpdate = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
-    const updatedData = { ...formData, ...data };
+    let updatedData = { ...formData, ...data };
+    
+    // Logic for agent type specific fields
+    if (data.agentType === 'APM') {
+        updatedData = {
+            ...updatedData,
+            systemOrigin: '02',
+            origin: '02',
+            utmCampaign: 'ROPO_APMCampaign',
+            leadSource: '02'
+        };
+    } else if (data.agentType === 'ADM') {
+        updatedData = {
+            ...updatedData,
+            systemOrigin: '06',
+            origin: '02',
+            utmCampaign: 'ROPO_ADMCampaign',
+            leadSource: '10'
+        };
+    }
+    
     setFormData(updatedData);
 
     try {
@@ -162,8 +183,6 @@ export default function Home() {
       };
       
       const response = await updateLead(payload);
-      // The update response might not be the final one we want to show
-      // but we can log it or handle it if necessary.
       console.log('Update successful:', response);
       
       handleNext(data);
@@ -204,16 +223,19 @@ export default function Home() {
       
       const response = await insertLead(payload);
       
-      // Assuming the response contains the idFullOperation needed for subsequent steps
-      const operationId = response[0]?.leadResultId; 
+      const operationId = response[0]?.leadResultId ?? response[0]?.resultErrors?.[0]?.leadErrorId;
+
       if (!operationId) {
-        // Look for error message
         const errorMessage = response[0]?.resultErrors?.[0]?.errorMessage ?? 'No se recibió un ID de operación de Salesforce.';
         throw new Error(errorMessage);
       }
+      if (response[0]?.resultErrors) {
+         const errorMessage = response[0]?.resultErrors?.[0]?.errorMessage ?? 'Ocurrió un error desconocido durante la creación del lead.';
+         throw new Error(errorMessage);
+      }
       
       setIdFullOperation(operationId);
-      setSubmissionResponse(response); // Store initial response
+      setSubmissionResponse(response);
       
       handleNext(data);
 

@@ -268,6 +268,7 @@ export const updateLeadFlow = ai.defineFlow(
                 netPremium: 1000.0,
                 paymentMethod: updateData.paymentMethod,
                 paymentPeriodicity: updateData.paymentTerm,
+                paymentTerm: updateData.paymentTerm,
                 additionalInformation: 'test',
                 isSelected: true,
             },
@@ -307,18 +308,18 @@ export const updateLeadFlow = ai.defineFlow(
         leadWrapperBase.utmData.utmCampaign = updateData.utmCampaign;
     }
     
+    const updatePayload: any = {
+      leadWrappers: [leadWrapperBase]
+    };
+    
     if (updateData.convertedStatus) {
         leadWrapperBase.conversionData = {
           convertedStatus: updateData.convertedStatus
         };
-        // The ownerId MUST be at the root of the leadWrapper object for conversion
+        // The ownerId MUST be passed at the root of the update payload for conversion
         leadWrapperBase.ownerId = '005D700000GSRhDIAX';
     }
 
-    const updatePayload = {
-      leadWrappers: [leadWrapperBase]
-    };
-    
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {
         method: 'POST',
         headers: {
@@ -359,3 +360,5 @@ export async function insertLead(input: InsertLeadInput): Promise<any> {
 export async function updateLead(input: UpdateLeadInput): Promise<any> {
     return updateLeadFlow(input);
 }
+
+    

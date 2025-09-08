@@ -219,66 +219,71 @@ export const updateLeadFlow = ai.defineFlow(
         'Número de serie__c': updateData.numero_de_serie,
     };
     
+    const leadWrapperBase = {
+      idFullOperation: updateData.leadResultId, // We use the leadResultId as the idFullOperation
+      
+      // Re-send all required data from the original object
+      firstName: updateData.firstName,
+      lastName: updateData.lastName,
+      documentType: updateData.documentType,
+      documentNumber: updateData.documentNumber,
+      birthdate: updateData.birthdate,
+      contactData: {
+        mobilePhone: updateData.mobilePhone,
+        phone: updateData.phone,
+        email: updateData.email,
+      },
+      interestProduct: {
+        businessLine: '01',
+        sector: 'XX_01',
+        subsector: 'XX_00',
+        branch: 'XX_205',
+        risk: JSON.stringify(riskObject),
+         quotes: [
+            {
+                id: 'TestWSConvertMIN',
+                effectiveDate: updateData.effectiveDate,
+                expirationDate: updateData.expirationDate,
+                productCode: 'PRD001',
+                productName: 'Life Insurance',
+                netPremium: 1000.0,
+                paymentMethod: updateData.paymentMethod,
+                paymentPeriodicity: updateData.paymentPeriodicity,
+                paymentTerm: updateData.paymentTerm,
+                additionalInformation: 'test',
+                isSelected: true,
+            },
+        ],
+      },
+      
+      // Add/overwrite with the new data for the update
+      sourceData: {
+          sourceEvent: updateData.sourceEvent,
+          systemOrigin: updateData.systemOrigin || '05', // Keep original if not provided
+          origin: updateData.origin || '01', // Keep original if not provided
+          leadSource: updateData.leadSource || '01', // Keep original if not provided
+          // Keep other sourceData fields from insert if needed
+          eventReason: '01',
+          sourceSite: 'Website',
+          deviceType: '01',
+          deviceModel: 'iPhone',
+          ipData: {},
+      },
+      utmData: {
+          utmCampaign: updateData.utmCampaign || 'ROPO_Auto', // Keep original if not provided
+      },
+      conversionData: {
+          convertedStatus: updateData.convertedStatus,
+      }
+    };
+    
+    // Add ownerId ONLY when converting the lead
+    if (updateData.convertedStatus) {
+        (leadWrapperBase as any).ownerId = '005D700000GSRhDIAX';
+    }
+
     const updatePayload = {
-      leadWrappers: [
-        {
-          idFullOperation: updateData.leadResultId, // We use the leadResultId as the idFullOperation
-          
-          // Re-send all required data from the original object
-          firstName: updateData.firstName,
-          lastName: updateData.lastName,
-          documentType: updateData.documentType,
-          documentNumber: updateData.documentNumber,
-          birthdate: updateData.birthdate,
-          contactData: {
-            mobilePhone: updateData.mobilePhone,
-            phone: updateData.phone,
-            email: updateData.email,
-          },
-          interestProduct: {
-            businessLine: '01',
-            sector: 'XX_01',
-            subsector: 'XX_00',
-            branch: 'XX_205',
-            risk: JSON.stringify(riskObject),
-             quotes: [
-                {
-                    id: 'TestWSConvertMIN',
-                    effectiveDate: updateData.effectiveDate,
-                    expirationDate: updateData.expirationDate,
-                    productCode: 'PRD001',
-                    productName: 'Life Insurance',
-                    netPremium: 1000.0,
-                    paymentMethod: updateData.paymentMethod,
-                    paymentPeriodicity: updateData.paymentPeriodicity,
-                    paymentTerm: updateData.paymentTerm,
-                    additionalInformation: 'test',
-                    isSelected: true,
-                },
-            ],
-          },
-          
-          // Add/overwrite with the new data for the update
-          sourceData: {
-              sourceEvent: updateData.sourceEvent,
-              systemOrigin: updateData.systemOrigin || '05', // Keep original if not provided
-              origin: updateData.origin || '01', // Keep original if not provided
-              leadSource: updateData.leadSource || '01', // Keep original if not provided
-              // Keep other sourceData fields from insert if needed
-              eventReason: '01',
-              sourceSite: 'Website',
-              deviceType: '01',
-              deviceModel: 'iPhone',
-              ipData: {},
-          },
-          utmData: {
-              utmCampaign: updateData.utmCampaign || 'ROPO_Auto', // Keep original if not provided
-          },
-          conversionData: {
-              convertedStatus: updateData.convertedStatus,
-          }
-        }
-      ]
+      leadWrappers: [leadWrapperBase]
     };
     
     const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/`, {

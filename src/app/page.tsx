@@ -46,15 +46,6 @@ interface LeadResult {
   idFullOperation: string | null;
 }
 
-interface SalesforceResponse {
-  leadResultId?: string;
-  idFullOperation?: string;
-  result?: {
-    leadResultId?: string;
-    idFullOperation?: string;
-  };
-}
-
 const TOTAL_STEPS = 5; // Pasos del formulario (sin contar la confirmación)
 const TOTAL_SCREENS = 6; // Total de pantallas incluyendo confirmación
 
@@ -97,22 +88,25 @@ export default function Home() {
   });
   const { toast } = useToast();
 
-  // Función helper para extraer IDs de la respuesta de Salesforce
+  // Función helper para extraer IDs de la respuesta de Salesforce de forma robusta
   const extractLeadIds = (response: any): { leadId: string | null; fullOperationId: string | null } => {
-    if (!response || (!Array.isArray(response) && typeof response !== 'object')) {
+    // Si la respuesta no es un objeto o está vacía, no hay nada que hacer.
+    if (!response || typeof response !== 'object') {
       return { leadId: null, fullOperationId: null };
     }
-
-    // Si es un array, tomar el primer elemento
-    const result: SalesforceResponse = Array.isArray(response) ? response[0] : response;
-    
-    if (!result) {
+  
+    // Salesforce a menudo devuelve un array, incluso con un solo resultado.
+    const result = Array.isArray(response) ? response[0] : response;
+  
+    // Si después de desempaquetar el array no tenemos un objeto, salimos.
+    if (!result || typeof result !== 'object') {
       return { leadId: null, fullOperationId: null };
     }
-
+  
+    // Buscar los IDs en múltiples ubicaciones posibles
     const leadId = result.leadResultId || result.result?.leadResultId || null;
     const fullOperationId = result.idFullOperation || result.result?.idFullOperation || null;
-
+  
     return { leadId, fullOperationId };
   };
 
@@ -158,20 +152,32 @@ export default function Home() {
       };
       
       const response = await insertLead(payload);
+      
+      // La llamada fue exitosa si no lanzó un error.
+      // Ahora, intentamos extraer los IDs de forma robusta.
       const { leadId, fullOperationId } = extractLeadIds(response);
-      
-      // Si la llamada fue exitosa (no lanzó error), guardamos la respuesta y avanzamos.
-      // Guardamos los IDs que encontremos, pero no bloqueamos si faltan.
-      setSubmissionResponse(response);
-      setLeadResult({ leadId, idFullOperation: fullOperationId });
-      
-      toast({
-        title: "Paso 3 Exitoso",
-        description: "Lead creado correctamente en Salesforce.",
-      });
-      
-      handleNext(data); // Avanzar siempre que no haya un error de la API
 
+      // Guardamos la respuesta completa para mostrarla al final.
+      setSubmissionResponse(response);
+      
+      // Solo si obtenemos el ID de operación, podemos continuar.
+      if (fullOperationId) {
+        setLeadResult({ 
+          leadId: leadId, 
+          idFullOperation: fullOperationId 
+        });
+        
+        toast({
+          title: "Paso 3 Exitoso",
+          description: "Lead creado correctamente en Salesforce.",
+        });
+        
+        handleNext(data); // Avanzar al siguiente paso.
+      } else {
+        // Si no viene el ID de operación, es un problema real
+         throw new Error("La respuesta de Salesforce no contiene el ID de Operación necesario.");
+      }
+      
     } catch (error) {
       console.error("Error in handleQuoteSubmit:", error);
       const errorMessage = error instanceof Error 
@@ -434,5 +440,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

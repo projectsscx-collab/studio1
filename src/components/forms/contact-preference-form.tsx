@@ -14,9 +14,10 @@ interface ContactPreferenceFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  response: any;
 }
 
-const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
+const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting, response }: ContactPreferenceFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         sourceEvent: true,
@@ -77,12 +78,21 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
                 </FormItem>
               )}
             />
+
+            {response && (
+              <div className="space-y-2 pt-4">
+                  <label className="text-sm font-medium">Respuesta de Actualización Anterior</label>
+                  <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-48">
+                      {JSON.stringify(response, null, 2)}
+                  </pre>
+              </div>
+            )}
             
             <div className="flex justify-between pt-8">
                 <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
                 <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSubmitting ? 'Procesando...' : 'CONTINUAR >'}
+                    {isSubmitting ? 'Actualizando...' : 'CONTINUAR >'}
                 </Button>
             </div>
         </div>

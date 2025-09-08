@@ -11,13 +11,14 @@ interface EmissionFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  response: any;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, response }: EmissionFormProps) => {
   const form = useForm({
     defaultValues: {
       ...initialData,
-      convertedStatus: '01' // Set the value to be sent on submit
+      convertedStatus: '01'
     },
   });
 
@@ -67,12 +68,22 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
                 </div>
             </div>
 
+             {response && (
+                <div className="space-y-2 pt-4">
+                    <label className="text-sm font-medium">Respuesta de la última actualización</label>
+                    <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-48">
+                        {JSON.stringify(response, null, 2)}
+                    </pre>
+                </div>
+             )}
+
+
           </CardContent>
           <div className="flex justify-between pt-8">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
             <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Procesando...' : 'Emitir'}
+                {isSubmitting ? 'Emitiendo...' : 'Emitir'}
             </Button>
           </div>
         </Card>

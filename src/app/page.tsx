@@ -49,13 +49,14 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   const [tokenResponse, setTokenResponse] = useState<SalesforceTokenResponse | null>(null);
+  const [lastUpdateResponse, setLastUpdateResponse] = useState<any>(null);
   const { toast } = useToast();
 
   const handleNext = (data: object) => {
     setDirection(1);
     const updatedFormData = { ...formData, ...data };
     setFormData(updatedFormData);
-    if (currentStep < TOTAL_STEPS) {
+    if (currentStep <= TOTAL_STEPS) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -64,8 +65,8 @@ export default function Home() {
     if (!tokenResponse) {
         toast({
             variant: "destructive",
-            title: "Authentication Error",
-            description: "Salesforce token not available. Please authenticate first."
+            title: "Error de Autenticación",
+            description: "El token de Salesforce no está disponible. Por favor, autentíquese primero."
         });
         return;
     }
@@ -81,21 +82,24 @@ export default function Home() {
             instanceUrl: tokenResponse.instance_url
         };
         const response = await insertLead(payload);
-        setSubmissionResponse(response); // Save the initial lead creation response
+        setSubmissionResponse(response);
         
-        // Add the leadResultId to the form data for the next steps
         const leadId = response[0]?.leadResultId;
         if (leadId) {
             setFormData(prev => ({...prev, leadResultId: leadId}));
+             toast({
+                title: "Lead Creado Exitosamente",
+                description: `El lead con ID: ${leadId} ha sido creado.`,
+            });
         }
 
-        handleNext(data); // Move to next step
+        handleNext(data);
     } catch (e) {
         console.error("Failed to insert lead", e);
-        const errorMessage = e instanceof Error ? e.message : "There was an error submitting your form. Please try again.";
+        const errorMessage = e instanceof Error ? e.message : "Hubo un error al enviar su formulario. Por favor, inténtelo de nuevo.";
         toast({
             variant: "destructive",
-            title: "Submission Failed",
+            title: "Fallo en el Envío",
             description: errorMessage,
         });
     } finally {
@@ -108,7 +112,7 @@ export default function Home() {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Authentication token or Lead ID is missing."
+            description: "El token de autenticación o el ID del Lead no están disponibles."
         });
         return;
     }
@@ -120,7 +124,7 @@ export default function Home() {
     try {
         const leadId = submissionResponse[0]?.leadResultId;
         if (!leadId) {
-            throw new Error("Could not find leadResultId in the submission response.");
+            throw new Error("No se pudo encontrar el leadResultId en la respuesta de envío.");
         }
         
         const payload: any = { 
@@ -129,7 +133,6 @@ export default function Home() {
             leadId: leadId,
         };
         
-        // Add fields specific to the update step
         if (data.hasOwnProperty('agentType')) {
             payload.sourceEvent = updatedFormData.sourceEvent;
             payload.agentType = updatedFormData.agentType;
@@ -140,15 +143,20 @@ export default function Home() {
         }
 
         const response = await updateLead(payload);
-        // Optionally update the submission response if needed
-        // setSubmissionResponse(response);
+        setLastUpdateResponse(response);
+        
+        toast({
+            title: "Lead Actualizado Exitosamente",
+            description: `El lead con ID: ${leadId} ha sido actualizado.`,
+        });
+
         handleNext(data);
     } catch (e) {
         console.error("Failed to update lead", e);
-        const errorMessage = e instanceof Error ? e.message : "There was an error updating your form. Please try again.";
+        const errorMessage = e instanceof Error ? e.message : "Hubo un error al actualizar su formulario. Por favor, inténtelo de nuevo.";
         toast({
             variant: "destructive",
-            title: "Update Failed",
+            title: "Fallo en la Actualización",
             description: errorMessage,
         });
     } finally {
@@ -163,12 +171,16 @@ export default function Home() {
     try {
         const token = await getSalesforceToken();
         setTokenResponse(token);
+        toast({
+            title: "Autenticación Exitosa",
+            description: "Token de Salesforce obtenido correctamente.",
+        });
     } catch (e) {
          console.error("Failed to get token", e);
         toast({
             variant: "destructive",
-            title: "Authentication Failed",
-            description: "Could not get authentication token from Salesforce."
+            title: "Fallo de Autenticación",
+            description: "No se pudo obtener el token de autenticación de Salesforce."
         });
     } finally {
         setIsSubmitting(false);
@@ -207,6 +219,7 @@ export default function Home() {
     });
     setSubmissionResponse(null);
     setTokenResponse(null);
+    setLastUpdateResponse(null);
     setCurrentStep(1);
   }
 
@@ -236,11 +249,11 @@ export default function Home() {
       case 3:
         return <QuoteForm onGetToken={handleGetToken} onSubmit={handleLeadInsert} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} tokenResponse={tokenResponse}/>;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
+        return <ContactPreferenceForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} response={lastUpdateResponse}/>;
       case 5:
-        return <EmissionForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting}/>;
+        return <EmissionForm onSubmit={handleLeadUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} response={lastUpdateResponse}/>;
       case 6:
-        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
+        return <SubmissionConfirmation onStartOver={handleStartOver} response={lastUpdateResponse || submissionResponse} />;
       default:
         return null;
     }

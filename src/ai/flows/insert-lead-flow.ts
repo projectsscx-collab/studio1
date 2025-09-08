@@ -224,95 +224,89 @@ export const updateLeadFlow = ai.defineFlow(
     async (input) => {
         const { accessToken, instanceUrl, leadId, ...rest } = input;
 
-        // Base payload structure required for all updates
-        const updatePayload: any = {
-            leadWrappers: [
-                {
-                    // Always send personal and contact data
-                    firstName: rest.firstName,
-                    lastName: rest.lastName,
-                    birthdate: rest.birthdate,
-                    documentType: rest.documentType,
-                    documentNumber: rest.documentNumber,
-                    contactData: {
-                        mobilePhone: rest.mobilePhone,
-                        phone: rest.phone,
-                        email: rest.email,
-                    },
-                    // Always send interest product data
-                    interestProduct: {
-                        businessLine: '01',
-                        sector: 'XX_01',
-                        subsector: 'XX_00',
-                        branch: 'XX_205',
-                        risk: JSON.stringify({
-                          'Número de matrícula__c': rest.numero_de_matricula,
-                          'Marca__c': rest.marca,
-                          'Modelo__c': rest.modelo,
-                          'Año del vehículo__c': rest.ano_del_vehiculo,
-                          'Número de serie__c': rest.numero_de_serie,
-                        }),
-                        quotes: [
-                          {
-                            id: 'TestWSConvertMIN',
-                            effectiveDate: rest.effectiveDate,
-                            expirationDate: rest.expirationDate,
-                            productCode: 'PRD001',
-                            productName: 'Life Insurance',
-                            netPremium: 1000.0,
-                            paymentMethod: rest.paymentMethod,
-                            isSelected: true,
-                            paymentPeriodicity: rest.paymentPeriodicity,
-                            paymentTerm: rest.paymentTerm,
-                            additionalInformation: 'test',
-                          },
-                        ],
-                    },
-                    // Default source and UTM data
-                    sourceData: {
-                        sourceEvent: rest.sourceEvent || '01',
-                        eventReason: '01',
-                        sourceSite: 'Website',
-                        deviceType: '01',
-                        deviceModel: 'iPhone',
-                        leadSource: '01',
-                        origin: '01',
-                        systemOrigin: '05',
-                        ipData: {},
-                    },
-                    utmData: {
-                         utmCampaign: 'ROPO_Auto',
-                    }
-                }
-            ]
+        const sourceData: any = {
+            sourceEvent: rest.sourceEvent || '01',
+            eventReason: '01',
+            sourceSite: 'Website',
+            deviceType: '01',
+            deviceModel: 'iPhone',
+            leadSource: '01',
+            origin: '01',
+            systemOrigin: '05',
+            ipData: {},
         };
-        
-        // Modify payload based on agentType
-        if (rest.agentType) {
-            const sourceData = updatePayload.leadWrappers[0].sourceData;
-            if (rest.agentType === 'APM') {
-                sourceData.systemOrigin = '02';
-                sourceData.origin = '02';
-                sourceData.leadSource = '02';
-                updatePayload.leadWrappers[0].utmData.utmCampaign = 'ROPO_APMCampaign';
-            } else if (rest.agentType === 'ADM') {
-                sourceData.systemOrigin = '06';
-                sourceData.origin = '02';
-                sourceData.leadSource = '10';
-                updatePayload.leadWrappers[0].utmData.utmCampaign = 'ROPO_ADMCampaign';
-            }
+
+        const utmData: any = {
+            utmCampaign: 'ROPO_Auto',
+        };
+
+        if (rest.agentType === 'APM') {
+            sourceData.systemOrigin = '02';
+            sourceData.origin = '02';
+            sourceData.leadSource = '02';
+            utmData.utmCampaign = 'ROPO_APMCampaign';
+        } else if (rest.agentType === 'ADM') {
+            sourceData.systemOrigin = '06';
+            sourceData.origin = '02';
+            sourceData.leadSource = '10';
+            utmData.utmCampaign = 'ROPO_ADMCampaign';
         }
 
-        // If this update is for conversion, add the conversionData object
+        const leadWrapper: any = {
+            firstName: rest.firstName,
+            lastName: rest.lastName,
+            birthdate: rest.birthdate,
+            documentType: rest.documentType,
+            documentNumber: rest.documentNumber,
+            contactData: {
+                mobilePhone: rest.mobilePhone,
+                phone: rest.phone,
+                email: rest.email,
+            },
+            interestProduct: {
+                businessLine: '01',
+                sector: 'XX_01',
+                subsector: 'XX_00',
+                branch: 'XX_205',
+                risk: JSON.stringify({
+                    'Número de matrícula__c': rest.numero_de_matricula,
+                    'Marca__c': rest.marca,
+                    'Modelo__c': rest.modelo,
+                    'Año del vehículo__c': rest.ano_del_vehiculo,
+                    'Número de serie__c': rest.numero_de_serie,
+                }),
+                quotes: [
+                    {
+                        id: 'TestWSConvertMIN',
+                        effectiveDate: rest.effectiveDate,
+                        expirationDate: rest.expirationDate,
+                        productCode: 'PRD001',
+                        productName: 'Life Insurance',
+                        netPremium: 1000.0,
+                        paymentMethod: rest.paymentMethod,
+                        isSelected: true,
+                        paymentPeriodicity: rest.paymentPeriodicity,
+                        paymentTerm: rest.paymentTerm,
+                        additionalInformation: 'test',
+                    },
+                ],
+            },
+            sourceData,
+            utmData,
+        };
+
         if (rest.convertedStatus) {
-            updatePayload.leadWrappers[0].conversionData = {
+            leadWrapper.conversionData = {
                 convertedStatus: rest.convertedStatus
             };
         }
 
-        // The endpoint for updates includes the leadId in the URL
+        const updatePayload = {
+            leadWrappers: [leadWrapper]
+        };
+
         const leadResponse = await fetch(`${instanceUrl}/services/apexrest/core/lead/${leadId}`, {
-            method: 'POST', // API requires POST for updates
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'

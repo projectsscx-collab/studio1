@@ -82,7 +82,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           mobilePhone: formData.mobilePhone,
           phone: formData.phone,
           email: formData.email,
-          // Address is now hardcoded/static, coming from the initial state
           address: {
               street: formData.street,
               postalCode: formData.postalCode,
@@ -100,14 +99,14 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           sector: formData.sector,
           subsector: formData.subsector,
           branch: formData.branch,
-          risk: JSON.stringify(riskObject), // ALWAYS stringify the risk object
+          risk: JSON.stringify(riskObject),
           quotes: [{
-              id: "TestWSConvertMIN", // Hardcoded based on new example
+              id: "TestWSConvertMIN",
               effectiveDate: formData.effectiveDate,
               expirationDate: formData.expirationDate,
-              productCode: "PRD001", // Hardcoded
-              productName: "Life Insurance", // Hardcoded
-              netPremium: 1000.00, // Hardcoded
+              productCode: "PRD001",
+              productName: "Life Insurance",
+              netPremium: 1000.00,
               paymentMethod: formData.paymentMethod,
               isSelected: true,
               paymentPeriodicity: formData.paymentPeriodicity,
@@ -118,7 +117,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
 
       utmData: {
           utmCampaign: formData.utmCampaign,
-          // utmContent and utmSource are removed as per new JSON
       },
 
       sourceData: {
@@ -132,13 +130,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           systemOrigin: formData.systemOrigin,
           ipData: {},
       },
-      
-      // These top-level objects are sent if they have data
-      idOwner: formData.idOwner,
-      company: formData.company,
-      sex: formData.sex,
-      maritalStatus: formData.maritalStatus,
-      additionalInformation: formData.additionalInformation,
   };
 
   // Add 'id' only if it's available in the formData (for update operations)
@@ -225,31 +216,28 @@ const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(finalPayload),
       });
       
-      const responseText = await leadResponse.text();
-      // Handle empty response on success, which can happen on updates.
-      if (leadResponse.status >= 200 && leadResponse.status < 300) {
-        if (responseText.length === 0) {
-            return { success: true, idFullOperation: formData.idFullOperation };
-        }
+      if (!leadResponse.ok) {
+        let responseData;
         try {
-            return JSON.parse(responseText);
+          responseData = await leadResponse.json();
         } catch (e) {
-             // If parsing fails but status is ok, return success with body
-             return { success: true, responseBody: responseText };
+          responseData = await leadResponse.text();
         }
+        const errorText = JSON.stringify(responseData);
+        console.error("Salesforce Update Error Response:", errorText);
+        throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
       }
-      
-      // If we are here, it's an error response
-      let responseData;
+    
+      // Handle empty response on success, which can happen on updates.
+      const responseText = await leadResponse.text();
+      if (responseText.length === 0) {
+          return { success: true, idFullOperation: formData.idFullOperation };
+      }
       try {
-        responseData = JSON.parse(responseText);
+          return JSON.parse(responseText);
       } catch (e) {
-        responseData = responseText; // The error might not be JSON
+           return { success: true, responseBody: responseText };
       }
-
-      const errorText = JSON.stringify(responseData);
-      console.error("Salesforce Update Error Response:", errorText);
-      throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
     }
   );
 

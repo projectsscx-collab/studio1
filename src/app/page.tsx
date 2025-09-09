@@ -74,7 +74,7 @@ const initialFormData: FormData = {
   // --- Step 5: Emission ---
   policyNumber: '', 
   StageName: null, 
-  CloseDate: null, // Set to null initially
+  CloseDate: null,
   Amount: 1000,
 };
 
@@ -156,18 +156,17 @@ const buildLeadPayload = (formData: FormData) => {
         },
         utmData: utmData,
         sourceData: sourceData,
+        conversionData: {
+            // This is the key change. StageName is now driven by the formData state.
+            // On creation, StageName is null. On final update, it's '06'.
+            convertedStatus: formData.StageName, 
+            policyNumber: formData.policyNumber || null
+        }
     };
   
-    // Only include the 'id' field if it's not null.
-    // This is crucial for distinguishing create vs. update calls.
+    // Only include the 'id' field if it's not null for the wrapper.
     if (!formData.id) {
         delete leadWrapper.id;
-    } else {
-        // Only add conversionData for the final update call
-        leadWrapper.conversionData = {
-          convertedStatus: formData.StageName,
-          policyNumber: formData.policyNumber || null
-        }
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -196,7 +195,7 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Explicitly set StageName to null for creation
+    // Explicitly set StageName to null for creation to ensure convertedStatus is null
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -250,12 +249,13 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
+      // Set StageName to '06' for the final update to drive convertedStatus
       const finalData: FormData = { 
         ...formData, 
         ...data,
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
-        StageName: '06', // Set StageName to '06' for the final update
+        StageName: '06', 
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
       };
 

@@ -34,6 +34,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   ano_del_vehiculo: '',
   numero_de_serie: '',
   // Step 3
+  idFullOperation: '',
   effectiveDate: '',
   expirationDate: '',
   paymentMethod: '',
@@ -101,7 +102,7 @@ export default function Home() {
     try {
       const token = await getSalesforceToken();
       // Since we generate the ID in the form, we can persist it right away
-      setIdFullOperation(updatedData.idFullOperation); 
+      setIdFullOperation(updatedData.idFullOperation!); 
 
       const response = await insertLead(updatedData, token);
 
@@ -203,7 +204,7 @@ export default function Home() {
         // Per user request, ignore the "PolicyNumber" error and proceed,
         // as the operation is successful in Salesforce.
         const error = findKey(response, 'errorMessage');
-        if (error && !error.includes('PolicyNumber')) {
+        if (error && !error.includes('You must fill the PolicyNumber field')) {
             throw new Error(error);
         }
 

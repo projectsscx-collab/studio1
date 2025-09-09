@@ -9,14 +9,22 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
-import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
+import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import type { InsertLeadInput } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
 const TOTAL_STEPS = 5;
 
-const initialFormData: InsertLeadInput & UpdateLeadInput = {
+// Helper to generate a unique operation ID
+const calculateFullOperationId = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randStr = Array.from({ length: 2 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    return `${Date.now()}${randStr}`;
+};
+
+
+const initialFormData: InsertLeadInput = {
   // Step 1 - Personal Details & Contact
   firstName: '',
   lastName: '',
@@ -35,7 +43,6 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   numero_de_serie: '',
 
   // Step 3 - Quote Details
-  idFullOperation: '', 
   effectiveDate: '',
   expirationDate: '',
   paymentMethod: '',
@@ -50,7 +57,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   policyNumber: '',
 
   // --- Static / Hardcoded data based on the provided JSON example ---
-  // Address Data (Hardcoded for this prototype)
+  idFullOperation: '', 
   street: '123 Main St', 
   postalCode: '12345', 
   city: 'Puerto Rico',
@@ -59,17 +66,11 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   state: 'XX', 
   country: 'PR',
   colony: 'Central Park',
-
-  // Interest Product (Hardcoded parts)
   businessLine: "01",
   sector: "XX_01",
   subsector: "XX_00",
   branch: "XX_205",
-
-  // UTM Data (using new default)
   utmCampaign: "ROPO_Auto",
-  
-  // Source Data (using new defaults)
   sourceEvent: "01", 
   eventReason: "01",
   sourceSite: "Website",
@@ -82,13 +83,11 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<InsertLeadInput & UpdateLeadInput>(initialFormData);
+  const [formData, setFormData] = useState<InsertLeadInput>(initialFormData);
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   
-  const [leadId, setLeadId] = useState<string | null>(null); 
-
   const { toast } = useToast();
   
   const findKey = (obj: any, keyToFind: string): string | null => {
@@ -111,62 +110,9 @@ export default function Home() {
 
   const handleNextStep = (data: Partial<typeof formData>) => {
     setDirection(1);
-    setFormData(prev => ({ ...prev, ...data }));
-    if (currentStep <= TOTAL_STEPS) {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-  
-  const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
-    setIsSubmitting(true);
-    const updatedData = { ...formData, ...data };
-    setFormData(updatedData);
-
-    try {
-      const token = await getSalesforceToken();
-      const response = await insertLead(updatedData, token);
-
-      const leadResult = response?.[0] ?? {};
-      // Prioritize leadResultId and idFullOperation from the first successful result
-      const successfulResult = response?.find((r: any) => r.leadResultId);
-      const newLeadId = successfulResult?.leadResultId ?? findKey(response, 'leadResultId');
-      const newFullOpId = successfulResult?.idFullOperation ?? findKey(response, 'idFullOperation');
-      const error = findKey(response, 'errorMessage');
-
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!newLeadId) {
-        throw new Error("Could not retrieve leadId from Salesforce after creation.");
-      }
-
-      setLeadId(newLeadId);
-      setFormData(prev => ({ 
-        ...prev, 
-        idFullOperation: newFullOpId ?? prev.idFullOperation 
-      }));
-      
-      setSubmissionResponse(response);
-      handleNextStep(updatedData); 
-
-    } catch (error) {
-      console.error('Error creating lead:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      toast({
-        variant: 'destructive',
-        title: 'Error en la Creación del Lead',
-        description: errorMessage,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdate = async (data: Partial<UpdateLeadInput>) => {
-    setIsSubmitting(true);
-    let updatedData = { ...formData, ...data };
     
+    let updatedData = { ...formData, ...data };
+     // Logic from old handleUpdate
     if (data.agentType === 'APM') {
       updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
     } else if (data.agentType === 'ADM') {
@@ -174,63 +120,42 @@ export default function Home() {
     }
 
     setFormData(updatedData);
-    
-    try {
-        const token = await getSalesforceToken();
-        const payload: UpdateLeadInput = {
-            ...updatedData,
-            id: leadId!,
-        };
-        const response = await updateLead(payload, token);
 
-        const error = findKey(response, 'errorMessage');
-        if (error) {
-            throw new Error(error);
-        }
-
-        setSubmissionResponse(response);
-        handleNextStep(updatedData); 
-    } catch(error) {
-        console.error('Error updating lead:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-        toast({
-          variant: 'destructive',
-          title: 'Error en la Actualización',
-          description: errorMessage,
-        });
-    } finally {
-        setIsSubmitting(false);
+    if (currentStep < TOTAL_STEPS + 1) {
+      setCurrentStep((prev) => prev + 1);
     }
   };
-  
-  const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
+
+  const handleSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
     
-    const finalData: UpdateLeadInput = { 
+    // Combine final data and set convertedStatus for submission
+    const finalData: InsertLeadInput = { 
         ...formData, 
         ...data,
-        id: leadId!,
-        policyNumber: 'PENDIENTE', // Send a placeholder value to pass validation
+        convertedStatus: '02', // Mark for conversion
+        policyNumber: 'PENDIENTE', // Send placeholder
+        idFullOperation: formData.idFullOperation || calculateFullOperationId(),
     };
     setFormData(finalData);
     
     try {
         const token = await getSalesforceToken();
-        const response = await updateLead(finalData, token);
+        const response = await insertLead(finalData, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) {
             throw new Error(error);
         }
         setSubmissionResponse(response);
-        handleNextStep(data);
+        handleNextStep(data); // Move to confirmation screen
 
     } catch(error) {
-        console.error('Error finalizing lead:', error);
+        console.error('Error submitting lead:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         toast({
           variant: 'destructive',
-          title: 'Error en la Emisión',
+          title: 'Error en el Envío',
           description: errorMessage,
         });
     } finally {
@@ -250,7 +175,6 @@ export default function Home() {
     setDirection(1);
     setFormData(initialFormData);
     setSubmissionResponse(null);
-    setLeadId(null);
     setCurrentStep(1);
     setIsSubmitting(false);
   };
@@ -279,11 +203,11 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <QuoteForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:

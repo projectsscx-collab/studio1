@@ -22,8 +22,6 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
     resolver: zodResolver(leadSchema.pick({
       sourceEvent: true,
       agentType: true,
-      agentId: true,
-      additionalInformation: true,
     })),
     defaultValues: {
       ...initialData,

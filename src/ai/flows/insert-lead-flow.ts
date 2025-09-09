@@ -130,14 +130,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       },
   };
   
-  // Conditionally add conversionData only when convertedStatus has a value
-  if (formData.convertedStatus) {
-    leadWrapper.conversionData = {
-        convertedStatus: formData.convertedStatus,
-        policyNumber: formData.policyNumber || null,
-    };
-  }
-
   // Filter out any top-level keys that are undefined to keep payload clean
   for (const key in leadWrapper) {
     if (leadWrapper[key] === undefined) {
@@ -195,15 +187,21 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      // Always build the full wrapper to pass validation
-      const leadWrapper = buildLeadWrapper(formData);
+      let leadWrapper;
 
-      // If this is the final conversion step, ensure conversionData is present
+      // If we are in the final conversion step, send a minimal payload
       if (formData.convertedStatus) {
-          leadWrapper.conversionData = {
-              convertedStatus: formData.convertedStatus,
-              policyNumber: formData.policyNumber,
-          };
+        leadWrapper = {
+          id: formData.id,
+          idFullOperation: formData.idFullOperation,
+          conversionData: {
+            convertedStatus: formData.convertedStatus,
+            policyNumber: formData.id, // Use leadId as policyNumber
+          }
+        };
+      } else {
+        // For intermediate updates, build the full wrapper
+        leadWrapper = buildLeadWrapper(formData);
       }
       
       const finalPayload = { leadWrappers: [leadWrapper] };

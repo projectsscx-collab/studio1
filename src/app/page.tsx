@@ -36,7 +36,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   numero_de_serie: '',
 
   // Step 3 - Quote Details
-  idFullOperation: '', // Will be generated in QuoteForm
+  idFullOperation: '', 
   effectiveDate: '',
   expirationDate: '',
   paymentMethod: '',
@@ -52,13 +52,6 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   policyNumber: '',
 
   // --- Static / Hardcoded data based on the provided JSON example ---
-  idOwner: '005Hs00000HeTcVIAV',
-  company: 'TestPSLead',
-  sex: '01',
-  maritalStatus: '01',
-  additionalInformation: 'test',
-  currencyIsoCode: 'EUR',
-
   // Address Data (Hardcoded for this prototype)
   street: '123 Main St', 
   postalCode: '12345', 
@@ -66,7 +59,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   district: 'Test', 
   municipality: 'Test',
   state: 'XX', 
-  country: 'PR', // Set to PR to avoid ISO code errors
+  country: 'PR',
   colony: 'Central Park',
 
   // Interest Product (Hardcoded parts)
@@ -75,41 +68,17 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   subsector: "XX_00",
   branch: "XX_205",
 
-  // Qualification Data
-  scoring: 21,
-  rating: '01',
-
-  // GA Data
-  gaClientId: "GA12345",
-  gaUserId: "User123",
-  gaTrackId: "Track123",
-  gaTerm: "Insurance",
-  gaMedium: "Email",
-  
   // UTM Data (using new default)
   utmCampaign: "ROPO_Auto",
-  utmContent: "EmailMarketing",
-  utmSource: "Google",
   
   // Source Data (using new defaults)
   eventReason: "01",
   sourceSite: "Website",
-  screenName: "HomePage",
   deviceType: "01",
   deviceModel: "iPhone",
   leadSource: "01",
   origin: "01",
   systemOrigin: "05",
-  
-  // IP Data
-  ipSubmitter: "Test",
-  ipHostName: "Test",
-  ipCity: "Test",
-  ipRegion: "Test",
-  ipCountry: "Test",
-  ipPostalCode: "Test",
-  ipLocation: "Test",
-  ipOrganization: "Test",
 };
 
 export default function Home() {
@@ -237,24 +206,23 @@ export default function Home() {
   
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
-    const updatedData = { ...formData, ...data, policyNumber: leadId };
     
-    setFormData(updatedData);
+    const finalData = {
+      id: leadId!,
+      convertedStatus: data.convertedStatus,
+    };
+    setFormData(prev => ({...prev, ...data}));
     
     try {
         const token = await getSalesforceToken();
-        const payload: UpdateLeadInput = {
-            ...updatedData,
-            id: leadId!,
-        };
-        const response = await updateLead(payload, token);
+        const response = await updateLead(finalData as UpdateLeadInput, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) {
             throw new Error(error);
         }
         setSubmissionResponse(response);
-        handleNextStep(updatedData);
+        handleNextStep(data);
 
     } catch(error) {
         console.error('Error finalizing lead:', error);

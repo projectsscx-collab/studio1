@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -58,144 +57,113 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Helper function to build the lead wrapper ---
+// --- Helper function to build the lead wrapper based on the provided final JSON structure ---
 const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
-  const riskObject = {
-      'Número de matrícula__c': formData.numero_de_matricula,
-      'Marca__c': formData.marca,
-      'Modelo__c': formData.modelo,
-      'Año del vehículo__c': formData.ano_del_vehiculo,
-      'Número de serie__c': formData.numero_de_serie,
-  };
-  
-  const quote = {
-      id: formData.quoteId,
-      issueDate: formData.issueDate,
-      dueDate: formData.dueDate,
-      effectiveDate: formData.effectiveDate,
-      expirationDate: formData.expirationDate,
-      productCode: formData.productCode,
-      productName: formData.productName,
-      netPremium: formData.netPremiumQuote,
-      totalPremium: formData.totalPremium,
-      paymentMethod: formData.paymentMethod,
-      currencyIsoCode: formData.currencyIsoCode,
-      isSelected: formData.isSelected,
-      discount: formData.discount,
-      paymentPeriodicity: formData.paymentPeriodicity,
-      paymentTerm: formData.paymentTerm,
-      additionalInformation: formData.quoteAdditionalInfo,
-      policyNumber: undefined as string | null | undefined,
-  };
-  
-  // Add policyNumber to the quote ONLY during the final conversion step
-  if ('convertedStatus' in formData && formData.convertedStatus) {
-      quote.policyNumber = formData.policyNumber || null;
-  } else {
-      delete quote.policyNumber; // Ensure it's not present otherwise
-  }
+    
+    const isFinalConversion = 'convertedStatus' in formData && formData.convertedStatus === '02';
 
-  const leadWrapper: any = {
-      id: formData.id,
-      idFullOperation: formData.idFullOperation,
-      idOwner: formData.idOwner,
-      company: formData.company,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      documentType: formData.documentType,
-      documentNumber: formData.documentNumber,
-      birthdate: formData.birthdate,
-      additionalInformation: formData.additionalInformation,
-      
-      contactData: {
-          mobilePhone: formData.mobilePhone,
-          phone: formData.phone,
-          email: formData.email,
-          address: {
-              street: formData.street,
-              postalCode: formData.postalCode,
-              city: formData.city,
-              district: formData.district,
-              municipality: formData.municipality,
-              state: formData.state,
-              country: formData.country,
-              colony: formData.colony,
-          },
-      },
-      
-      interestProduct: {
-          businessLine: formData.businessLine,
-          sector: formData.sector,
-          subsector: formData.subsector,
-          branch: formData.branch,
-          risk: JSON.stringify(riskObject),
-          quotes: [quote],
-      },
-
-      commercialStructureData: {
-        idIntermediary: formData.idIntermediary,
-        regionalOffice: formData.regionalOffice,
-        managerOffice: formData.managerOffice,
-      },
-
-      qualificationData: {
-        scoring: formData.scoring,
-        rating: formData.rating,
-      },
-
-      googleAnalyticsData: {
-        gaClientId: formData.gaClientId,
-        gaUserId: formData.gaUserId,
-        gaTrackId: formData.gaTrackId,
-        gaTerm: formData.gaTerm,
-        gaMedium: formData.gaMedium,
-      },
-
-      utmData: {
-          utmCampaign: formData.utmCampaign,
-          utmContent: formData.utmContent,
-          utmSource: formData.utmSource,
-      },
-
-      sourceData: {
-          sourceEvent: formData.sourceEvent,
-          eventReason: formData.eventReason,
-          sourceSite: formData.sourceSite,
-          screenName: formData.screenName,
-          deviceType: formData.deviceType,
-          deviceModel: formData.deviceModel,
-          leadSource: formData.leadSource,
-          origin: formData.origin,
-          systemOrigin: formData.systemOrigin,
-          ipData: {
-            ipSubmitter: formData.ipSubmitter,
-            ipHostName: formData.ipHostName,
-            ipCity: formData.ipCity,
-            ipRegion: formData.ipRegion,
-            ipCountry: formData.ipCountry,
-            ipPostalCode: formData.ipPostalCode,
-            ipLocation: formData.ipLocation,
-            ipOrganization: formData.ipOrganization,
-          },
-      },
-  };
-  
-  // Add conversion data only if it exists (final step)
-  if ('convertedStatus' in formData && formData.convertedStatus) {
-    leadWrapper.conversionData = {
-      convertedStatus: formData.convertedStatus,
-      policyNumber: null,
-      netPremium: null,
-      totalPremium: null,
+    const riskObject = {
+        'numero_de_matricula': formData.numero_de_matricula,
+        'marca': formData.marca,
+        'modelo': formData.modelo,
+        'ano_del_vehiculo': formData.ano_del_vehiculo,
+        'numero_de_serie': formData.numero_de_serie,
     };
-  }
+  
+    // Base leadWrapper structure
+    const leadWrapper: any = {
+        id: formData.id,
+        idFullOperation: formData.idFullOperation,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        documentType: formData.documentType,
+        documentNumber: formData.documentNumber,
+        birthdate: formData.birthdate,
+        
+        contactData: {
+            mobilePhone: formData.mobilePhone,
+            phone: formData.phone,
+            email: formData.email,
+            address: {
+                street: formData.street,
+                postalCode: formData.postalCode,
+                city: formData.city,
+                district: formData.district,
+                municipality: formData.municipality,
+                state: formData.state,
+                country: formData.country,
+                colony: formData.colony,
+            },
+        },
+      
+        interestProduct: {
+            businessLine: formData.businessLine,
+            sector: formData.sector,
+            subsector: formData.subsector,
+            branch: formData.branch,
+            risk: JSON.stringify(riskObject),
+            quotes: [
+              {
+                effectiveDate: formData.effectiveDate,
+                expirationDate: formData.expirationDate,
+                paymentMethod: formData.paymentMethod,
+                paymentPeriodicity: formData.paymentPeriodicity,
+                paymentTerm: formData.paymentTerm,
+              }
+            ]
+        },
 
-  // Salesforce throws an error if an empty string or null is passed for the ID on creation.
-  if (!leadWrapper.id) {
-    delete leadWrapper.id;
-  }
+        riskDetail: JSON.stringify(riskObject),
 
-  return leadWrapper;
+        utmData: {
+            utmCampaign: formData.utmCampaign,
+        },
+
+        sourceData: {
+            sourceEvent: formData.sourceEvent,
+            eventReason: formData.eventReason,
+            sourceSite: formData.sourceSite,
+            deviceType: formData.deviceType,
+            deviceModel: formData.deviceModel,
+            leadSource: formData.leadSource,
+            origin: formData.origin,
+            systemOrigin: formData.systemOrigin,
+        },
+    };
+  
+    // Add conversion data only for the final step
+    if (isFinalConversion) {
+      leadWrapper.conversionData = {
+        convertedStatus: formData.convertedStatus,
+        policyNumber: formData.policyNumber, 
+      };
+    }
+    
+    // Add fields that are not needed in the final payload but are needed for initial/update calls
+    if (!isFinalConversion) {
+        leadWrapper.idOwner = formData.idOwner;
+        leadWrapper.company = formData.company;
+        leadWrapper.additionalInformation = formData.additionalInformation;
+        leadWrapper.interestProduct.quotes[0].id = "TestPSLead";
+        leadWrapper.interestProduct.quotes[0].issueDate = "2024-02-01";
+        leadWrapper.interestProduct.quotes[0].dueDate = "2025-01-01";
+        leadWrapper.interestProduct.quotes[0].productCode = "PRD001";
+        leadWrapper.interestProduct.quotes[0].productName = "Life Insurance";
+        leadWrapper.interestProduct.quotes[0].netPremium = 1000.00;
+        leadWrapper.interestProduct.quotes[0].totalPremium = 1200.00;
+        leadWrapper.interestProduct.quotes[0].currencyIsoCode = "EUR";
+        leadWrapper.interestProduct.quotes[0].isSelected = true;
+        leadWrapper.interestProduct.quotes[0].discount = "0.24";
+        leadWrapper.interestProduct.quotes[0].additionalInformation = "test";
+    }
+
+
+    // Salesforce throws an error if an empty string or null is passed for the ID on creation.
+    if (!leadWrapper.id) {
+        delete leadWrapper.id;
+    }
+  
+    return leadWrapper;
 };
 
 
@@ -285,3 +253,5 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
 }
+
+    

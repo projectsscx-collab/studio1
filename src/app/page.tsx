@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +17,7 @@ import Header from '@/components/header';
 const TOTAL_STEPS = 5;
 
 const calculateFullOperationId = () => {
-    return Date.now().toString();
+    return Date.now().toString() + "IS";
 };
 
 const initialFormData: InsertLeadInput = {
@@ -33,6 +32,8 @@ const initialFormData: InsertLeadInput = {
   documentType: '',
   documentNumber: '',
   birthdate: '',
+  
+  // Contact Data
   mobilePhone: '',
   phone: '',
   email: '',
@@ -52,18 +53,17 @@ const initialFormData: InsertLeadInput = {
   paymentTerm: '',
   
   // --- Step 4: Contact Preference ---
-  agentType: '', // Frontend only
-  sourceEvent: '01',
+  agentType: '', // Frontend only field for agent logic
   
   // --- Step 5: Emission ---
   convertedStatus: '',
   
-  // --- Hardcoded / Static Data (based on JSON example) ---
+  // --- Hardcoded / Static Data ---
   idOwner: "005Hs00000HeTcVIAV",
   company: "TestPSLead",
   additionalInformation: "test",
   
-  // Contact Address
+  // Address
   street: '123 Main St', 
   postalCode: '12345', 
   city: 'Puerto Rico',
@@ -79,59 +79,20 @@ const initialFormData: InsertLeadInput = {
   subsector: "XX_00",
   branch: "XX_205",
 
-  // Quote Details (in `quotes` array)
-  quoteId: "TestPSLead",
-  issueDate: "2024-02-01",
-  dueDate: "2025-01-01",
-  productCode: "PRD001",
-  productName: "Life Insurance",
-  netPremiumQuote: 1000.00,
-  totalPremium: 1200.00,
-  currencyIsoCode: "EUR",
-  isSelected: true,
-  discount: "0.24",
-  quoteAdditionalInfo: "test",
-
-  // Commercial Structure
-  idIntermediary: null,
-  regionalOffice: null,
-  managerOffice: null,
-
-  // Qualification Data
-  scoring: "21",
-  rating: "01",
-
-  // Google Analytics
-  gaClientId: "GA12345",
-  gaUserId: "User123",
-  gaTrackId: "Track123",
-  gaTerm: "Insurance",
-  gaMedium: "Email",
-
-  // UTM Data
+  // UTM Data (Can be dynamic)
   utmCampaign: "Winter2024",
   utmContent: "EmailMarketing",
   utmSource: "Google",
 
-  // Source Data
+  // Source Data (Can be dynamic)
+  sourceEvent: "01",
   eventReason: "01",
   sourceSite: "Website",
-  screenName: "HomePage",
   deviceType: "01",
   deviceModel: "iPhone",
   leadSource: "01",
   origin: "01",
   systemOrigin: "05",
-  
-  // IP Data
-  ipSubmitter: "Test",
-  ipHostName: "Test",
-  ipCity: "Test",
-  ipRegion: "Test",
-  ipCountry: "Test",
-  ipPostalCode: "Test",
-  ipLocation: "Test",
-  ipOrganization: "Test",
 };
 
 interface SalesforceIds {
@@ -172,12 +133,17 @@ export default function Home() {
   const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
+    
+    // Combine all data for submission, including the new operation ID
     const submissionData: InsertLeadInput = { 
         ...formData, 
         ...data,
         idFullOperation: newIdFullOperation,
     };
     
+    // Also update the main form state to ensure it's persisted for subsequent steps
+    setFormData(submissionData);
+
     try {
         const token = await getSalesforceToken();
         const response = await insertLead(submissionData, token);
@@ -191,8 +157,7 @@ export default function Home() {
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
         setSalesforceIds(newIds);
         
-        // Persist all data, including the new IDs, into the main form state
-        setFormData(prev => ({...prev, ...data, ...newIds }));
+        setFormData(prev => ({...prev, ...newIds }));
         handleNextStep(data);
 
     } catch(error) {
@@ -208,35 +173,49 @@ export default function Home() {
     }
   };
 
-  const handleUpdate = async (data: Partial<InsertLeadInput>) => {
+  const handleUpdate = async (data: Partial<UpdateLeadInput>) => {
     if (!salesforceIds) {
         toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
         return;
     }
     setIsSubmitting(true);
     
-    const updatedData: UpdateLeadInput = { 
+    let updatedData: UpdateLeadInput = { 
         ...formData, 
         ...data, 
         ...salesforceIds 
     };
     
     if (data.agentType === 'APM') {
-      updatedData.systemOrigin = '02';
-      updatedData.origin = '02';
-      updatedData.utmCampaign = 'ROPO_APMCampaign';
-      updatedData.leadSource = '02';
+      updatedData = {
+        ...updatedData,
+        systemOrigin: '02',
+        origin: '02',
+        utmCampaign: 'ROPO_APMCampaign',
+        leadSource: '02',
+      };
     } else if (data.agentType === 'ADM') {
-      updatedData.systemOrigin = '06';
-      updatedData.origin = '02';
-      updatedData.utmCampaign = 'ROPO_ADMCampaign';
-      updatedData.leadSource = '10';
+      updatedData = {
+        ...updatedData,
+        systemOrigin: '06',
+        origin: '02',
+        utmCampaign: 'ROPO_ADMCampaign',
+        leadSource: '10',
+      };
+    } else { // Default to Contact Center (CC)
+      updatedData = {
+        ...updatedData,
+        systemOrigin: '05', // Default value
+        origin: '01', // Default value
+        utmCampaign: 'Winter2024', // Default value
+        leadSource: '01', // Default value
+      }
     }
     
     try {
       const token = await getSalesforceToken();
       await updateLead(updatedData, token);
-      setFormData(updatedData); // Persist updated data
+      setFormData(updatedData);
       handleNextStep(data);
 
     } catch(error) {
@@ -263,8 +242,8 @@ export default function Home() {
           ...formData,
           ...data,
           ...salesforceIds,
-          convertedStatus: '01',
-          policyNumber: salesforceIds.id, // Set policyNumber to the lead ID for the final conversion call
+          convertedStatus: '02', // This is the key for the final step
+          policyNumber: salesforceIds.id, 
       };
 
       try {
@@ -378,3 +357,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

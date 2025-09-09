@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
 // This schema defines ALL possible fields that can be part of the form state.
-// It is used for both creation and updates, with some fields being optional
-// depending on the operation.
 const FormDataSchema = z.object({
     // --- DYNAMIC FIELDS (from forms) ---
     id: z.string().optional().nullable(),
@@ -18,7 +16,7 @@ const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // Vehicle Data (will be stringified into 'risk')
+    // Vehicle Data (will be stringified into 'risk' and 'riskDetail')
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
     marca: z.string().min(1, 'Marca es requerida.'),
     modelo: z.string().min(1, 'Modelo es requerido.'),
@@ -60,60 +58,20 @@ const FormDataSchema = z.object({
     subsector: z.string().optional(),
     branch: z.string().optional(),
     
-    // Quotes array fields (Hardcoded)
-    quoteId: z.string().optional(),
-    issueDate: z.string().optional(),
-    dueDate: z.string().optional(),
-    productCode: z.string().optional(),
-    productName: z.string().optional(),
-    netPremiumQuote: z.number().optional(),
-    totalPremium: z.number().optional(),
-    currencyIsoCode: z.string().optional(),
-    isSelected: z.boolean().optional(),
-    discount: z.string().optional(),
-    quoteAdditionalInfo: z.string().optional(),
-    
-    // commercialStructureData (Hardcoded)
-    idIntermediary: z.string().optional().nullable(),
-    regionalOffice: z.string().optional().nullable(),
-    managerOffice: z.string().optional().nullable(),
-    
-    // qualificationData (Hardcoded)
-    scoring: z.string().optional(),
-    rating: z.string().optional(),
-
-    // googleAnalyticsData (Hardcoded)
-    gaClientId: z.string().optional(),
-    gaUserId: z.string().optional(),
-    gaTrackId: z.string().optional(),
-    gaTerm: z.string().optional(),
-    gaMedium: z.string().optional(),
-
-    // utmData (Hardcoded)
+    // utmData (Can be dynamic)
     utmCampaign: z.string().optional(),
     utmContent: z.string().optional(),
     utmSource: z.string().optional(),
     
-    // sourceData (Hardcoded)
+    // sourceData (Can be dynamic)
     sourceEvent: z.string().optional(),
     eventReason: z.string().optional(),
     sourceSite: z.string().optional(),
-    screenName: z.string().optional(),
     deviceType: z.string().optional(),
     deviceModel: z.string().optional(),
     leadSource: z.string().optional(),
     origin: z.string().optional(),
     systemOrigin: z.string().optional(),
-    
-    // ipData (Hardcoded)
-    ipSubmitter: z.string().optional(),
-    ipHostName: z.string().optional(),
-    ipCity: z.string().optional(),
-    ipRegion: z.string().optional(),
-    ipCountry: z.string().optional(),
-    ipPostalCode: z.string().optional(),
-    ipLocation: z.string().optional(),
-    ipOrganization: z.string().optional(),
 });
 
 
@@ -138,3 +96,5 @@ export const SalesforceTokenResponseSchema = z.object({
     signature: z.string(),
 });
 export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
+
+    

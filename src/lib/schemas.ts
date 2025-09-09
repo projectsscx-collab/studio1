@@ -39,7 +39,6 @@ export const agentTypes = {
 };
 
 // This schema validates only the fields the user actively fills in the forms.
-// Other data is managed as static state and is not part of this validation schema.
 export const leadSchema = z.object({
   idFullOperation: z.string().optional(), 
   
@@ -77,3 +76,5 @@ export const leadSchema = z.object({
 });
 
 export type LeadData = z.infer<typeof leadSchema>;
+
+    

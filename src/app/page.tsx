@@ -187,7 +187,7 @@ export default function Home() {
     
     // Logic from Step 5 (Emission)
     if (data.convertedStatus === '02') {
-        updatedData = { ...updatedData, idOwner: '005D700000GSRhDIAX' };
+        updatedData = { ...updatedData, idOwner: '005D700000GSRhDIAX', policyNumber: leadId! };
     }
     
     setFormData(updatedData);
@@ -201,10 +201,8 @@ export default function Home() {
         };
         const response = await updateLead(payload, token);
 
-        // Per user request, ignore the "PolicyNumber" error and proceed,
-        // as the operation is successful in Salesforce.
         const error = findKey(response, 'errorMessage');
-        if (error && !error.includes('You must fill the PolicyNumber field')) {
+        if (error) {
             throw new Error(error);
         }
 

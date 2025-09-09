@@ -202,7 +202,7 @@ const updateLeadFlow = ai.defineFlow(
       if (formData.convertedStatus) {
         leadWrapper.conversionData = {
             convertedStatus: formData.convertedStatus,
-            policyNumber: formData.policyNumber || undefined, // Send undefined if empty
+            policyNumber: formData.policyNumber,
         };
       }
 

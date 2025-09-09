@@ -74,7 +74,8 @@ export const leadSchema = z.object({
   // Step 4: Contact Preference
   sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),
   agentType: z.string().min(1, 'Debe seleccionar un tipo de agente.'),
-  
+  UTMCampaign: z.string().optional(),
+
   // Step 5: Emission
   Amount: z.number().positive('El importe debe ser un número positivo.'),
   policyNumber: z.string().optional(),

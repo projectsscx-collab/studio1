@@ -68,6 +68,7 @@ const initialFormData: FormData = {
   // --- Step 4: Contact Preference ---
   agentType: '', // Frontend only field for agent logic
   sourceEvent: '01',
+  UTMCampaign: '',
   
   // --- Step 5: Emission ---
   policyNumber: '', 
@@ -85,6 +86,37 @@ const buildLeadPayload = (formData: FormData) => {
         'Año del vehículo__c': formData.ano_del_vehiculo,
         'Número de serie__c': formData.numero_de_serie,
     };
+    
+    // Base sourceData
+    let sourceData = {
+        sourceEvent: formData.sourceEvent,
+        eventReason: "01",
+        sourceSite: "Website",
+        deviceType: "01",
+        deviceModel: "iPhone",
+        leadSource: "01",
+        origin: "02",
+        systemOrigin: "06",
+        ipData: {}
+    };
+
+    // Base utmData
+    let utmData = {};
+
+    // Conditional logic based on agentType
+    if (formData.agentType === 'APM') {
+        sourceData.systemOrigin = '02';
+        sourceData.origin = '02';
+        sourceData.leadSource = '02';
+        utmData = { campaign: 'ROPO_APMCampaign' };
+    } else if (formData.agentType === 'ADM') {
+        sourceData.systemOrigin = '06';
+        sourceData.origin = '02';
+        sourceData.leadSource = '10';
+        utmData = { campaign: 'ROPO_ADMCampaign' };
+    }
+    // If agentType is 'CC' or anything else, the defaults remain.
+
 
     const leadWrapper = {
         id: formData.id,
@@ -126,18 +158,8 @@ const buildLeadPayload = (formData: FormData) => {
                 additionalInformation: "test"
             }]
         },
-        utmData: {},
-        sourceData: {
-            sourceEvent: formData.sourceEvent,
-            eventReason: "01",
-            sourceSite: "Website",
-            deviceType: "01",
-            deviceModel: "iPhone",
-            leadSource: "01",
-            origin: "02",
-            systemOrigin: "06",
-            ipData: {}
-        },
+        utmData: utmData,
+        sourceData: sourceData,
         conversionData: {
           convertedStatus: null,
           policyNumber: ""
@@ -208,7 +230,10 @@ export default function Home() {
         // Update both the dedicated ID state and the main form data state
         // to ensure the IDs persist through all subsequent steps.
         setSalesforceIds(newIds);
-        setFormData(prev => ({ ...prev, ...submissionData, ...newIds }));
+        
+        // Pass all data, including new IDs, to the next step's state.
+        const nextStepData = { ...submissionData, ...newIds };
+        setFormData(nextStepData);
 
         // Move to the next step
         setDirection(1);

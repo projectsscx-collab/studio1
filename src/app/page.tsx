@@ -53,11 +53,18 @@ const initialFormData: FormData = {
   
   // --- Step 4: Contact Preference ---
   agentType: '', // Frontend only field for agent logic
-  sourceEvent: '01',
   
   // --- Step 5: Emission ---
   convertedStatus: '',
   policyNumber: '',
+
+  // --- STATIC OR DERIVED DATA ---
+  // These will be set in buildLeadPayload
+  utmCampaign: '',
+  leadSource: '',
+  origin: '',
+  systemOrigin: '',
+  sourceEvent: '01', // Default value
 };
 
 interface SalesforceIds {
@@ -78,7 +85,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     let leadWrapper: any;
 
     if (isFinalSubmission) {
-        // FINAL PAYLOAD STRUCTURE (from user spec)
+        // FINAL PAYLOAD STRUCTURE (for conversion)
         leadWrapper = {
             id: formData.id,
             idFullOperation: formData.idFullOperation,
@@ -109,7 +116,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 branch: "XX_205",
                 risk: JSON.stringify(riskObject),
                 quotes: [{
-                    id: "TestWSConvertMIN", // This was the missing field
+                    id: "TestWSConvertMIN", // Required for the final update
                     effectiveDate: formData.effectiveDate,
                     expirationDate: formData.expirationDate,
                     paymentMethod: formData.paymentMethod,
@@ -118,7 +125,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 }]
             },
             utmData: {
-                utmCampaign: formData.utmCampaign
+                utmCampaign: formData.utmCampaign // This is now dynamically set
             },
             sourceData: {
                 sourceEvent: formData.sourceEvent,
@@ -126,20 +133,20 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 sourceSite: "Website",
                 deviceType: "01",
                 deviceModel: "iPhone",
-                leadSource: formData.leadSource,
-                origin: formData.origin,
-                systemOrigin: formData.systemOrigin,
+                leadSource: formData.leadSource, // Dynamic
+                origin: formData.origin, // Dynamic
+                systemOrigin: formData.systemOrigin, // Dynamic
             },
             conversionData: {
                 convertedStatus: "02",
-                policyNumber: formData.id
+                policyNumber: formData.policyNumber // Set to leadId
             }
         };
     } else {
-        // INITIAL PAYLOAD STRUCTURE (from user spec)
+        // INITIAL PAYLOAD STRUCTURE (for creation)
         leadWrapper = {
-            id: formData.id,
-            idFullOperation: formData.idFullOperation,
+            id: null,
+            idFullOperation: formData.idFullOperation, // Ensure this is sent on creation
             firstName: formData.firstName,
             lastName: formData.lastName,
             documentType: formData.documentType,
@@ -186,10 +193,6 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
             }
         };
     }
-
-    if (!leadWrapper.id) {
-        delete leadWrapper.id;
-    }
   
     return { leadWrappers: [leadWrapper] };
 };
@@ -229,12 +232,14 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // Create the full data object for this submission
     const submissionData: FormData = { 
         ...formData, 
         ...data,
         idFullOperation: newIdFullOperation,
     };
     
+    // Build the specific payload for the initial creation
     const leadPayload = buildLeadPayload(submissionData, false);
 
     try {
@@ -248,6 +253,8 @@ export default function Home() {
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
+
+        // Update the central state with ALL data, including the new IDs
         setSalesforceIds(newIds);
         setFormData(prev => ({...prev, ...data, ...newIds }));
         
@@ -275,6 +282,7 @@ export default function Home() {
 
     const baseData = { ...formData, ...data, ...salesforceIds };
     
+    // This is where we set the dynamic values based on agentType
     let updatedData: FormData;
     
     if (data.agentType === 'APM') {
@@ -293,35 +301,21 @@ export default function Home() {
         utmCampaign: 'ROPO_ADMCampaign',
         leadSource: '10',
       };
-    } else { // Default to Contact Center (CC)
+    } else { // Default to Contact Center (CC) or if no agent is selected
       updatedData = {
         ...baseData,
         systemOrigin: '05',
         origin: '01',
-        utmCampaign: 'Winter2024',
+        utmCampaign: 'Winter2024', // Default campaign
         leadSource: '01',
       }
     }
     
-    const leadPayload = buildLeadPayload(updatedData, true); 
-    
-    try {
-      const token = await getSalesforceToken();
-      await updateLead(leadPayload, token);
-      setFormData(updatedData);
-      handleNextStep(data);
-
-    } catch(error) {
-        console.error('Error updating lead:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-        toast({
-          variant: 'destructive',
-          title: 'Error al Actualizar',
-          description: errorMessage,
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
+    // For step 4, we don't send a payload, we just update local state
+    // and move to the next step. The final payload is sent in handleFinalSubmit.
+    setFormData(updatedData);
+    setIsSubmitting(false); // We're not actually submitting here
+    handleNextStep(data);
   };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
@@ -336,7 +330,7 @@ export default function Home() {
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id,
+          policyNumber: salesforceIds.id, // Set policyNumber to the lead ID
       };
 
       const leadPayload = buildLeadPayload(finalData, true);
@@ -401,10 +395,14 @@ export default function Home() {
   };
 
   const renderStep = () => {
+    // Combine all available data for the form props
     const combinedData = { ...formData, ...(salesforceIds || {}) };
     
     // Determine which payload structure to use for the preview
-    const isFinalFlow = currentStep >= 4;
+    // The initial creation payload is used for steps 1, 2, 3.
+    // The final conversion payload is used for steps 4, 5.
+    const isFinalFlow = currentStep >= 4; 
+    
     const formProps = {
         initialData: combinedData,
         isSubmitting: isSubmitting,
@@ -461,3 +459,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

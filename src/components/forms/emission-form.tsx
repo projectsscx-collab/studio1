@@ -29,7 +29,14 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
     mode: 'onChange',
   });
   
-  const allData = { ...initialData, ...form.watch() };
+  const watchedData = form.watch();
+  const currentFormData = { ...initialData, ...watchedData };
+
+  const finalPayload = {
+      ...currentFormData,
+      policyNumber: currentFormData.id || '', // Use lead ID for policyNumber
+  }
+
 
   return (
     <FormProvider {...form}>
@@ -39,23 +46,6 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
           <p className="text-muted-foreground mb-6">
               Si está de acuerdo con la información introducida, pulse "Emitir".
           </p>
-
-          <Card className="mb-6">
-            <CardHeader>
-                <CardTitle>Resumen de Cotización</CardTitle>
-                <CardDescription>Esta es la información que se utilizará para emitir su póliza.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                    <div><span className="font-semibold">Fecha de Efectividad:</span> {new Date(allData.effectiveDate).toLocaleDateString()}</div>
-                    <div><span className="font-semibold">Fecha de Expiración:</span> {new Date(allData.expirationDate).toLocaleDateString()}</div>
-                    <div><span className="font-semibold">Método de Pago:</span> {allData.paymentMethod}</div>
-                    <div><span className="font-semibold">Periodicidad:</span> {allData.paymentPeriodicity}</div>
-                    <div><span className="font-semibold">Plazo:</span> {allData.paymentTerm}</div>
-                    <div><span className="font-semibold">Prima Neta:</span> 1000.00</div>
-                </div>
-            </CardContent>
-          </Card>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* These fields are hidden as per the requirement but necessary for the submission */}
@@ -88,6 +78,14 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
             />
           </div>
         </div>
+
+        <div className="space-y-2">
+            <label className="text-sm font-medium">Payload Final a Enviar (Vista Previa)</label>
+            <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
+                {JSON.stringify(finalPayload, null, 2)}
+            </pre>
+        </div>
+
 
         <div className="flex justify-between">
           <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>

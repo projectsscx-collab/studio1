@@ -25,7 +25,11 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
     defaultValues: {
       ...initialData
     },
+    mode: 'onChange',
   });
+
+  const watchedData = form.watch();
+  const currentFormData = { ...initialData, ...watchedData };
 
   return (
     <FormProvider {...form}>
@@ -90,9 +94,15 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
                 />
             </div>
         </div>
+        <div className="space-y-2">
+            <label className="text-sm font-medium">Estado actual del formulario (Vista Previa)</label>
+            <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
+                {JSON.stringify(currentFormData, null, 2)}
+            </pre>
+        </div>
         <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={!form.formState.isValid}>
             CONTINUAR >
             </Button>
         </div>

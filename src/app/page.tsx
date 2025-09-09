@@ -9,9 +9,9 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { submitLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import { submitLead } from '@/ai/flows/insert-lead-flow';
 import { updateOpportunity } from '@/ai/flows/update-opportunity-flow';
-import type { FormData } from '@/lib/salesforce-schemas';
+import type { FormData, SalesforceIds } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 import { format } from 'date-fns';
@@ -22,7 +22,7 @@ const TOTAL_STEPS = 5;
 const calculateFullOperationId = () => {
     const timestamp = Date.now();
     const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
-    return `${timestamp}IS${randomPart}`;
+    return `IS${timestamp}${randomPart}`;
 };
 
 
@@ -43,6 +43,15 @@ const initialFormData: FormData = {
   phone: '',
   email: '',
   
+  street: '',
+  postalCode: '',
+  city: '',
+  district: '',
+  municipality: '',
+  state: 'XX', // Default value
+  country: 'PR', // Default value
+  colony: '',
+
   // --- Step 2: Vehicle Details ---
   numero_de_matricula: '',
   marca: '',
@@ -62,28 +71,24 @@ const initialFormData: FormData = {
   sourceEvent: '01',
   
   // --- Step 5: Emission ---
-  convertedStatus: '',
   policyNumber: '', 
-  StageName: '',
+  StageName: '06', // Hardcoded as per business logic
   CloseDate: '',
   Amount: 10,
 };
 
-interface SalesforceIds {
-    id: string; // This is the OPPORTUNITY ID
-    idFullOperation: string;
-}
 
 const buildLeadPayload = (formData: FormData) => {
     const riskObject = {
-        'numero_de_matricula': formData.numero_de_matricula,
-        'marca': formData.marca,
-        'modelo': formData.modelo,
-        'ano_del_vehiculo': formData.ano_del_vehiculo,
-        'numero_de_serie': formData.numero_de_serie,
+        'Número de matrícula__c': formData.numero_de_matricula,
+        'Marca__c': formData.marca,
+        'Modelo__c': formData.modelo,
+        'Año del vehículo__c': formData.ano_del_vehiculo,
+        'Número de serie__c': formData.numero_de_serie,
     };
 
     const leadWrapper = {
+        id: formData.id,
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -94,6 +99,16 @@ const buildLeadPayload = (formData: FormData) => {
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,
             email: formData.email,
+            address: {
+              street: formData.street,
+              postalCode: formData.postalCode,
+              city: formData.city,
+              district: formData.district,
+              municipality: formData.municipality,
+              state: formData.state,
+              country: formData.country,
+              colony: formData.colony
+            }
         },
         interestProduct: {
             businessLine: "01",
@@ -102,32 +117,32 @@ const buildLeadPayload = (formData: FormData) => {
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
             quotes: [{
-                id: "TestWSConvertMIN",
+                id: "123456", // Static ID as per example
                 effectiveDate: formData.effectiveDate,
                 expirationDate: formData.expirationDate,
-                productCode: "PRD001",
-                productName: "Life Insurance",
-                netPremium: 1000,
                 paymentMethod: formData.paymentMethod,
                 isSelected: true,
                 paymentPeriodicity: formData.paymentPeriodicity,
                 paymentTerm: formData.paymentTerm,
+                netPremium: formData.Amount,
                 additionalInformation: "test"
             }]
         },
-        utmData: {
-            utmCampaign: "ROPO_Auto"
-        },
+        utmData: {},
         sourceData: {
-            sourceEvent: "01",
+            sourceEvent: formData.sourceEvent,
             eventReason: "01",
             sourceSite: "Website",
             deviceType: "01",
             deviceModel: "iPhone",
             leadSource: "01",
-            origin: "01",
-            systemOrigin: "05",
+            origin: "02",
+            systemOrigin: "06",
             ipData: {}
+        },
+        conversionData: {
+          convertedStatus: null,
+          policyNumber: ""
         }
     };
   
@@ -165,10 +180,12 @@ export default function Home() {
     }
   };
 
+  // Step 1: Create the Lead in Salesforce
   const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // Merge all data and the new operation ID
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -178,8 +195,7 @@ export default function Home() {
     const leadPayload = buildLeadPayload(submissionData);
 
     try {
-        const token = await getSalesforceToken();
-        const response = await submitLead(leadPayload, token);
+        const response = await submitLead(leadPayload);
         
         const error = findKey(response, 'errorMessage');
         if (error) throw new Error(error);
@@ -188,13 +204,13 @@ export default function Home() {
         const opportunityId = findKey(response, 'leadResultId');
         if (!opportunityId) throw new Error('Opportunity ID not found in Salesforce response.');
         
-        const newIds = { id: opportunityId, idFullOperation: newIdFullOperation };
+        const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
         
         // ** CRITICAL FIX **
-        // Update both states sequentially and robustly to prevent race conditions
-        // and ensure data persistence through all subsequent steps.
+        // Update both the dedicated ID state and the main form data state
+        // to ensure the IDs persist through all subsequent steps.
         setSalesforceIds(newIds);
-        setFormData(prev => ({...prev, ...data, ...newIds}));
+        setFormData(prev => ({ ...prev, ...submissionData, ...newIds }));
 
         // Move to the next step
         setDirection(1);
@@ -213,6 +229,7 @@ export default function Home() {
     }
   };
   
+  // Step 2: Update the Opportunity
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds?.id) {
         toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Opportunity ID no encontrado. Por favor, reinicie el formulario.' });
@@ -221,29 +238,27 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      const finalData: Partial<FormData> = { 
+      const finalData: FormData = { 
         ...formData, 
         ...data, 
       };
 
       // This is the payload for the OPPORTUNITY UPDATE
       const opportunityPayload = {
-          StageName: "06", // Ganada emitida
+          StageName: finalData.StageName || "06", // Ganada emitida
           CloseDate: format(new Date(), 'yyyy-MM-dd'), // Emission date
-          Amount: finalData.Amount || 10, // Use amount from form or default
-          PolicyNumber__c: salesforceIds.id, // Using Opp ID as policy number as per logic
+          Amount: finalData.Amount || 10,
+          PolicyNumber__c: finalData.policyNumber || salesforceIds.id, // Use form data or default
       };
 
       try {
-          const token = await getSalesforceToken();
           const response = await updateOpportunity({
               opportunityId: salesforceIds.id,
               payload: opportunityPayload,
-              token: token,
           });
           
           setSubmissionResponse({ success: true, ...response });
-          setFormData(prev => ({...prev, ...finalData})); // Save final state
+          setFormData(finalData); // Save final state
           handleNextStep(data); // Move to confirmation screen
 
       } catch (error) {
@@ -293,9 +308,6 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    const isFinalFlow = currentStep >= 5;
-    
-    // This prop is now only used for the initial lead creation preview
     const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data });
     
     const formProps = {
@@ -314,9 +326,9 @@ export default function Home() {
       case 4:
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} />;
       case 6:
-        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
+        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} salesforceIds={salesforceIds} />;
       default:
         return null;
     }

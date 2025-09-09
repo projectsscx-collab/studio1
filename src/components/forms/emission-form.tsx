@@ -8,31 +8,36 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import type { SalesforceIds } from '@/lib/salesforce-schemas';
 
 interface EmissionFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  // buildPreviewPayload is no longer needed here as the payload is simple
+  salesforceIds: SalesforceIds | null;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceIds }: EmissionFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
       Amount: true,
+      policyNumber: true,
     })),
     defaultValues: {
       Amount: initialData.Amount || 10,
+      policyNumber: initialData.policyNumber || '',
     },
     mode: 'onChange',
   });
   
+  const watchedData = form.watch();
+
   const finalPayload = {
       StageName: "06",
       CloseDate: format(new Date(), 'yyyy-MM-dd'),
-      Amount: form.getValues('Amount'),
-      PolicyNumber__c: initialData.id, // The Opportunity ID
+      Amount: watchedData.Amount,
+      PolicyNumber__c: watchedData.policyNumber || salesforceIds?.id,
   };
 
 
@@ -42,7 +47,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
         <div>
           <h2 className="text-xl font-semibold mb-6">Emisión de la Póliza</h2>
           <p className="text-muted-foreground mb-6">
-              Confirme los detalles finales para emitir la póliza. El número de póliza se asignará automáticamente.
+              Confirme los detalles finales para emitir la póliza. El número de póliza se asignará automáticamente si se deja en blanco.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -59,13 +64,19 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
                     </FormItem>
                 )}
             />
-             <FormItem>
-                <FormLabel>Número de Póliza</FormLabel>
-                <FormControl>
-                    <Input readOnly value={initialData.id || 'Se generará al emitir'} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
+             <FormField
+                control={form.control}
+                name="policyNumber"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Número de Póliza (Opcional)</FormLabel>
+                    <FormControl>
+                        <Input placeholder={salesforceIds?.id || 'Se generará al emitir'} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
           </div>
         </div>
 
@@ -81,7 +92,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
           <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
             Atrás
           </Button>
-          <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
+          <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'EMITIR PÓLIZA'}
           </Button>
         </div>

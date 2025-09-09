@@ -38,11 +38,11 @@ export const agentTypes = {
     "ADM": "Agente (ADM)",
 };
 
-// This schema validates only the fields the user actively fills in the forms.
+// This composite schema validates the fields across all steps.
 export const leadSchema = z.object({
   idFullOperation: z.string().optional(), 
   
-  // Step 1
+  // Step 1: Personal Details
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
@@ -51,29 +51,34 @@ export const leadSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().optional(),
   email: z.string().email('El correo electrónico no es válido.'),
+  street: z.string().min(1, 'La calle es requerida.'),
+  postalCode: z.string().min(1, 'El código postal es requerido.'),
+  city: z.string().min(1, 'La ciudad es requerida.'),
+  district: z.string().min(1, 'El distrito es requerido.'),
+  municipality: z.string().min(1, 'El municipio es requerido.'),
+  colony: z.string().min(1, 'La colonia es requerida.'),
   
-  // Step 2
+  // Step 2: Vehicle Details
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),
   marca: z.string().min(1, 'La marca es requerida.'),
   modelo: z.string().min(1, 'El modelo es requerido.'),
   ano_del_vehiculo: z.string().min(1, 'El año del vehículo es requerido.'),
   numero_de_serie: z.string().min(1, 'El número de serie es requerido.'),
 
-  // Step 3
+  // Step 3: Quote Details
   effectiveDate: z.string().min(1, { message: 'La fecha de efectividad es requerida.'}),
   expirationDate: z.string().min(1, { message: 'La fecha de expiración es requerida.'}),
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
   
-  // Step 4
+  // Step 4: Contact Preference
   sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),
   agentType: z.string().min(1, 'Debe seleccionar un tipo de agente.'),
   
-  // Step 5
+  // Step 5: Emission
   Amount: z.number().positive('El importe debe ser un número positivo.'),
-  policyNumber: z.string().optional().nullable(),
-  convertedStatus: z.string().optional(), // No longer directly used in a form
+  policyNumber: z.string().optional(),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

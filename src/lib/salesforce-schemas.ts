@@ -6,15 +6,27 @@ export const FormDataSchema = z.object({
     id: z.string().optional().nullable(), // Will hold the Opportunity ID
     idFullOperation: z.string().optional(),
     
-    // --- Personal & Contact ---
+    // --- Personal Info ---
     firstName: z.string().min(1, 'Nombre es requerido.'),
     lastName: z.string().min(1, 'Apellido es requerido.'),
     documentType: z.string().min(1, 'Tipo de documento es requerido.'),
     documentNumber: z.string().min(1, 'Número de documento es requerido.'),
     birthdate: z.string().min(1, 'Fecha de nacimiento es requerida.'),
+    
+    // --- Contact Info ---
     mobilePhone: z.string().min(1, 'Teléfono móvil es requerido.'),
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
+    
+    // --- Address Info ---
+    street: z.string().min(1, "La calle es requerida."),
+    postalCode: z.string().min(1, "El código postal es requerido."),
+    city: z.string().min(1, "La ciudad es requerida."),
+    district: z.string().min(1, "El distrito es requerido."),
+    municipality: z.string().min(1, "El municipio es requerido."),
+    state: z.string().min(1, "El estado es requerido."),
+    country: z.string().min(1, "El país es requerido."),
+    colony: z.string().min(1, "La colonia es requerida."),
     
     // --- Vehicle Data ---
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
@@ -35,17 +47,10 @@ export const FormDataSchema = z.object({
     sourceEvent: z.string().optional(),
 
     // --- Emission / Opportunity Data (Step 5) ---
-    convertedStatus: z.string().optional(), 
     policyNumber: z.string().optional(),
     StageName: z.string().optional(),
     CloseDate: z.string().optional(),
     Amount: z.number().optional(),
-
-    // --- Fields that might be set dynamically based on logic ---
-    utmCampaign: z.string().optional(),
-    leadSource: z.string().optional(),
-    origin: z.string().optional(),
-    systemOrigin: z.string().optional(),
 });
 
 export type FormData = z.infer<typeof FormDataSchema>;
@@ -60,3 +65,9 @@ export const SalesforceTokenResponseSchema = z.object({
     signature: z.string(),
 });
 export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
+
+// Defines the shape of the IDs we get from Salesforce
+export interface SalesforceIds {
+    id: string; // This is the OPPORTUNITY ID
+    idFullOperation: string;
+}

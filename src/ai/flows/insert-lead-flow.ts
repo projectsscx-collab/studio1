@@ -1,14 +1,14 @@
 'use server';
 
 /**
- * @fileoverview Genkit flow to **CREATE** a lead in Salesforce.
- * This flow handles the initial submission and returns an Opportunity ID.
+ * @fileoverview Genkit flow to CREATE a lead in Salesforce by calling the custom Apex REST endpoint.
+ * This flow handles the initial submission and returns the full response from Salesforce,
+ * which includes the Opportunity ID.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { SalesforceTokenResponseSchema } from '@/lib/salesforce-schemas';
-import type { SalesforceTokenResponse } from '@/lib/salesforce-schemas';
 
 // --- Flow to get the authentication token ---
 const getSalesforceTokenFlow = ai.defineFlow(
@@ -56,11 +56,12 @@ const submitLeadFlow = ai.defineFlow(
     name: 'submitLeadFlow',
     inputSchema: z.object({
       leadPayload: z.any(),
-      token: SalesforceTokenResponseSchema,
     }),
     outputSchema: z.any(),
   },
-  async ({ leadPayload, token }) => {
+  async ({ leadPayload }) => {
+    const token = await getSalesforceTokenFlow();
+    
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
       method: 'POST',
       headers: {
@@ -84,11 +85,7 @@ const submitLeadFlow = ai.defineFlow(
 );
 
 
-// --- Exported functions to be called from the frontend ---
-export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
-  return getSalesforceTokenFlow();
-}
-
-export async function submitLead(leadPayload: any, token: SalesforceTokenResponse): Promise<any> {
-  return submitLeadFlow({ leadPayload, token });
+// --- Exported function to be called from the frontend ---
+export async function submitLead(leadPayload: any): Promise<any> {
+  return submitLeadFlow({ leadPayload });
 }

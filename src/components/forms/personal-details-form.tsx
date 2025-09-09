@@ -21,7 +21,7 @@ interface PersonalDetailsFormProps {
   buildPreviewPayload: (data: any) => any;
 }
 
-const PersonalDetailsForm = ({ onSubmit, initialData, buildPreviewPayload }: PersonalDetailsFormProps) => {
+const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({ 
         firstName: true, 
@@ -32,17 +32,19 @@ const PersonalDetailsForm = ({ onSubmit, initialData, buildPreviewPayload }: Per
         mobilePhone: true,
         phone: true,
         email: true,
+        street: true,
+        postalCode: true,
+        city: true,
+        district: true,
+        municipality: true,
+        colony: true,
     })),
     defaultValues: {
       ...initialData,
-      phone: initialData.phone || '', // Ensure phone is not null/undefined
     },
     mode: 'onChange',
   });
   
-  const watchedData = form.watch();
-  const previewPayload = buildPreviewPayload(watchedData);
-
 
   return (
       <FormProvider {...form}>
@@ -109,9 +111,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData, buildPreviewPayload }: Per
                     />
                 </div>
             </div>
-
             <hr/>
-            
              <div>
                 <h2 className="text-xl font-semibold mb-6">Documento y Contacto</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -179,12 +179,17 @@ const PersonalDetailsForm = ({ onSubmit, initialData, buildPreviewPayload }: Per
                     />
                 </div>
             </div>
-
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Estado actual del formulario (Vista Previa)</label>
-                <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                    {JSON.stringify(previewPayload, null, 2)}
-                </pre>
+            <hr/>
+             <div>
+                <h2 className="text-xl font-semibold mb-6">Dirección</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField control={form.control} name="street" render={({ field }) => ( <FormItem> <FormLabel>Calle</FormLabel> <FormControl><Input placeholder="E.g. 123 Main St" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="city" render={({ field }) => ( <FormItem> <FormLabel>Ciudad</FormLabel> <FormControl><Input placeholder="E.g. San Juan" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="postalCode" render={({ field }) => ( <FormItem> <FormLabel>Código Postal</FormLabel> <FormControl><Input placeholder="E.g. 00901" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="district" render={({ field }) => ( <FormItem> <FormLabel>Distrito</FormLabel> <FormControl><Input placeholder="E.g. Santurce" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="municipality" render={({ field }) => ( <FormItem> <FormLabel>Municipio</FormLabel> <FormControl><Input placeholder="E.g. San Juan" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="colony" render={({ field }) => ( <FormItem> <FormLabel>Colonia</FormLabel> <FormControl><Input placeholder="E.g. Miramar" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                </div>
             </div>
             
             <div className="flex justify-end">

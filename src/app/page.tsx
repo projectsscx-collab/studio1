@@ -73,7 +73,7 @@ const initialFormData: FormData = {
   
   // --- Step 5: Emission ---
   policyNumber: '', 
-  StageName: '06', 
+  StageName: null, // Default to null for creation
   CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
   Amount: 1000,
 };
@@ -157,7 +157,7 @@ const buildLeadPayload = (formData: FormData) => {
         utmData: utmData,
         sourceData: sourceData,
         conversionData: {
-          convertedStatus: formData.id ? "06" : null,
+          convertedStatus: formData.StageName, // Directly use the value from form data
           policyNumber: formData.policyNumber || null
         }
     };
@@ -194,11 +194,12 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Create the submission data, ensuring ID is null for creation
+    // Create the submission data, ensuring ID and StageName are null for creation
     const submissionData: FormData = { 
         ...formData, 
         ...data,
         id: null,
+        StageName: null,
         idFullOperation: newIdFullOperation,
     };
     
@@ -254,6 +255,7 @@ export default function Home() {
         ...data,
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
+        StageName: '06', // Set StageName to '06' for the final update
       };
 
       const updatePayload = buildLeadPayload(finalData);
@@ -370,4 +372,6 @@ export default function Home() {
     </div>
   );
 }
+    
+
     

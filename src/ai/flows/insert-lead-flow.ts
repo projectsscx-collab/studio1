@@ -72,20 +72,34 @@ const submitLeadFlow = ai.defineFlow(
     });
     
     const responseText = await leadResponse.text();
-    const responseData = responseText ? JSON.parse(responseText) : {};
+    
+    if (!responseText) {
+        throw new Error(`Salesforce returned an empty response. Status: ${leadResponse.status}`);
+    }
+    
+    const responseData = JSON.parse(responseText);
 
+    // The response is an array with one element, e.g., [{"leadResultId": "..."}]
+    if (!Array.isArray(responseData) || responseData.length === 0) {
+        const errorDetails = JSON.stringify(responseData);
+        console.error("Salesforce response was not a non-empty array. Full response:", errorDetails);
+        throw new Error(`Unexpected Salesforce response format: ${errorDetails}`);
+    }
+
+    const leadResult = responseData[0];
+    
     if (!leadResponse.ok) {
-        const errorText = JSON.stringify(responseData);
+        const errorText = JSON.stringify(leadResult);
         console.error("Salesforce Submission Error Response:", errorText);
         throw new Error(`Failed to submit lead: ${leadResponse.status} ${errorText}`);
     }
     
     // Explicitly parse the response to find the Opportunity ID
-    const opportunityId = responseData?.leadResults?.[0]?.leadResultId;
+    const opportunityId = leadResult?.leadResultId;
 
     if (!opportunityId) {
-      const errorDetails = JSON.stringify(responseData);
-      console.error("Salesforce response did not contain an Opportunity ID. Full response:", errorDetails);
+      const errorDetails = JSON.stringify(leadResult);
+      console.error("Salesforce response did not contain an Opportunity ID (leadResultId). Full response:", errorDetails);
       throw new Error(`Opportunity ID not found in Salesforce response: ${errorDetails}`);
     }
 
@@ -93,7 +107,7 @@ const submitLeadFlow = ai.defineFlow(
     return {
       success: true,
       opportunityId: opportunityId,
-      fullResponse: responseData, // Keep the full response for logging if needed
+      fullResponse: leadResult, // Keep the full response for logging if needed
     };
   }
 );

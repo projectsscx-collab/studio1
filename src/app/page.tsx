@@ -78,7 +78,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
 
     if (isFinalSubmission) {
         // FINAL PAYLOAD STRUCTURE (for conversion)
-         leadWrapper = {
+        leadWrapper = {
             id: formData.id,
             idFullOperation: formData.idFullOperation,
             firstName: formData.firstName,
@@ -244,9 +244,10 @@ export default function Home() {
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
 
         setSalesforceIds(newIds);
-        setFormData(prev => ({...prev, ...data, ...newIds }));
         
-        handleNextStep(data);
+        // CRITICAL FIX: Merge the new IDs and the form data together for the next step.
+        const nextStepData = { ...data, ...newIds };
+        handleNextStep(nextStepData);
 
     } catch(error) {
         console.error('Error creating lead:', error);
@@ -272,7 +273,7 @@ export default function Home() {
     
       let finalData: FormData;
       
-      if (data.agentType === 'APM') {
+      if (baseData.agentType === 'APM') {
         finalData = {
           ...baseData,
           systemOrigin: '02',
@@ -280,7 +281,7 @@ export default function Home() {
           utmCampaign: 'ROPO_APMCampaign',
           leadSource: '02',
         };
-      } else if (data.agentType === 'ADM') {
+      } else if (baseData.agentType === 'ADM') {
         finalData = {
           ...baseData,
           systemOrigin: '06',
@@ -301,7 +302,7 @@ export default function Home() {
       finalData = {
           ...finalData,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id, 
+          policyNumber: finalData.id, 
       };
 
       const leadPayload = buildLeadPayload(finalData, true);
@@ -368,7 +369,7 @@ export default function Home() {
   const renderStep = () => {
     const combinedData = { ...formData, ...(salesforceIds || {}) };
     
-    const isFinalFlow = currentStep >= 4; 
+    const isFinalFlow = currentStep >= 5; // Step 5 is the final submission
     
     const formProps = {
         initialData: combinedData,

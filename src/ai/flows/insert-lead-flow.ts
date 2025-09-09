@@ -161,58 +161,46 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-
-      // Base structure with the IDs to identify the record
-      const leadWrapperBase: any = {
+      // Simplified, direct payload construction
+      const leadWrapper = {
+        // IDs
         id: formData.id,
         idFullOperation: formData.idFullOperation,
-        // Always include basic identification data for validation
+        idOwner: formData.idOwner,
+
+        // Always include base data for validation
         firstName: formData.firstName,
         lastName: formData.lastName,
         documentType: formData.documentType,
         documentNumber: formData.documentNumber,
+        
+        // Always include contact data
         contactData: {
-          mobilePhone: formData.mobilePhone,
-          phone: formData.phone,
-          email: formData.email,
+            mobilePhone: formData.mobilePhone,
+            phone: formData.phone,
+            email: formData.email,
+        },
+
+        // Data that gets updated in subsequent steps
+        sourceData: {
+            sourceEvent: formData.sourceEvent,
+            systemOrigin: formData.systemOrigin,
+            origin: formData.origin,
+            leadSource: formData.leadSource,
+            eventReason: '01', 
+            sourceSite: 'Website', 
+            deviceType: '01', 
+            deviceModel: 'iPhone', 
+            ipData: {}
+        },
+        utmData: {
+            utmCampaign: formData.utmCampaign,
+        },
+        conversionData: {
+            convertedStatus: formData.convertedStatus,
+            policyNumber: formData.policyNumber || undefined, // Send undefined if empty
         },
       };
-      
-      // Dynamically add data based on what's available in the formData
-      const sourceData: any = {};
-      if (formData.sourceEvent) sourceData.sourceEvent = formData.sourceEvent;
-      if (formData.systemOrigin) sourceData.systemOrigin = formData.systemOrigin;
-      if (formData.origin) sourceData.origin = formData.origin;
-      if (formData.leadSource) sourceData.leadSource = formData.leadSource;
-
-      const utmData: any = {};
-      if (formData.utmCampaign) utmData.utmCampaign = formData.utmCampaign;
-
-      const conversionData: any = {};
-       if (formData.convertedStatus) {
-         conversionData.convertedStatus = formData.convertedStatus;
-         // Only include policyNumber if it has a value
-         if (formData.policyNumber) {
-           conversionData.policyNumber = formData.policyNumber;
-         }
-       }
-       
-      const leadWrapper: any = {
-        ...leadWrapperBase,
-      };
-
-      if (Object.keys(sourceData).length > 0) {
-        leadWrapper.sourceData = { ...sourceData, eventReason: '01', sourceSite: 'Website', deviceType: '01', deviceModel: 'iPhone', ipData: {} };
-      }
-      if (Object.keys(utmData).length > 0) {
-        leadWrapper.utmData = utmData;
-      }
-      if (Object.keys(conversionData).length > 0) {
-        leadWrapper.conversionData = conversionData;
-      }
-      if (formData.idOwner) {
-        leadWrapper.idOwner = formData.idOwner;
-      }
 
       const finalPayload = { leadWrappers: [leadWrapper] };
 

@@ -31,6 +31,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
 
   const watchedData = form.watch();
   const currentFormData = { ...initialData, ...watchedData };
+  const previewPayload = { leadWrappers: [currentFormData] };
 
 
   return (
@@ -89,7 +90,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
         <div className="space-y-2">
             <label className="text-sm font-medium">Estado actual del formulario (Vista Previa)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                {JSON.stringify(currentFormData, null, 2)}
+                {JSON.stringify(previewPayload, null, 2)}
             </pre>
         </div>
 

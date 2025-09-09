@@ -33,8 +33,10 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
   const currentFormData = { ...initialData, ...watchedData };
 
   const finalPayload = {
-      ...currentFormData,
-      policyNumber: currentFormData.id || '', // Use lead ID for policyNumber
+      leadWrappers: [{
+          ...currentFormData,
+          policyNumber: currentFormData.id || '', // Use lead ID for policyNumber
+      }]
   }
 
 

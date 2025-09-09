@@ -38,44 +38,11 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
 
   const allData = { ...initialData, ...form.watch() };
   
-  // This is a simplified representation for the JSON preview
   const leadPayload = {
       leadWrappers: [{
-        idFullOperation: allData.idFullOperation,
-        firstName: allData.firstName,
-        lastName: allData.lastName,
-        documentNumber: allData.documentNumber,
-        email: allData.email,
-        interestProduct: {
-            risk: JSON.stringify({
-                'Número de matrícula__c': allData.numero_de_matricula,
-                'Marca__c': allData.marca,
-                'Modelo__c': allData.modelo,
-                'Año del vehículo__c': allData.ano_del_vehiculo,
-                'Número de serie__c': allData.numero_de_serie,
-            }),
-            quotes: [
-                {
-                    id: 'TestWSConvertMIN',
-                    effectiveDate: allData.effectiveDate,
-                    expirationDate: allData.expirationDate,
-                    netPremium: 1000.0,
-                    paymentMethod: allData.paymentMethod,
-                    paymentPeriodicity: allData.paymentPeriodicity,
-                    paymentTerm: allData.paymentTerm,
-                    additionalInformation: "test",
-                },
-            ],
-        },
-        utmData: {
-            utmCampaign: allData.utmCampaign
-        },
-        sourceData: {
-            sourceEvent: allData.sourceEvent,
-            systemOrigin: allData.systemOrigin,
-        }
+          ...allData
       }],
-    };
+  };
   
   return (
     <FormProvider {...form}>

@@ -109,6 +109,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 branch: "XX_205",
                 risk: JSON.stringify(riskObject),
                 quotes: [{
+                    id: "TestWSConvertMIN", // This was the missing field
                     effectiveDate: formData.effectiveDate,
                     expirationDate: formData.expirationDate,
                     paymentMethod: formData.paymentMethod,
@@ -131,7 +132,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
             },
             conversionData: {
                 convertedStatus: "02",
-                policyNumber: formData.policyNumber
+                policyNumber: formData.id
             }
         };
     } else {
@@ -302,7 +303,7 @@ export default function Home() {
       }
     }
     
-    const leadPayload = buildLeadPayload(updatedData, true); // Use final structure for updates for now
+    const leadPayload = buildLeadPayload(updatedData, true); 
     
     try {
       const token = await getSalesforceToken();

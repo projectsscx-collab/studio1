@@ -131,7 +131,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   };
   
   // Add conversion data only if it exists
-  if (formData.convertedStatus) {
+  if ('convertedStatus' in formData && formData.convertedStatus) {
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
       // Only include policyNumber if it has a value
@@ -144,6 +144,12 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
     if (leadWrapper[key] === undefined) {
       delete leadWrapper[key];
     }
+  }
+
+  // Salesforce throws an error if an empty string is passed for the ID on creation.
+  // We must remove it from the payload if it's not a valid ID.
+  if (!leadWrapper.id) {
+    delete leadWrapper.id;
   }
 
   return leadWrapper;
@@ -201,7 +207,7 @@ const updateLeadFlow = ai.defineFlow(
     const finalPayload = { leadWrappers: [leadWrapper] };
 
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
-      method: 'POST',
+      method: 'POST', // Salesforce uses POST for updates with this APEX class
       headers: {
         'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
@@ -209,7 +215,6 @@ const updateLeadFlow = ai.defineFlow(
       body: JSON.stringify(finalPayload),
     });
 
-    // It's possible for a successful update to return an empty response
     const responseText = await leadResponse.text();
     const responseData = responseText ? JSON.parse(responseText) : { success: true, id: formData.id };
     
@@ -236,5 +241,3 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
 }
-
-    

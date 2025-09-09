@@ -161,8 +161,8 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      // Simplified, direct payload construction
-      const leadWrapper = {
+      
+      const leadWrapper: any = {
         // IDs
         id: formData.id,
         idFullOperation: formData.idFullOperation,
@@ -196,11 +196,16 @@ const updateLeadFlow = ai.defineFlow(
         utmData: {
             utmCampaign: formData.utmCampaign,
         },
-        conversionData: {
+      };
+
+      // Only include conversionData if convertedStatus is present
+      if (formData.convertedStatus) {
+        leadWrapper.conversionData = {
             convertedStatus: formData.convertedStatus,
             policyNumber: formData.policyNumber || undefined, // Send undefined if empty
-        },
-      };
+        };
+      }
+
 
       const finalPayload = { leadWrappers: [leadWrapper] };
 

@@ -57,6 +57,133 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
+// --- Helper function to build the lead wrapper ---
+const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
+  const riskObject = {
+      'Número de matrícula__c': formData.numero_de_matricula,
+      'Marca__c': formData.marca,
+      'Modelo__c': formData.modelo,
+      'Año del vehículo__c': formData.ano_del_vehiculo,
+      'Número de serie__c': formData.numero_de_serie,
+  };
+
+  const leadWrapper: any = {
+      idFullOperation: formData.idFullOperation,
+      idOwner: formData.idOwner,
+      company: formData.company,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      documentType: formData.documentType,
+      documentNumber: formData.documentNumber,
+      birthdate: formData.birthdate,
+      sex: formData.sex,
+      maritalStatus: formData.maritalStatus,
+      additionalInformation: formData.additionalInformation,
+      contactData: {
+          mobilePhone: formData.mobilePhone,
+          phone: formData.phone,
+          email: formData.email,
+          address: {
+              street: formData.street,
+              postalCode: formData.postalCode,
+              city: formData.city,
+              district: formData.district,
+              municipality: formData.municipality,
+              state: formData.state,
+              country: formData.country,
+              colony: formData.colony,
+          },
+      },
+      interestProduct: {
+          businessLine: '01',
+          sector: 'XX_01',
+          subsector: 'XX_00',
+          branch: 'XX_205',
+          risk: JSON.stringify(riskObject),
+          quotes: [{
+              id: 'TestPSLead',
+              issueDate: '2024-02-01',
+              dueDate: '2025-01-01',
+              effectiveDate: formData.effectiveDate,
+              expirationDate: formData.expirationDate,
+              productCode: 'PRD001',
+              productName: 'Life Insurance',
+              netPremium: 1000.0,
+              totalPremium: 1200.0,
+              paymentMethod: formData.paymentMethod,
+              currencyIsoCode: formData.currencyIsoCode,
+              isSelected: true,
+              discount: '0.24',
+              paymentPeriodicity: formData.paymentPeriodicity,
+              paymentTerm: formData.paymentTerm,
+              additionalInformation: 'test',
+          }],
+      },
+      qualificationData: {
+          scoring: formData.scoring,
+          rating: formData.rating,
+      },
+      googleAnalyticsData: {
+          gaClientId: formData.gaClientId,
+          gaUserId: formData.gaUserId,
+          gaTrackId: formData.gaTrackId,
+          gaTerm: formData.gaTerm,
+          gaMedium: formData.gaMedium,
+      },
+      utmData: {
+          utmCampaign: formData.utmCampaign,
+          utmContent: formData.utmContent,
+          utmSource: formData.utmSource,
+      },
+      sourceData: {
+          sourceEvent: formData.sourceEvent,
+          eventReason: formData.eventReason,
+          sourceSite: formData.sourceSite,
+          screenName: formData.screenName,
+          deviceType: formData.deviceType,
+          deviceModel: formData.deviceModel,
+          leadSource: formData.leadSource,
+          origin: formData.origin,
+          systemOrigin: formData.systemOrigin,
+          ipData: {
+              ipSubmitter: formData.ipSubmitter,
+              ipHostName: formData.ipHostName,
+              ipCity: formData.ipCity,
+              ipRegion: formData.ipRegion,
+              ipCountry: formData.ipCountry,
+              ipPostalCode: formData.ipPostalCode,
+              ipLocation: formData.ipLocation,
+              ipOrganization: formData.ipOrganization,
+          },
+      },
+      conversionData: {
+          convertedStatus: formData.convertedStatus,
+          policyNumber: formData.policyNumber,
+          netPremium: null,
+          totalPremium: null,
+      },
+      // Static data from example
+      commercialStructureData: {
+          idIntermediary: null,
+          regionalOffice: null,
+          managerOffice: null,
+      },
+  };
+
+  // Add 'id' only if it's an update operation
+  if ('id' in formData && formData.id) {
+    leadWrapper.id = formData.id;
+  }
+
+  // Clean up conversionData if status is empty
+  if (!formData.convertedStatus) {
+    delete leadWrapper.conversionData;
+  }
+
+  return leadWrapper;
+};
+
+
 // --- Flow to CREATE the lead (called from Step 3) ---
 const insertLeadFlow = ai.defineFlow(
   {
@@ -68,65 +195,7 @@ const insertLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async ({ formData, token }) => {
-    const riskObject = {
-      'Número de matrícula__c': formData.numero_de_matricula,
-      'Marca__c': formData.marca,
-      'Modelo__c': formData.modelo,
-      'Año del vehículo__c': formData.ano_del_vehiculo,
-      'Número de serie__c': formData.numero_de_serie,
-    };
-
-    const leadWrapper = {
-      idFullOperation: formData.idFullOperation,
-      // Personal & Contact Data from Step 1
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      documentType: formData.documentType,
-      documentNumber: formData.documentNumber,
-      birthdate: formData.birthdate,
-      contactData: {
-        mobilePhone: formData.mobilePhone,
-        phone: formData.phone,
-        email: formData.email,
-      },
-      // Product & Quote Data from Step 3
-      interestProduct: {
-        businessLine: '01',
-        sector: 'XX_01',
-        subsector: 'XX_00',
-        branch: 'XX_205',
-        risk: JSON.stringify(riskObject),
-        quotes: [{
-          id: 'TestWSConvertMIN', // Static ID for validation
-          effectiveDate: formData.effectiveDate,
-          expirationDate: formData.expirationDate,
-          productCode: 'PRD001',
-          productName: 'Life Insurance',
-          netPremium: 1000.0,
-          paymentMethod: formData.paymentMethod,
-          paymentPeriodicity: formData.paymentPeriodicity,
-          paymentTerm: formData.paymentTerm,
-          additionalInformation: 'test',
-          isSelected: true,
-        }],
-      },
-      // Default Source & Campaign Data
-      sourceData: {
-        sourceEvent: '01',
-        eventReason: '01',
-        sourceSite: 'Website',
-        deviceType: '01',
-        deviceModel: 'iPhone',
-        leadSource: '01',
-        origin: '01',
-        systemOrigin: '05',
-        ipData: {},
-      },
-      utmData: {
-        utmCampaign: 'ROPO_Auto',
-      },
-    };
-
+    const leadWrapper = buildLeadWrapper(formData);
     const finalPayload = { leadWrappers: [leadWrapper] };
 
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
@@ -161,52 +230,7 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      
-      const leadWrapper: any = {
-        // IDs
-        id: formData.id,
-        idFullOperation: formData.idFullOperation,
-        idOwner: formData.idOwner,
-
-        // Always include base data for validation
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        documentType: formData.documentType,
-        documentNumber: formData.documentNumber,
-        
-        // Always include contact data
-        contactData: {
-            mobilePhone: formData.mobilePhone,
-            phone: formData.phone,
-            email: formData.email,
-        },
-
-        // Data that gets updated in subsequent steps
-        sourceData: {
-            sourceEvent: formData.sourceEvent,
-            systemOrigin: formData.systemOrigin,
-            origin: formData.origin,
-            leadSource: formData.leadSource,
-            eventReason: '01', 
-            sourceSite: 'Website', 
-            deviceType: '01', 
-            deviceModel: 'iPhone', 
-            ipData: {}
-        },
-        utmData: {
-            utmCampaign: formData.utmCampaign,
-        },
-      };
-
-      // Only include conversionData if convertedStatus is present
-      if (formData.convertedStatus) {
-        leadWrapper.conversionData = {
-            convertedStatus: formData.convertedStatus,
-            policyNumber: formData.policyNumber,
-        };
-      }
-
-
+      const leadWrapper = buildLeadWrapper(formData);
       const finalPayload = { leadWrappers: [leadWrapper] };
 
       const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
@@ -218,17 +242,11 @@ const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(finalPayload),
       });
 
-      // Handle potential empty response for success
       const responseText = await leadResponse.text();
       if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
           return { success: true, idFullOperation: formData.idFullOperation };
       }
       
-      if (!responseText) {
-        if(leadResponse.ok) return { success: true, idFullOperation: formData.idFullOperation };
-        else throw new Error(`Failed to update lead: ${leadResponse.status} Empty error response`);
-      }
-
       const responseData = JSON.parse(responseText);
 
       if (!leadResponse.ok) {

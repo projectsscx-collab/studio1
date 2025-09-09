@@ -25,7 +25,6 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
     defaultValues: {
       ...initialData,
       convertedStatus: '02', // Pre-select "Emitido"
-      policyNumber: '', // Ensure it's an empty string
     },
     mode: 'onChange',
   });
@@ -73,7 +72,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
                     </FormItem>
                 )}
             />
-             {/* Field is now completely hidden from the UI and form state */}
+             {/* This field is now completely hidden from the UI */}
              <FormField
                 control={form.control}
                 name="policyNumber"

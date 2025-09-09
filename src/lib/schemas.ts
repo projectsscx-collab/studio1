@@ -8,6 +8,18 @@ export const documentTypes = {
   "03": "Licencia de Conducir",
 };
 
+export const sexes = {
+  "01": "Masculino",
+  "02": "Femenino",
+};
+
+export const maritalStatuses = {
+    "01": "Soltero/a",
+    "02": "Casado/a",
+    "03": "Divorciado/a",
+    "04": "Viudo/a"
+};
+
 export const paymentMethods = {
     "01": "Tarjeta de Crédito",
     "02": "Transferencia Bancaria",
@@ -39,7 +51,8 @@ export const agentTypes = {
 };
 
 export const leadSchema = z.object({
-  idFullOperation: z.string().optional(), // Optional in the form, but required in the final payload
+  idFullOperation: z.string().optional(), 
+  
   // Step 1
   firstName: z.string().min(1, 'El nombre es requerido.'),
   lastName: z.string().min(1, 'El apellido es requerido.'),
@@ -49,6 +62,17 @@ export const leadSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().min(1, 'El teléfono es requerido.'),
   email: z.string().email('El correo electrónico no es válido.'),
+  company: z.string().optional(),
+  sex: z.string().min(1, 'Seleccione el sexo.'),
+  maritalStatus: z.string().min(1, 'Seleccione el estado civil.'),
+  street: z.string().min(1, 'La calle es requerida.'),
+  postalCode: z.string().min(1, 'El código postal es requerido.'),
+  city: z.string().min(1, 'La ciudad es requerida.'),
+  district: z.string().min(1, 'El distrito es requerido.'),
+  municipality: z.string().min(1, 'El municipio es requerido.'),
+  state: z.string().min(1, 'El estado es requerido.'),
+  country: z.string().min(1, 'El país es requerido.'),
+  colony: z.string().min(1, 'La colonia es requerida.'),
   
   // Step 2
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),
@@ -63,6 +87,7 @@ export const leadSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
+  currencyIsoCode: z.string().min(1, 'La moneda es requerida.'),
   
   // Step 4
   sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),

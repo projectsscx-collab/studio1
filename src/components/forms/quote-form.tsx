@@ -31,16 +31,18 @@ const calculateFullOperationId = () => {
 const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
-        idFullOperation: true, // This field is required for the payload
+        idFullOperation: true,
         effectiveDate: true,
         expirationDate: true,
         paymentMethod: true,
         paymentPeriodicity: true,
         paymentTerm: true,
+        currencyIsoCode: true,
     })),
     defaultValues: {
         ...initialData,
         netPremium: '1000.00',
+        totalPremium: '1200.00',
         idFullOperation: initialData.idFullOperation || calculateFullOperationId(),
     },
     mode: 'onChange'
@@ -48,27 +50,15 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
 
   const allData = { ...initialData, ...form.watch() };
   
+  // This is a simplified representation for the JSON preview
   const leadPayload = {
       leadWrappers: [{
         idFullOperation: allData.idFullOperation,
-        // Personal Data
         firstName: allData.firstName,
         lastName: allData.lastName,
-        birthdate: allData.birthdate,
-        documentType: allData.documentType,
-        documentNumber: allData.documentNumber,
-        // Contact Data
-        contactData: {
-            mobilePhone: allData.mobilePhone,
-            phone: allData.phone,
-            email: allData.email,
-        },
-        // Interest Product and Vehicle Data
+        // ... other fields from previous steps
         interestProduct: {
-            businessLine: '01',
-            sector: 'XX_01',
-            subsector: 'XX_00',
-            branch: 'XX_205',
+            // ... other interest product fields
             risk: JSON.stringify({
                 'Número de matrícula__c': allData.numero_de_matricula,
                 'Marca__c': allData.marca,
@@ -76,39 +66,22 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                 'Año del vehículo__c': allData.ano_del_vehiculo,
                 'Número de serie__c': allData.numero_de_serie,
             }),
-            // Quote Data
             quotes: [
                 {
-                    id: 'TestWSConvertMIN', // Static ID as required by Apex validation
+                    id: 'TestPSLead',
                     effectiveDate: allData.effectiveDate,
                     expirationDate: allData.expirationDate,
-                    productCode: 'PRD001',
-                    productName: 'Life Insurance',
                     netPremium: 1000.0,
+                    totalPremium: 1200.0,
                     paymentMethod: allData.paymentMethod,
                     paymentPeriodicity: allData.paymentPeriodicity,
                     paymentTerm: allData.paymentTerm,
-                    additionalInformation: 'test',
-                    isSelected: true,
+                    currencyIsoCode: allData.currencyIsoCode,
+                    // ... other static quote fields
                 },
             ],
         },
-        // Default Source Data
-        sourceData: {
-            sourceEvent: '01',
-            eventReason: '01',
-            sourceSite: 'Website',
-            deviceType: '01',
-            deviceModel: 'iPhone',
-            leadSource: '01',
-            origin: '01',
-            systemOrigin: '05', 
-            ipData: {},
-        },
-        // Default UTM Data
-        utmData: {
-            utmCampaign: 'ROPO_Auto',
-        },
+        // ... other wrapper fields
       }],
     };
   
@@ -143,7 +116,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                                 <FormControl>
                                 <Button
                                     variant={'outline'}
-                                    className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                                    className={cn('w-full justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>Seleccione una fecha</span>}
@@ -184,7 +157,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                                 <FormControl>
                                 <Button
                                     variant={'outline'}
-                                    className={cn('w-[240px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                                    className={cn('w-full justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {field.value ? format(new Date(field.value), 'dd/MM/yyyy') : <span>Seleccione una fecha</span>}
@@ -213,6 +186,23 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                         <Input readOnly value="1000.00" />
                     </FormControl>
                 </FormItem>
+                 <FormItem>
+                    <FormLabel>Prima Total</FormLabel>
+                    <FormControl>
+                        <Input readOnly value="1200.00" />
+                    </FormControl>
+                </FormItem>
+                 <FormField
+                    control={form.control}
+                    name="currencyIsoCode"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Moneda</FormLabel>
+                        <FormControl><Input placeholder="EUR" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                 control={form.control}
                 name="paymentMethod"
@@ -264,7 +254,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">JSON a Enviar</label>
+            <label className="text-sm font-medium">JSON a Enviar (Vista Previa)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(leadPayload, null, 2)}
             </pre>

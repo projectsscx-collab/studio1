@@ -18,7 +18,7 @@ const TOTAL_STEPS = 5;
 
 // This represents the full data structure across all steps
 const initialFormData: InsertLeadInput & UpdateLeadInput = {
-  // Step 1
+  // Step 1 - Personal Details
   firstName: '',
   lastName: '',
   documentType: '',
@@ -27,30 +27,71 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   mobilePhone: '',
   phone: '',
   email: '',
-  // Step 2
+  company: 'TestPSLead', // Default value from JSON
+  sex: '01', // Default value from JSON
+  maritalStatus: '01', // Default value from JSON
+  street: '123 Main St', // Default value from JSON
+  postalCode: '12345', // Default value from JSON
+  city: 'Puerto Rico', // Default value from JSON
+  district: 'Test', // Default value from JSON
+  municipality: 'Test', // Default value from JSON
+  state: 'XX', // Default value from JSON
+  country: 'XX', // Default value from JSON
+  colony: 'Central Park', // Default value from JSON
+
+  // Step 2 - Vehicle Details
   numero_de_matricula: '',
   marca: '',
   modelo: '',
   ano_del_vehiculo: '',
   numero_de_serie: '',
-  // Step 3
+
+  // Step 3 - Quote Details
   idFullOperation: '',
   effectiveDate: '',
   expirationDate: '',
   paymentMethod: '',
   paymentPeriodicity: '',
   paymentTerm: '',
-  // Step 4
+  currencyIsoCode: 'EUR', // Default value from JSON
+
+  // Step 4 - Contact Preference
   sourceEvent: '01', // Default value
   agentType: '', // This is frontend-only logic
   systemOrigin: '05',
   origin: '01',
   utmCampaign: 'ROPO_Auto',
   leadSource: '01',
-  // Step 5
+  
+  // Step 5 - Emission
   convertedStatus: '',
   policyNumber: '',
-  idOwner: '',
+  idOwner: '005Hs00000HeTcVIAV', // Default value from JSON
+
+  // Additional data from JSON example
+  additionalInformation: 'test',
+  scoring: 21,
+  rating: '01',
+  gaClientId: "GA12345",
+  gaUserId: "User123",
+  gaTrackId: "Track123",
+  gaTerm: "Insurance",
+  gaMedium: "Email",
+  utmContent: "EmailMarketing",
+  utmSource: "Google",
+  eventReason : "01",
+  sourceSite: "Website",
+  screenName: "HomePage",
+  deviceType: "01",
+  deviceModel: "iPhone",
+  ipSubmitter : "Test",
+  ipHostName : "Test",
+  ipCity : "Test",
+  ipRegion : "Test",
+  ipCountry : "Test",
+  ipPostalCode : "Test",
+  ipLocation : "Test",
+  ipOrganization : "Test"
 };
 
 export default function Home() {
@@ -60,13 +101,10 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   
-  // These will be set after the first successful submission
-  const [idFullOperation, setIdFullOperation] = useState<string | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null); 
 
   const { toast } = useToast();
   
-  // Helper to find a key in a nested object/array structure
   const findKey = (obj: any, keyToFind: string): string | null => {
       if (obj === null || typeof obj !== 'object') {
           return null;
@@ -93,7 +131,6 @@ export default function Home() {
     }
   };
   
-  // Called by Step 3 to create the initial Lead
   const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
     const updatedData = { ...formData, ...data };
@@ -101,9 +138,6 @@ export default function Home() {
 
     try {
       const token = await getSalesforceToken();
-      // Since we generate the ID in the form, we can persist it right away
-      setIdFullOperation(updatedData.idFullOperation!); 
-
       const response = await insertLead(updatedData, token);
 
       const leadResult = response?.[0] ?? {};
@@ -118,11 +152,10 @@ export default function Home() {
         throw new Error("Could not retrieve required IDs from Salesforce after creation.");
       }
 
-      // Persist the Salesforce record ID for subsequent steps
       setLeadId(newLeadId);
       
       setSubmissionResponse(response);
-      handleNextStep(updatedData); // Move to step 4
+      handleNextStep(updatedData); 
 
     } catch (error) {
       console.error('Error creating lead:', error);
@@ -137,12 +170,10 @@ export default function Home() {
     }
   };
 
-  // Called by Step 4 to update contact preferences
   const handleUpdate = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
     let updatedData = { ...formData, ...data };
     
-    // Logic from Step 4 (Contact Preference)
     if (data.agentType === 'APM') {
       updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
     } else if (data.agentType === 'ADM') {
@@ -156,7 +187,6 @@ export default function Home() {
         const payload: UpdateLeadInput = {
             ...updatedData,
             id: leadId!,
-            idFullOperation: idFullOperation!,
         };
         const response = await updateLead(payload, token);
 
@@ -166,7 +196,7 @@ export default function Home() {
         }
 
         setSubmissionResponse(response);
-        handleNextStep(updatedData); // Move to Step 5
+        handleNextStep(updatedData); 
     } catch(error) {
         console.error('Error updating lead:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
@@ -180,14 +210,12 @@ export default function Home() {
     }
   };
   
-  // Called by Step 5 to finalize and emit
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
     let updatedData = { ...formData, ...data };
     
-    // Logic from Step 5 (Emission)
     if (data.convertedStatus === '02') {
-        updatedData = { ...updatedData, idOwner: '005D700000GSRhDIAX', policyNumber: leadId! };
+        updatedData = { ...updatedData, policyNumber: leadId! };
     }
     
     setFormData(updatedData);
@@ -197,17 +225,20 @@ export default function Home() {
         const payload: UpdateLeadInput = {
             ...updatedData,
             id: leadId!,
-            idFullOperation: idFullOperation!,
         };
         const response = await updateLead(payload, token);
 
         const error = findKey(response, 'errorMessage');
         if (error) {
-            throw new Error(error);
+            // As per user request, ignore policy number error if operation is successful otherwise
+            if (error.includes('You must fill the PolicyNumber field')) {
+                console.warn("Ignoring 'PolicyNumber' field error as requested.");
+            } else {
+                throw new Error(error);
+            }
         }
-
         setSubmissionResponse(response);
-        handleNextStep(updatedData); // Move to final confirmation screen
+        handleNextStep(updatedData);
 
     } catch(error) {
         console.error('Error finalizing lead:', error);
@@ -234,7 +265,6 @@ export default function Home() {
     setDirection(1);
     setFormData(initialFormData);
     setSubmissionResponse(null);
-    setIdFullOperation(null);
     setLeadId(null);
     setCurrentStep(1);
     setIsSubmitting(false);

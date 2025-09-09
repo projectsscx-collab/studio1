@@ -210,7 +210,7 @@ export default function Home() {
         ...formData, 
         ...data,
         id: leadId!,
-        policyNumber: '', // Send an empty string, not the lead ID
+        policyNumber: 'PENDIENTE', // Send a placeholder value to pass validation
     };
     setFormData(finalData);
     

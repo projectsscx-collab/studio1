@@ -96,29 +96,42 @@ const submitLeadFlow = ai.defineFlow(
       throw new Error(`Lead ID not found in Salesforce response: ${errorDetails}`);
     }
     
-    // 3. Query for the Converted Opportunity ID
-    const query = `SELECT ConvertedOpportunityId FROM Lead WHERE Id = '${leadId}'`;
-    const queryUrl = `${token.instance_url}/services/data/v61.0/query?q=${encodeURIComponent(query)}`;
+    // 3. Query for the Converted Opportunity ID with retries for async conversion
+    let opportunityId: string | null = null;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
 
-    const queryResponse = await fetch(queryUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token.access_token}`,
-      },
-    });
+    for (let i = 0; i < maxRetries; i++) {
+        const query = `SELECT ConvertedOpportunityId FROM Lead WHERE Id = '${leadId}'`;
+        const queryUrl = `${token.instance_url}/services/data/v61.0/query?q=${encodeURIComponent(query)}`;
 
-    if (!queryResponse.ok) {
-        const errorText = await queryResponse.text();
-        throw new Error(`Failed to query for Opportunity ID: ${queryResponse.status} ${errorText}`);
+        const queryResponse = await fetch(queryUrl, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token.access_token}` },
+        });
+
+        if (!queryResponse.ok) {
+            const errorText = await queryResponse.text();
+            throw new Error(`Failed to query for Opportunity ID: ${queryResponse.status} ${errorText}`);
+        }
+
+        const queryResult = await queryResponse.json();
+        opportunityId = queryResult?.records?.[0]?.ConvertedOpportunityId;
+
+        if (opportunityId) {
+            break; // Successfully found the ID, exit the loop.
+        }
+
+        // If not found and not the last attempt, wait before retrying.
+        if (i < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
     }
 
-    const queryResult = await queryResponse.json();
-    const opportunityId = queryResult?.records?.[0]?.ConvertedOpportunityId;
 
     if (!opportunityId) {
-        const errorDetails = JSON.stringify(queryResult);
-        console.error("Could not find ConvertedOpportunityId from Lead. Full query response:", errorDetails);
-        throw new Error(`Converted Opportunity ID not found in Salesforce query response: ${errorDetails}`);
+        // If still not found after all retries, throw an error.
+        throw new Error(`Converted Opportunity ID was not available after ${maxRetries} attempts. The lead-to-opportunity conversion might be delayed.`);
     }
 
     // 4. Return a clean object with the correct Opportunity ID

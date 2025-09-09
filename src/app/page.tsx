@@ -223,7 +223,6 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Create the full data object for this submission
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -245,7 +244,6 @@ export default function Home() {
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
 
         setSalesforceIds(newIds);
-        // Also update the main form state with the new IDs
         setFormData(prev => ({...prev, ...data, ...newIds }));
         
         handleNextStep(data);
@@ -270,7 +268,7 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      const baseData = { ...formData, ...data };
+      const baseData = { ...formData, ...data, ...salesforceIds };
     
       let finalData: FormData;
       
@@ -302,8 +300,6 @@ export default function Home() {
       
       finalData = {
           ...finalData,
-          id: salesforceIds.id, 
-          idFullOperation: salesforceIds.idFullOperation,
           convertedStatus: '02',
           policyNumber: salesforceIds.id, 
       };
@@ -370,10 +366,8 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    // Combine the base form data with any new data from the current step's form
     const combinedData = { ...formData, ...(salesforceIds || {}) };
     
-    // Determine if we are in the final submission flow (for payload structure)
     const isFinalFlow = currentStep >= 4; 
     
     const formProps = {

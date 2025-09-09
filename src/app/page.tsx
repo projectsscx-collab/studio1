@@ -64,7 +64,7 @@ const initialFormData: InsertLeadInput = {
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: '', // Use empty string to avoid React null error
+  policyNumber: '', // Initialize as an empty string to avoid React "null" error
 
   // --- Static / Hardcoded data ---
   businessLine: "01",
@@ -135,9 +135,10 @@ export default function Home() {
         const leadId = findKey(response, 'leadResultId');
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
-        setSalesforceIds({ id: leadId, idFullOperation: newIdFullOperation });
+        const newIds = { id: leadId, idFullOperation: newIdFullOperation };
+        setSalesforceIds(newIds);
         // Persist all data, including the new IDs, into the main form state
-        setFormData(prev => ({...prev, ...data, id: leadId, idFullOperation: newIdFullOperation }));
+        setFormData(prev => ({...prev, ...data, ...newIds }));
         handleNextStep(data);
 
     } catch(error) {
@@ -213,7 +214,7 @@ export default function Home() {
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id, // Set policyNumber to the lead ID
+          policyNumber: salesforceIds.id, // Set policyNumber to the lead ID for the final conversion call
       };
 
       try {

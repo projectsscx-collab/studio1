@@ -67,6 +67,28 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       'Año del vehículo__c': formData.ano_del_vehiculo,
       'Número de serie__c': formData.numero_de_serie,
   };
+  
+  const quote = {
+      id: "TestWSConvertMIN",
+      effectiveDate: formData.effectiveDate,
+      expirationDate: formData.expirationDate,
+      productCode: "PRD001",
+      productName: "Life Insurance",
+      netPremium: 1000.00,
+      paymentMethod: formData.paymentMethod,
+      isSelected: true,
+      paymentPeriodicity: formData.paymentPeriodicity,
+      paymentTerm: formData.paymentTerm,
+      additionalInformation: 'test',
+      policyNumber: undefined as string | undefined, // Define it here
+  };
+  
+  // Add policyNumber to the quote ONLY during the final conversion step
+  if ('convertedStatus' in formData && formData.convertedStatus && 'policyNumber' in formData) {
+      quote.policyNumber = formData.policyNumber || undefined;
+  } else {
+      delete quote.policyNumber; // Ensure it's not present otherwise
+  }
 
   const leadWrapper: any = {
       id: formData.id,
@@ -99,19 +121,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           subsector: formData.subsector,
           branch: formData.branch,
           risk: JSON.stringify(riskObject),
-          quotes: [{
-              id: "TestWSConvertMIN",
-              effectiveDate: formData.effectiveDate,
-              expirationDate: formData.expirationDate,
-              productCode: "PRD001",
-              productName: "Life Insurance",
-              netPremium: 1000.00,
-              paymentMethod: formData.paymentMethod,
-              isSelected: true,
-              paymentPeriodicity: formData.paymentPeriodicity,
-              paymentTerm: formData.paymentTerm,
-              additionalInformation: 'test'
-          }],
+          quotes: [quote], // Add the dynamically constructed quote
       },
 
       utmData: {
@@ -131,9 +141,8 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       },
   };
   
-  // Add conversion data and policy number only if it exists (final step)
+  // Add conversion data only if it exists (final step)
   if ('convertedStatus' in formData && formData.convertedStatus) {
-    leadWrapper.policyNumber = formData.policyNumber; // Add top-level policy number
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
     };

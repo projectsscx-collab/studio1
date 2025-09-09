@@ -9,6 +9,7 @@ import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { SalesforceIds } from '@/lib/salesforce-schemas';
+import { useEffect } from 'react';
 
 interface EmissionFormProps {
   onSubmit: (data: any) => void;
@@ -31,13 +32,20 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
     mode: 'onChange',
   });
   
+  useEffect(() => {
+    // Pre-fill policyNumber with opportunityId when the component mounts and if the field is empty.
+    if (salesforceIds?.id && !form.getValues('policyNumber')) {
+      form.setValue('policyNumber', salesforceIds.id, { shouldValidate: true });
+    }
+  }, [salesforceIds, form]);
+
   const watchedData = form.watch();
 
   const finalPayload = {
       StageName: "06",
       CloseDate: format(new Date(), 'yyyy-MM-dd'),
       Amount: watchedData.Amount,
-      PolicyNumber__c: watchedData.policyNumber || salesforceIds?.id,
+      PolicyNumber__c: watchedData.policyNumber || salesforceIds?.id || '',
   };
 
 
@@ -71,7 +79,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
                     <FormItem>
                     <FormLabel>Número de Póliza (Opcional)</FormLabel>
                     <FormControl>
-                        <Input placeholder={salesforceIds?.id || 'Se generará al emitir'} {...field} />
+                        <Input placeholder="Se autocompletará con el ID" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>

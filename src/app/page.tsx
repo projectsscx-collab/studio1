@@ -205,7 +205,6 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Merge all data and the new operation ID
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -226,18 +225,11 @@ export default function Home() {
         
         const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
         
-        // ** CRITICAL FIX **
-        // Update both the dedicated ID state and the main form data state
-        // to ensure the IDs persist through all subsequent steps.
         setSalesforceIds(newIds);
         
-        // Pass all data, including new IDs, to the next step's state.
         const nextStepData = { ...submissionData, ...newIds };
-        setFormData(nextStepData);
-
-        // Move to the next step
-        setDirection(1);
-        setCurrentStep((prev) => prev + 1);
+        
+        handleNextStep(nextStepData);
 
     } catch(error) {
         console.error('Error creating lead:', error);
@@ -282,7 +274,7 @@ export default function Home() {
           
           setSubmissionResponse({ success: true, ...response });
           setFormData(finalData); // Save final state
-          handleNextStep(data); // Move to confirmation screen
+          handleNextStep(finalData); // Move to confirmation screen with all data
 
       } catch (error) {
           console.error('Error updating opportunity:', error);

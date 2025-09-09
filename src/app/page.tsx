@@ -83,8 +83,8 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     if (isFinalSubmission) {
         // FINAL PAYLOAD STRUCTURE (for conversion)
         leadWrapper = {
-            id: formData.id, // Crucial for update
-            idFullOperation: formData.idFullOperation, // Crucial for upsert
+            id: formData.id,
+            idFullOperation: formData.idFullOperation,
             firstName: formData.firstName,
             lastName: formData.lastName,
             documentType: formData.documentType,
@@ -227,7 +227,6 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Create the full data object for submission, including the new ID
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -247,15 +246,16 @@ export default function Home() {
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
-
+        
         // ** CRITICAL FIX **
-        // Update both the salesforceIds state AND the main formData state
-        // This ensures the IDs persist through all subsequent steps.
+        // Update both states sequentially and robustly to prevent race conditions
+        // and ensure data persistence through all subsequent steps.
         setSalesforceIds(newIds);
-        const nextStepData = { ...data, ...newIds };
-        setFormData(prev => ({...prev, ...nextStepData})); // Persist IDs into main state
-        handleNextStep({}); // Move to next step with updated state
+        setFormData(prev => ({...prev, ...data, ...newIds}));
 
+        // Move to the next step
+        setDirection(1);
+        setCurrentStep((prev) => prev + 1);
 
     } catch(error) {
         console.error('Error creating lead:', error);
@@ -278,9 +278,6 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      // ** CRITICAL FIX **
-      // Explicitly merge formData, data from the current step, AND the stored salesforceIds
-      // This ensures that id and idFullOperation are correctly passed to buildLeadPayload.
       const combinedData: FormData = { 
         ...formData, 
         ...data, 
@@ -321,7 +318,7 @@ export default function Home() {
       finalData = {
           ...finalData,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id, // Use the stored Salesforce ID
+          policyNumber: salesforceIds.id,
       };
 
       const leadPayload = buildLeadPayload(finalData, true);
@@ -402,7 +399,6 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} />;
       case 4:
-        // Now just moves to the next step without a backend call
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} />;
@@ -445,5 +441,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

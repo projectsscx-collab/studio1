@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileoverview Genkit flows to create and update a lead in Salesforce.
- * These flows now act as simple proxies, receiving a fully constructed payload
- * from the client and forwarding it to Salesforce.
+ * @fileoverview Genkit flow to submit lead data to Salesforce.
+ * This has been simplified to a single submission flow, as the Apex
+ * class handles both inserts and updates (upsert).
  */
 
 import { ai } from '@/ai/genkit';
@@ -51,19 +51,20 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Consolidated Flow to SUBMIT/UPSERT the lead ---
+// --- Consolidated Flow to SUBMIT the lead ---
+// The Apex class uses POST for both creation and updates, so we only need one flow.
 const submitLeadFlow = ai.defineFlow(
   {
     name: 'submitLeadFlow',
     inputSchema: z.object({
-      leadPayload: z.any(), // The payload is now built on the client
+      leadPayload: z.any(), // The payload is now built entirely on the client
       token: SalesforceTokenResponseSchema,
     }),
     outputSchema: z.any(),
   },
   async ({ leadPayload, token }) => {
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
-      method: 'POST', // Salesforce uses POST for both inserts and updates with this APEX class
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',

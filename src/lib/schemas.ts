@@ -76,7 +76,6 @@ export const leadSchema = z.object({
   paymentMethod: z.string().min(1, 'Seleccione un método de pago.'),
   paymentPeriodicity: z.string().min(1, 'Seleccione una periodicidad de pago.'),
   paymentTerm: z.string().min(1, 'Seleccione un plazo de pago.'),
-  currencyIsoCode: z.string().optional(),
   
   // Step 4
   sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),
@@ -86,7 +85,7 @@ export const leadSchema = z.object({
 
   // Step 5
   convertedStatus: z.string().min(1, 'El estado de conversión es requerido.'),
-  policyNumber: z.string().optional().nullable(),
+  policyNumber: z.string().optional(),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

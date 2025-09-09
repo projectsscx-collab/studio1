@@ -95,13 +95,13 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           },
       },
       interestProduct: {
-          businessLine: '01',
-          sector: 'XX_01',
-          subsector: 'XX_00',
-          branch: 'XX_205',
+          businessLine: formData.businessLine,
+          sector: formData.sector,
+          subsector: formData.subsector,
+          branch: formData.branch,
           risk: JSON.stringify(riskObject), // ALWAYS stringify the risk object
           quotes: [{
-              id: 'TestPSLead',
+              id: formData.idFullOperation, // Using idFullOperation as quote ID as per new example
               issueDate: '2024-02-01',
               dueDate: '2025-01-01',
               effectiveDate: formData.effectiveDate,
@@ -116,7 +116,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
               discount: '0.24',
               paymentPeriodicity: formData.paymentPeriodicity,
               paymentTerm: formData.paymentTerm,
-              additionalInformation: 'test',
+              additionalInformation: formData.additionalInformation,
           }],
       },
       qualificationData: {
@@ -176,6 +176,13 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
         netPremium: null,
         totalPremium: null,
     };
+  }
+
+  // Filter out any top-level keys that are undefined
+  for (const key in leadWrapper) {
+    if (leadWrapper[key] === undefined) {
+      delete leadWrapper[key];
+    }
   }
 
   return leadWrapper;

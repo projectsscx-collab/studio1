@@ -18,7 +18,7 @@ const TOTAL_STEPS = 5;
 
 // This represents the full data structure across all steps, based on the example JSON
 const initialFormData: InsertLeadInput & UpdateLeadInput = {
-  // Step 1 - Personal Details & Address
+  // Step 1 - Personal Details & Contact
   firstName: '',
   lastName: '',
   documentType: '',
@@ -27,14 +27,16 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   mobilePhone: '',
   phone: '',
   email: '',
-  street: '123 Main St', 
-  postalCode: '12345', 
-  city: 'Puerto Rico',
-  district: 'Test', 
-  municipality: 'Test',
-  state: 'XX', 
-  country: 'PR', // Corrected Country Code
-  colony: 'Central Park',
+  
+  // Minimal address data
+  street: '', 
+  postalCode: '', 
+  city: '',
+  district: '', 
+  municipality: '',
+  state: '', 
+  country: 'PR',
+  colony: '',
 
   // Step 2 - Vehicle Details
   numero_de_matricula: '',
@@ -57,7 +59,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: '', // Set to leadId on final submission
+  policyNumber: '', 
 
   // --- Static data based on the provided JSON example ---
   idOwner: '005Hs00000HeTcVIAV',
@@ -78,15 +80,15 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   gaTerm: "Insurance",
   gaMedium: "Email",
   
-  // UTM Data
+  // UTM Data (using new default)
   utmCampaign: "ROPO_Auto",
   utmContent: "EmailMarketing",
   utmSource: "Google",
   
-  // Source Data
+  // Source Data (using new defaults)
   eventReason: "01",
   sourceSite: "Website",
-  screenName: "HomePage",
+  screenName: "",
   deviceType: "01",
   deviceModel: "iPhone",
   leadSource: "01",
@@ -94,14 +96,14 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   systemOrigin: "05",
   
   // IP Data
-  ipSubmitter: "Test",
-  ipHostName: "Test",
-  ipCity: "Test",
-  ipRegion: "Test",
-  ipCountry: "Test",
-  ipPostalCode: "Test",
-  ipLocation: "Test",
-  ipOrganization: "Test",
+  ipSubmitter: "",
+  ipHostName: "",
+  ipCity: "",
+  ipRegion: "",
+  ipCountry: "",
+  ipPostalCode: "",
+  ipLocation: "",
+  ipOrganization: "",
 };
 
 export default function Home() {
@@ -338,5 +340,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

@@ -11,9 +11,10 @@ interface VehicleDetailsFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
+  buildPreviewPayload: (data: any) => any;
 }
 
-const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFormProps) => {
+const VehicleDetailsForm = ({ onSubmit, onBack, initialData, buildPreviewPayload }: VehicleDetailsFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         numero_de_matricula: true,
@@ -29,8 +30,7 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
   });
 
   const watchedData = form.watch();
-  const currentFormData = { ...initialData, ...watchedData };
-  const previewPayload = { leadWrappers: [currentFormData] };
+  const previewPayload = buildPreviewPayload(watchedData);
 
 
   return (

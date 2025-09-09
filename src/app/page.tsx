@@ -100,6 +100,98 @@ interface SalesforceIds {
     idFullOperation: string;
 }
 
+// This function now lives on the client to be used by the preview
+const buildLeadPayload = (formData: InsertLeadInput | UpdateLeadInput) => {
+    const isFinalConversion = 'convertedStatus' in formData && formData.convertedStatus === '02';
+
+    const riskObject = {
+        'numero_de_matricula': formData.numero_de_matricula,
+        'marca': formData.marca,
+        'modelo': formData.modelo,
+        'ano_del_vehiculo': formData.ano_del_vehiculo,
+        'numero_de_serie': formData.numero_de_serie,
+    };
+  
+    const leadWrapper: any = {
+      id: formData.id,
+      idFullOperation: formData.idFullOperation,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      documentType: formData.documentType,
+      documentNumber: formData.documentNumber,
+      birthdate: formData.birthdate,
+      
+      contactData: {
+          mobilePhone: formData.mobilePhone,
+          phone: formData.phone,
+          email: formData.email,
+          address: {
+              street: formData.street,
+              postalCode: formData.postalCode,
+              city: formData.city,
+              district: formData.district,
+              municipality: formData.municipality,
+              state: formData.state,
+              country: formData.country,
+              colony: formData.colony,
+          },
+      },
+    
+      interestProduct: {
+          businessLine: formData.businessLine,
+          sector: formData.sector,
+          subsector: formData.subsector,
+          branch: formData.branch,
+          risk: JSON.stringify(riskObject),
+          quotes: [
+            {
+              effectiveDate: formData.effectiveDate,
+              expirationDate: formData.expirationDate,
+              paymentMethod: formData.paymentMethod,
+              paymentPeriodicity: formData.paymentPeriodicity,
+              paymentTerm: formData.paymentTerm,
+            }
+          ]
+      },
+
+      riskDetail: JSON.stringify(riskObject),
+
+      utmData: {
+          utmCampaign: formData.utmCampaign,
+      },
+
+      sourceData: {
+          sourceEvent: formData.sourceEvent,
+          eventReason: formData.eventReason,
+          sourceSite: formData.sourceSite,
+          deviceType: formData.deviceType,
+          deviceModel: formData.deviceModel,
+          leadSource: formData.leadSource,
+          origin: formData.origin,
+          systemOrigin: formData.systemOrigin,
+      },
+    };
+  
+    if (isFinalConversion) {
+      leadWrapper.conversionData = {
+        convertedStatus: formData.convertedStatus,
+        policyNumber: (formData as UpdateLeadInput).policyNumber, 
+      };
+    } else {
+        // Add fields only needed for initial/update, not final conversion
+        leadWrapper.idOwner = formData.idOwner;
+        leadWrapper.company = formData.company;
+        leadWrapper.additionalInformation = formData.additionalInformation;
+        // Salesforce throws an error if an empty string or null is passed for the ID on creation.
+        if (!leadWrapper.id) {
+            delete leadWrapper.id;
+        }
+    }
+  
+    return { leadWrappers: [leadWrapper] };
+};
+
+
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<InsertLeadInput | UpdateLeadInput>(initialFormData);
@@ -134,19 +226,18 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Combine all data for submission, including the new operation ID
     const submissionData: InsertLeadInput = { 
         ...formData, 
         ...data,
         idFullOperation: newIdFullOperation,
     };
     
-    // Also update the main form state to ensure it's persisted for subsequent steps
     setFormData(submissionData);
+    const leadPayload = buildLeadPayload(submissionData);
 
     try {
         const token = await getSalesforceToken();
-        const response = await insertLead(submissionData, token);
+        const response = await insertLead(leadPayload, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) throw new Error(error);
@@ -157,7 +248,7 @@ export default function Home() {
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
         setSalesforceIds(newIds);
         
-        setFormData(prev => ({...prev, ...newIds }));
+        setFormData(prev => ({...prev, ...newIds, idFullOperation: newIdFullOperation }));
         handleNextStep(data);
 
     } catch(error) {
@@ -205,16 +296,18 @@ export default function Home() {
     } else { // Default to Contact Center (CC)
       updatedData = {
         ...updatedData,
-        systemOrigin: '05', // Default value
-        origin: '01', // Default value
-        utmCampaign: 'Winter2024', // Default value
-        leadSource: '01', // Default value
+        systemOrigin: '05',
+        origin: '01',
+        utmCampaign: 'Winter2024',
+        leadSource: '01',
       }
     }
+
+    const leadPayload = buildLeadPayload(updatedData);
     
     try {
       const token = await getSalesforceToken();
-      await updateLead(updatedData, token);
+      await updateLead(leadPayload, token);
       setFormData(updatedData);
       handleNextStep(data);
 
@@ -242,13 +335,15 @@ export default function Home() {
           ...formData,
           ...data,
           ...salesforceIds,
-          convertedStatus: '02', // This is the key for the final step
-          policyNumber: salesforceIds.id, 
+          convertedStatus: '02',
+          policyNumber: salesforceIds.id,
       };
+
+      const leadPayload = buildLeadPayload(finalData);
 
       try {
           const token = await getSalesforceToken();
-          const response = await updateLead(finalData, token);
+          const response = await updateLead(leadPayload, token);
           
           const error = findKey(response, 'errorMessage');
           if (error) {
@@ -307,17 +402,23 @@ export default function Home() {
 
   const renderStep = () => {
     const combinedData = { ...formData, ...(salesforceIds || {}) };
+    // Pass the builder function to the forms for the preview
+    const formProps = {
+        initialData: combinedData,
+        buildPreviewPayload: (data: any) => buildLeadPayload({ ...combinedData, ...data })
+    };
+
     switch (currentStep) {
       case 1:
-        return <PersonalDetailsForm onSubmit={handleNextStep} initialData={combinedData} />;
+        return <PersonalDetailsForm onSubmit={handleNextStep} {...formProps} />;
       case 2:
-        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} initialData={combinedData} />;
+        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 3:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={combinedData} isSubmitting={isSubmitting} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} isSubmitting={isSubmitting} {...formProps} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={combinedData} isSubmitting={isSubmitting} />;
+        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} isSubmitting={isSubmitting} {...formProps} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={combinedData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} isSubmitting={isSubmitting} {...formProps} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
@@ -357,5 +458,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

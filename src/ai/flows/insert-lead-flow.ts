@@ -57,137 +57,24 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Helper function to build the lead wrapper based on the provided final JSON structure ---
-const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
-    
-    const isFinalConversion = 'convertedStatus' in formData && formData.convertedStatus === '02';
-
-    const riskObject = {
-        'numero_de_matricula': formData.numero_de_matricula,
-        'marca': formData.marca,
-        'modelo': formData.modelo,
-        'ano_del_vehiculo': formData.ano_del_vehiculo,
-        'numero_de_serie': formData.numero_de_serie,
-    };
-  
-    // Base leadWrapper structure
-    const leadWrapper: any = {
-        id: formData.id,
-        idFullOperation: formData.idFullOperation,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        documentType: formData.documentType,
-        documentNumber: formData.documentNumber,
-        birthdate: formData.birthdate,
-        
-        contactData: {
-            mobilePhone: formData.mobilePhone,
-            phone: formData.phone,
-            email: formData.email,
-            address: {
-                street: formData.street,
-                postalCode: formData.postalCode,
-                city: formData.city,
-                district: formData.district,
-                municipality: formData.municipality,
-                state: formData.state,
-                country: formData.country,
-                colony: formData.colony,
-            },
-        },
-      
-        interestProduct: {
-            businessLine: formData.businessLine,
-            sector: formData.sector,
-            subsector: formData.subsector,
-            branch: formData.branch,
-            risk: JSON.stringify(riskObject),
-            quotes: [
-              {
-                effectiveDate: formData.effectiveDate,
-                expirationDate: formData.expirationDate,
-                paymentMethod: formData.paymentMethod,
-                paymentPeriodicity: formData.paymentPeriodicity,
-                paymentTerm: formData.paymentTerm,
-              }
-            ]
-        },
-
-        riskDetail: JSON.stringify(riskObject),
-
-        utmData: {
-            utmCampaign: formData.utmCampaign,
-        },
-
-        sourceData: {
-            sourceEvent: formData.sourceEvent,
-            eventReason: formData.eventReason,
-            sourceSite: formData.sourceSite,
-            deviceType: formData.deviceType,
-            deviceModel: formData.deviceModel,
-            leadSource: formData.leadSource,
-            origin: formData.origin,
-            systemOrigin: formData.systemOrigin,
-        },
-    };
-  
-    // Add conversion data only for the final step
-    if (isFinalConversion) {
-      leadWrapper.conversionData = {
-        convertedStatus: formData.convertedStatus,
-        policyNumber: formData.policyNumber, 
-      };
-    }
-    
-    // Add fields that are not needed in the final payload but are needed for initial/update calls
-    if (!isFinalConversion) {
-        leadWrapper.idOwner = formData.idOwner;
-        leadWrapper.company = formData.company;
-        leadWrapper.additionalInformation = formData.additionalInformation;
-        leadWrapper.interestProduct.quotes[0].id = "TestPSLead";
-        leadWrapper.interestProduct.quotes[0].issueDate = "2024-02-01";
-        leadWrapper.interestProduct.quotes[0].dueDate = "2025-01-01";
-        leadWrapper.interestProduct.quotes[0].productCode = "PRD001";
-        leadWrapper.interestProduct.quotes[0].productName = "Life Insurance";
-        leadWrapper.interestProduct.quotes[0].netPremium = 1000.00;
-        leadWrapper.interestProduct.quotes[0].totalPremium = 1200.00;
-        leadWrapper.interestProduct.quotes[0].currencyIsoCode = "EUR";
-        leadWrapper.interestProduct.quotes[0].isSelected = true;
-        leadWrapper.interestProduct.quotes[0].discount = "0.24";
-        leadWrapper.interestProduct.quotes[0].additionalInformation = "test";
-    }
-
-
-    // Salesforce throws an error if an empty string or null is passed for the ID on creation.
-    if (!leadWrapper.id) {
-        delete leadWrapper.id;
-    }
-  
-    return leadWrapper;
-};
-
-
 // --- Flow to CREATE the lead (called from Step 3) ---
 const insertLeadFlow = ai.defineFlow(
   {
     name: 'insertLeadFlow',
     inputSchema: z.object({
-      formData: InsertLeadInputSchema,
+      leadPayload: z.any(), // The payload is now built on the client
       token: SalesforceTokenResponseSchema,
     }),
     outputSchema: z.any(),
   },
-  async ({ formData, token }) => {
-    const leadWrapper = buildLeadWrapper(formData);
-    const finalPayload = { leadWrappers: [leadWrapper] };
-
+  async ({ leadPayload, token }) => {
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(finalPayload),
+      body: JSON.stringify(leadPayload),
     });
     
     const responseData = await leadResponse.json();
@@ -208,27 +95,24 @@ const updateLeadFlow = ai.defineFlow(
   {
     name: 'updateLeadFlow',
     inputSchema: z.object({
-      formData: UpdateLeadInputSchema,
+      leadPayload: z.any(), // The payload is now built on the client
       token: SalesforceTokenResponseSchema,
     }),
     outputSchema: z.any(),
   },
-  async ({ formData, token }) => {
-    const leadWrapper = buildLeadWrapper(formData);
-    const finalPayload = { leadWrappers: [leadWrapper] };
-
+  async ({ leadPayload, token }) => {
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
       method: 'POST', // Salesforce uses POST for updates with this APEX class
       headers: {
         'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(finalPayload),
+      body: JSON.stringify(leadPayload),
     });
 
     const responseText = await leadResponse.text();
     // Handle empty response on success, which can happen on updates.
-    const responseData = responseText ? JSON.parse(responseText) : { success: true, id: formData.id };
+    const responseData = responseText ? JSON.parse(responseText) : { success: true, id: leadPayload.leadWrappers[0].id };
     
     if (!leadResponse.ok) {
       const errorText = JSON.stringify(responseData);
@@ -246,12 +130,10 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
   return getSalesforceTokenFlow();
 }
 
-export async function insertLead(formData: InsertLeadInput, token: SalesforceTokenResponse): Promise<any> {
-  return insertLeadFlow({ formData, token });
+export async function insertLead(leadPayload: any, token: SalesforceTokenResponse): Promise<any> {
+  return insertLeadFlow({ leadPayload, token });
 }
 
-export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
-  return updateLeadFlow({ formData, token });
+export async function updateLead(leadPayload: any, token: SalesforceTokenResponse): Promise<any> {
+  return updateLeadFlow({ leadPayload, token });
 }
-
-    

@@ -18,9 +18,10 @@ interface QuoteFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  buildPreviewPayload: (data: any) => any;
 }
 
-const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormProps) => {
+const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         idFullOperation: true,
@@ -36,13 +37,8 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
     mode: 'onChange'
   });
 
-  const allData = { ...initialData, ...form.watch() };
-  
-  const leadPayload = {
-      leadWrappers: [{
-          ...allData
-      }],
-  };
+  const watchedData = form.watch();
+  const leadPayload = buildPreviewPayload(watchedData);
   
   return (
     <FormProvider {...form}>
@@ -214,5 +210,3 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
 };
 
 export default QuoteForm;
-
-    

@@ -15,9 +15,10 @@ interface ContactPreferenceFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  buildPreviewPayload: (data: any) => any;
 }
 
-const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
+const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: ContactPreferenceFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
       sourceEvent: true,
@@ -30,8 +31,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
   });
 
   const watchedData = form.watch();
-  const currentFormData = { ...initialData, ...watchedData };
-  const previewPayload = { leadWrappers: [currentFormData] };
+  const previewPayload = buildPreviewPayload(watchedData);
 
 
   return (

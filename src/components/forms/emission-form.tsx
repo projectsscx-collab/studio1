@@ -14,9 +14,10 @@ interface EmissionFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
+  buildPreviewPayload: (data: any) => any;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: EmissionFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
       convertedStatus: true,
@@ -30,14 +31,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionF
   });
   
   const watchedData = form.watch();
-  const currentFormData = { ...initialData, ...watchedData };
-
-  const finalPayload = {
-      leadWrappers: [{
-          ...currentFormData,
-          policyNumber: currentFormData.id || '', // Use lead ID for policyNumber
-      }]
-  }
+  const finalPayload = buildPreviewPayload(watchedData);
 
 
   return (

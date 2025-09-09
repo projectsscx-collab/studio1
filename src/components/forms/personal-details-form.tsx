@@ -16,9 +16,10 @@ import { format } from 'date-fns';
 interface PersonalDetailsFormProps {
   onSubmit: (data: any) => void;
   initialData: any;
+  buildPreviewPayload: (data: any) => any;
 }
 
-const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {
+const PersonalDetailsForm = ({ onSubmit, initialData, buildPreviewPayload }: PersonalDetailsFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({ 
         firstName: true, 
@@ -38,8 +39,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
   });
   
   const watchedData = form.watch();
-  const currentFormData = { ...initialData, ...watchedData };
-  const previewPayload = { leadWrappers: [currentFormData] };
+  const previewPayload = buildPreviewPayload(watchedData);
 
 
   return (

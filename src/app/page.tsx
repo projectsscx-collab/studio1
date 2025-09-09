@@ -33,7 +33,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   district: 'Test', 
   municipality: 'Test',
   state: 'XX', 
-  country: 'XX', 
+  country: 'PR', // Corrected Country Code
   colony: 'Central Park',
 
   // Step 2 - Vehicle Details
@@ -235,12 +235,7 @@ export default function Home() {
         
         const error = findKey(response, 'errorMessage');
         if (error) {
-            // As per user request, ignore policy number error if operation is successful otherwise
-            if (error.includes('You must fill the PolicyNumber field')) {
-                console.warn("Ignoring 'PolicyNumber' field error as requested.");
-            } else {
-                throw new Error(error);
-            }
+            throw new Error(error);
         }
         setSubmissionResponse(response);
         handleNextStep(updatedData);

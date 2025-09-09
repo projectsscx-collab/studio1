@@ -62,17 +62,6 @@ export const leadSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().min(1, 'El teléfono es requerido.'),
   email: z.string().email('El correo electrónico no es válido.'),
-  company: z.string().optional(),
-  sex: z.string().min(1, 'Seleccione el sexo.'),
-  maritalStatus: z.string().min(1, 'Seleccione el estado civil.'),
-  street: z.string().min(1, 'La calle es requerida.'),
-  postalCode: z.string().min(1, 'El código postal es requerido.'),
-  city: z.string().min(1, 'La ciudad es requerida.'),
-  district: z.string().min(1, 'El distrito es requerido.'),
-  municipality: z.string().min(1, 'El municipio es requerido.'),
-  state: z.string().min(1, 'El estado es requerido.'),
-  country: z.string().min(1, 'El país es requerido.'),
-  colony: z.string().min(1, 'La colonia es requerida.'),
   
   // Step 2
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),

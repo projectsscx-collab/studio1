@@ -2,7 +2,7 @@
 
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { documentTypes, sexes, maritalStatuses, leadSchema } from '@/lib/schemas';
+import { documentTypes, leadSchema } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -23,23 +23,12 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
     resolver: zodResolver(leadSchema.pick({ 
         firstName: true, 
         lastName: true, 
-        company: true,
         documentType: true,
         documentNumber: true,
         birthdate: true,
-        sex: true,
-        maritalStatus: true,
         mobilePhone: true,
         phone: true,
         email: true,
-        street: true,
-        postalCode: true,
-        city: true,
-        district: true,
-        municipality: true,
-        state: true,
-        country: true,
-        colony: true,
     })),
     defaultValues: {
       ...initialData,
@@ -51,7 +40,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div>
-                <h2 className="text-xl font-semibold mb-6">Información Personal y de la Empresa</h2>
+                <h2 className="text-xl font-semibold mb-6">Información Personal</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                         control={form.control}
@@ -71,17 +60,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             <FormItem>
                             <FormLabel>Apellido</FormLabel>
                             <FormControl><Input placeholder="E.g. Doe" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="company"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Compañía</FormLabel>
-                            <FormControl><Input placeholder="E.g. MAPFRE Inc." {...field} /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -150,42 +128,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="sex"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Sexo</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione sexo" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {Object.entries(sexes).map(([key, value]) => (
-                                        <SelectItem key={key} value={key}>{value}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="maritalStatus"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Estado Civil</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione estado civil" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {Object.entries(maritalStatuses).map(([key, value]) => (
-                                        <SelectItem key={key} value={key}>{value}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
                 </div>
             </div>
 
@@ -223,94 +165,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             <FormItem>
                             <FormLabel>Correo Electrónico</FormLabel>
                             <FormControl><Input placeholder="E.g. john.doe@example.com" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="street"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Calle</FormLabel>
-                            <FormControl><Input placeholder="E.g. 123 Main St" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Ciudad</FormLabel>
-                            <FormControl><Input placeholder="E.g. San Juan" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="postalCode"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Código Postal</FormLabel>
-                            <FormControl><Input placeholder="E.g. 12345" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="colony"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Colonia</FormLabel>
-                            <FormControl><Input placeholder="E.g. Central Park" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="municipality"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Municipio</FormLabel>
-                            <FormControl><Input placeholder="E.g. Test" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="district"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Distrito</FormLabel>
-                            <FormControl><Input placeholder="E.g. Test" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Estado</FormLabel>
-                            <FormControl><Input placeholder="E.g. XX" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="country"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>País</FormLabel>
-                            <FormControl><Input placeholder="E.g. XX" {...field} /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}

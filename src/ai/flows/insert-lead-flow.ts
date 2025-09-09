@@ -57,8 +57,7 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Helper function to build the lead wrapper ---
-// This function now takes the entire form state and builds the complex payload
+// --- Helper function to build the lead wrapper for CREATION ---
 const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   
   // Create the risk object, which will be stringified
@@ -131,19 +130,12 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           ipData: {},
       },
   };
-
-  // Add 'id' only if it's available in the formData (for update operations)
-  if ('id' in formData && formData.id) {
-    leadWrapper.id = formData.id;
-  }
   
   // Conditionally add conversionData only when convertedStatus has a value
   if (formData.convertedStatus) {
     leadWrapper.conversionData = {
         convertedStatus: formData.convertedStatus,
         policyNumber: formData.policyNumber || null,
-        netPremium: null,
-        totalPremium: null,
     };
   }
 
@@ -204,7 +196,25 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      const leadWrapper = buildLeadWrapper(formData);
+      // For updates, especially conversion, send a minimal payload
+      const leadWrapper = {
+        id: formData.id,
+        idFullOperation: formData.idFullOperation,
+        conversionData: {
+            convertedStatus: formData.convertedStatus,
+            policyNumber: formData.policyNumber,
+        },
+        // Include any other fields that change in this step, e.g. from ContactPreference
+        sourceData: {
+          systemOrigin: formData.systemOrigin,
+          origin: formData.origin,
+          leadSource: formData.leadSource
+        },
+        utmData: {
+          utmCampaign: formData.utmCampaign
+        }
+      };
+
       const finalPayload = { leadWrappers: [leadWrapper] };
 
       const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {

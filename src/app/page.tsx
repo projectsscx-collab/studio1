@@ -11,7 +11,6 @@ import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
 import { submitLead } from '@/ai/flows/insert-lead-flow';
-import { updateOpportunity } from '@/ai/flows/update-opportunity-flow';
 import type { FormData, SalesforceIds } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
@@ -29,7 +28,7 @@ const calculateFullOperationId = () => {
 
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
-  id: null, // This will hold the Opportunity ID after creation
+  id: null, // This will hold the Lead ID after creation
   idFullOperation: '',
 
   // --- Step 1: Personal Details ---
@@ -44,13 +43,14 @@ const initialFormData: FormData = {
   phone: '',
   email: '',
   
+  // Address is no longer collected
   street: 'N/A',
   postalCode: 'N/A',
   city: 'N/A',
   district: 'N/A',
   municipality: 'N/A',
-  state: 'XX', // Default value
-  country: 'PR', // Default value
+  state: 'XX', 
+  country: 'PR',
 
   // --- Step 2: Vehicle Details ---
   numero_de_matricula: '',
@@ -115,6 +115,9 @@ const buildLeadPayload = (formData: FormData) => {
     }
     
     const leadWrapper: any = {
+        // id is only included for updates, not creation.
+        // The presence of this field tells the Apex service to update.
+        id: formData.id,
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -142,7 +145,7 @@ const buildLeadPayload = (formData: FormData) => {
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
             quotes: [{
-                id: "123456", // Static ID as per example
+                id: "123456",
                 effectiveDate: formData.effectiveDate,
                 expirationDate: formData.expirationDate,
                 paymentMethod: formData.paymentMethod,
@@ -156,14 +159,15 @@ const buildLeadPayload = (formData: FormData) => {
         utmData: utmData,
         sourceData: sourceData,
         conversionData: {
-          convertedStatus: null,
-          policyNumber: ""
+          convertedStatus: "06", // '06' seems to indicate "Ganada emitida"
+          policyNumber: formData.policyNumber || formData.id
         }
     };
   
     // Only include the 'id' field if it's not null.
-    if (formData.id) {
-        leadWrapper.id = formData.id;
+    // This is crucial for distinguishing create vs. update calls.
+    if (!formData.id) {
+        delete leadWrapper.id;
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -192,6 +196,7 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // For initial submission, id must be null
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -204,26 +209,27 @@ export default function Home() {
     try {
         const response = await submitLead(leadPayload);
 
-        if (!response?.success || !response?.opportunityId) {
-            console.error("Salesforce Response does not contain Opportunity ID:", response);
-            throw new Error('Opportunity ID not found in Salesforce response.');
+        if (!response?.success || !response?.leadId) {
+            console.error("Salesforce Response does not contain Lead ID:", response);
+            throw new Error('Lead ID not found in Salesforce response.');
         }
         
-        const opportunityId = response.opportunityId;
-        const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
+        // The ID returned is the LEAD ID, which we'll use for subsequent updates.
+        const leadId = response.leadId;
+        const newIds: SalesforceIds = { id: leadId, idFullOperation: newIdFullOperation };
         
         setSalesforceIds(newIds);
         
+        // Pass the new IDs and the rest of the data to the next step.
         const nextStepData = { ...submissionData, ...newIds };
-        
         handleNextStep(nextStepData);
 
     } catch(error) {
-        console.error('Error creating lead/opportunity:', error);
+        console.error('Error creating lead:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         toast({
           variant: 'destructive',
-          title: 'Error al Crear Oportunidad',
+          title: 'Error al Crear Lead',
           description: errorMessage,
         });
     } finally {
@@ -233,39 +239,38 @@ export default function Home() {
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds?.id) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Opportunity ID no encontrado. Por favor, reinicie el formulario.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
         setIsSubmitting(false);
         return;
       }
       setIsSubmitting(true);
 
+      // This is the final state of the form data
       const finalData: FormData = { 
         ...formData, 
-        ...data, 
+        ...data,
+        id: salesforceIds.id, // CRUCIAL: Add the lead ID to the payload for update
+        idFullOperation: salesforceIds.idFullOperation,
       };
 
-      const opportunityUpdatePayload = {
-          StageName: "Ganada emitida", // Final stage for the Opportunity
-          CloseDate: finalData.CloseDate,
-          PolicyNumber__c: finalData.policyNumber || salesforceIds.id,
-      };
+      // Build the payload for the UPDATE call. 
+      // The presence of the "id" field signals an update to the Apex endpoint.
+      const updatePayload = buildLeadPayload(finalData);
 
       try {
-          const response = await updateOpportunity({
-              opportunityId: salesforceIds.id,
-              payload: opportunityUpdatePayload,
-          });
+          // Call the SAME submitLead function, but with a payload that contains the ID.
+          const response = await submitLead(updatePayload);
           
           setSubmissionResponse({ success: true, ...response });
           setFormData(finalData); // Save final state
           handleNextStep(finalData); // Move to confirmation screen with all data
 
       } catch (error) {
-          console.error('Error updating opportunity:', error);
+          console.error('Error updating lead:', error);
           const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
           toast({
               variant: 'destructive',
-              title: 'Error al Actualizar Oportunidad',
+              title: 'Error al Actualizar Lead',
               description: errorMessage,
           });
       } finally {
@@ -307,7 +312,7 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data, id: null });
+    const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data });
     
     const formProps = {
         initialData: formData,
@@ -365,5 +370,4 @@ export default function Home() {
     </div>
   );
 }
-
     

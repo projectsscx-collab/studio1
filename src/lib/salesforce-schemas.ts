@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // This schema defines ALL possible fields that can be part of the form state.
@@ -18,7 +19,7 @@ export const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // --- Address Info (Hardcoded as N/A) ---
+    // --- Address Info (Hardcoded as N/A or default) ---
     street: z.string().optional(),
     postalCode: z.string().optional(),
     city: z.string().optional(),
@@ -71,3 +72,4 @@ export interface SalesforceIds {
     id: string; // This is the LEAD ID
     idFullOperation: string;
 }
+    

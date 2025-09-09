@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -51,6 +52,8 @@ export const leadSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().optional(),
   email: z.string().email('El correo electrónico no es válido.'),
+  
+  // Address fields are no longer in the form, so they are not required here.
   street: z.string().optional(),
   postalCode: z.string().optional(),
   city: z.string().optional(),
@@ -82,3 +85,4 @@ export const leadSchema = z.object({
 });
 
 export type LeadData = z.infer<typeof leadSchema>;
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, FormProvider } from 'react-hook-form';
@@ -185,3 +186,4 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
 };
 
 export default PersonalDetailsForm;
+    

@@ -30,7 +30,7 @@ const SubmissionConfirmation = ({ onStartOver, response, salesforceIds }: Submis
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                        <span className="font-semibold text-muted-foreground">ID de Oportunidad:</span>
+                        <span className="font-semibold text-muted-foreground">ID de Lead:</span>
                         <span className="font-mono bg-gray-100 px-2 py-1 rounded">{salesforceIds.id}</span>
                     </div>
                     <div className="flex justify-between">
@@ -65,5 +65,4 @@ const SubmissionConfirmation = ({ onStartOver, response, salesforceIds }: Submis
 };
 
 export default SubmissionConfirmation;
-
     

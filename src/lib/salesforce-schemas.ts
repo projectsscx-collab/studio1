@@ -8,6 +8,7 @@ export const FormDataSchema = z.object({
     // --- DYNAMIC FIELDS (from forms) ---
     id: z.string().optional().nullable(),
     idFullOperation: z.string().optional(),
+    policyNumber: z.string().optional(),
     
     // Personal & Contact
     firstName: z.string().min(1, 'Nombre es requerido.'),
@@ -39,7 +40,6 @@ export const FormDataSchema = z.object({
 
     // Emission Data (Step 5)
     convertedStatus: z.string().optional(), 
-    policyNumber: z.string().optional().nullable(),
 
     // --- Fields that might be set dynamically based on logic ---
     utmCampaign: z.string().optional(),

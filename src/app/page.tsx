@@ -24,6 +24,7 @@ const initialFormData: FormData = {
   // --- Salesforce IDs ---
   id: null,
   idFullOperation: '',
+  policyNumber: '',
 
   // --- Step 1: Personal Details ---
   firstName: '',
@@ -53,18 +54,10 @@ const initialFormData: FormData = {
   
   // --- Step 4: Contact Preference ---
   agentType: '', // Frontend only field for agent logic
+  sourceEvent: '01',
   
   // --- Step 5: Emission ---
   convertedStatus: '',
-  policyNumber: '',
-
-  // --- STATIC OR DERIVED DATA ---
-  // These will be set in buildLeadPayload
-  utmCampaign: '',
-  leadSource: '',
-  origin: '',
-  systemOrigin: '',
-  sourceEvent: '01', // Default value
 };
 
 interface SalesforceIds {
@@ -72,7 +65,7 @@ interface SalesforceIds {
     idFullOperation: string;
 }
 
-// This function now lives on the client to be used by the preview and submissions
+
 const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     const riskObject = {
         'numero_de_matricula': formData.numero_de_matricula,
@@ -116,7 +109,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 branch: "XX_205",
                 risk: JSON.stringify(riskObject),
                 quotes: [{
-                    id: "TestWSConvertMIN", // Required for the final update
+                    id: "TestWSConvertMIN",
                     effectiveDate: formData.effectiveDate,
                     expirationDate: formData.expirationDate,
                     paymentMethod: formData.paymentMethod,
@@ -125,7 +118,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 }]
             },
             utmData: {
-                utmCampaign: formData.utmCampaign // This is now dynamically set
+                utmCampaign: formData.utmCampaign
             },
             sourceData: {
                 sourceEvent: formData.sourceEvent,
@@ -133,20 +126,20 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
                 sourceSite: "Website",
                 deviceType: "01",
                 deviceModel: "iPhone",
-                leadSource: formData.leadSource, // Dynamic
-                origin: formData.origin, // Dynamic
-                systemOrigin: formData.systemOrigin, // Dynamic
+                leadSource: formData.leadSource, 
+                origin: formData.origin,
+                systemOrigin: formData.systemOrigin,
             },
             conversionData: {
                 convertedStatus: "02",
-                policyNumber: formData.policyNumber // Set to leadId
+                policyNumber: formData.policyNumber
             }
         };
     } else {
         // INITIAL PAYLOAD STRUCTURE (for creation)
         leadWrapper = {
             id: null,
-            idFullOperation: formData.idFullOperation, // Ensure this is sent on creation
+            idFullOperation: formData.idFullOperation, 
             firstName: formData.firstName,
             lastName: formData.lastName,
             documentType: formData.documentType,
@@ -239,7 +232,6 @@ export default function Home() {
         idFullOperation: newIdFullOperation,
     };
     
-    // Build the specific payload for the initial creation
     const leadPayload = buildLeadPayload(submissionData, false);
 
     try {
@@ -254,7 +246,6 @@ export default function Home() {
         
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
 
-        // Update the central state with ALL data, including the new IDs
         setSalesforceIds(newIds);
         setFormData(prev => ({...prev, ...data, ...newIds }));
         
@@ -280,9 +271,8 @@ export default function Home() {
     }
     setIsSubmitting(true);
 
-    const baseData = { ...formData, ...data, ...salesforceIds };
+    let baseData = { ...formData, ...data, ...salesforceIds };
     
-    // This is where we set the dynamic values based on agentType
     let updatedData: FormData;
     
     if (data.agentType === 'APM') {
@@ -301,21 +291,43 @@ export default function Home() {
         utmCampaign: 'ROPO_ADMCampaign',
         leadSource: '10',
       };
-    } else { // Default to Contact Center (CC) or if no agent is selected
+    } else { 
       updatedData = {
         ...baseData,
         systemOrigin: '05',
         origin: '01',
-        utmCampaign: 'Winter2024', // Default campaign
+        utmCampaign: 'Winter2024',
         leadSource: '01',
       }
     }
     
-    // For step 4, we don't send a payload, we just update local state
-    // and move to the next step. The final payload is sent in handleFinalSubmit.
-    setFormData(updatedData);
-    setIsSubmitting(false); // We're not actually submitting here
-    handleNextStep(data);
+    // Now we must send the update to salesforce
+    const leadPayload = buildLeadPayload(updatedData, true); // Using final payload structure
+    // We remove conversionData as it's not needed for this intermediate update
+    delete leadPayload.leadWrappers[0].conversionData; 
+
+
+    try {
+      const token = await getSalesforceToken();
+      const response = await updateLead(leadPayload, token);
+      
+      const error = findKey(response, 'errorMessage');
+      if (error) throw new Error(error);
+      
+      setFormData(updatedData);
+      handleNextStep(data);
+
+    } catch (error) {
+        console.error('Error updating lead:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        toast({
+            variant: 'destructive',
+            title: 'Error al Actualizar',
+            description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
@@ -330,7 +342,7 @@ export default function Home() {
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id, // Set policyNumber to the lead ID
+          policyNumber: salesforceIds.id, 
       };
 
       const leadPayload = buildLeadPayload(finalData, true);
@@ -395,12 +407,11 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    // Combine all available data for the form props
     const combinedData = { ...formData, ...(salesforceIds || {}) };
     
-    // Determine which payload structure to use for the preview
-    // The initial creation payload is used for steps 1, 2, 3.
-    // The final conversion payload is used for steps 4, 5.
+    // For the preview, we decide which payload to show based on the step.
+    // Steps 1-3 show the initial creation payload.
+    // Steps 4-5 show the final conversion payload.
     const isFinalFlow = currentStep >= 4; 
     
     const formProps = {
@@ -459,5 +470,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

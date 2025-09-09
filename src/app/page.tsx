@@ -57,7 +57,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: null, // Set to leadId on final submission
+  policyNumber: '', // Set to leadId on final submission
 
   // --- Static data based on the provided JSON example ---
   idOwner: '005Hs00000HeTcVIAV',
@@ -343,3 +343,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

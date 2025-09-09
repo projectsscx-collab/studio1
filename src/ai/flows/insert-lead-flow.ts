@@ -173,7 +173,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   if (formData.convertedStatus) {
     leadWrapper.conversionData = {
         convertedStatus: formData.convertedStatus,
-        policyNumber: formData.policyNumber,
+        policyNumber: formData.policyNumber || null,
         netPremium: null,
         totalPremium: null,
     };
@@ -272,3 +272,5 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
 }
+
+    

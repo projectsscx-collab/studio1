@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -220,8 +221,13 @@ export default function Home() {
         if (error) throw new Error(error);
 
         // IMPORTANT: The leadResultId is actually the OPPORTUNITY ID
-        const opportunityId = findKey(response, 'leadResultId');
-        if (!opportunityId) throw new Error('Opportunity ID not found in Salesforce response.');
+        // Direct access to the ID to avoid errors with the generic findKey function.
+        const opportunityId = response?.leadResults?.[0]?.leadResultId;
+        
+        if (!opportunityId) {
+          console.error("Salesforce Response does not contain Opportunity ID:", response);
+          throw new Error('Opportunity ID not found in Salesforce response.');
+        }
         
         const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
         
@@ -381,3 +387,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

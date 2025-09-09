@@ -41,6 +41,7 @@ export const FormDataSchema = z.object({
     paymentMethod: z.string().min(1, 'Método de pago es requerido.'),
     paymentPeriodicity: z.string().min(1, 'Periodicidad de pago es requerida.'),
     paymentTerm: z.string().min(1, 'Plazo de pago es requerido.'),
+    isSelected: z.boolean(), // Always required
 
     // --- Contact Preference Data (Step 4) ---
     agentType: z.string().optional(), // Frontend only field for logic
@@ -49,8 +50,8 @@ export const FormDataSchema = z.object({
 
     // --- Emission / Final Update Data (Step 5) ---
     policyNumber: z.string().optional(),
-    StageName: z.string().optional(), // Corresponds to Lead 'Status'
-    CloseDate: z.string().optional(),
+    StageName: z.string().optional().nullable(), // Corresponds to Lead 'Status'
+    CloseDate: z.string().optional().nullable(),
     Amount: z.number().optional(),
 });
 

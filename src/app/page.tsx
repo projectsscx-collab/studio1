@@ -76,6 +76,7 @@ const initialFormData: FormData = {
   StageName: null, 
   CloseDate: null,
   Amount: 1000,
+  isSelected: false,
 };
 
 
@@ -122,15 +123,9 @@ const buildLeadPayload = (formData: FormData) => {
         paymentPeriodicity: formData.paymentPeriodicity,
         paymentTerm: formData.paymentTerm,
         netPremium: formData.Amount,
-        additionalInformation: "test"
+        additionalInformation: "test",
+        isSelected: formData.isSelected // CRITICAL: Always send a boolean
     };
-
-    // *** CRITICAL CHANGE ***
-    // `isSelected` is ONLY included for the final update, not for the initial creation.
-    if (formData.StageName) {
-        (quote as any).isSelected = true;
-    }
-
 
     const leadWrapper: any = {
         id: formData.id,
@@ -206,12 +201,13 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Explicitly set StageName to null for creation to ensure `conversionData` is not built.
+    // Explicitly set creation-specific values
     const submissionData: FormData = { 
         ...formData, 
         ...data,
         id: null,
         StageName: null, 
+        isSelected: false,
         idFullOperation: newIdFullOperation,
     };
     
@@ -260,13 +256,14 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      // Set StageName to '06' for the final update to drive `conversionData` creation.
+      // Set update-specific values
       const finalData: FormData = { 
         ...formData, 
         ...data,
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
         StageName: '06', 
+        isSelected: true,
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
       };
 
@@ -384,8 +381,4 @@ export default function Home() {
     </div>
   );
 }
-    
-
-    
-
     

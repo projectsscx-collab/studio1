@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 // This schema defines ALL possible fields that can be part of the form state.
-// Many of these will be hardcoded or optional, but they need to be defined here
-// to be part of the state object that gets passed around.
+// It is used for both creation and updates, with some fields being optional
+// depending on the operation.
 const FormDataSchema = z.object({
     // --- DYNAMIC FIELDS (from forms) ---
-    id: z.string().optional(), // For updates
+    id: z.string().optional(), // Required for updates, absent for creation
     firstName: z.string().min(1, 'Nombre es requerido.'),
     lastName: z.string().min(1, 'Apellido es requerido.'),
     documentType: z.string().min(1, 'Tipo de documento es requerido.'),
@@ -35,7 +35,6 @@ const FormDataSchema = z.object({
     // Emission Data
     convertedStatus: z.string().optional(), 
     policyNumber: z.string().optional().nullable(),
-
 
     // --- STATIC & HARDCODED FIELDS (part of state, but not form UI) ---
     idFullOperation: z.string().optional(),
@@ -72,8 +71,14 @@ const FormDataSchema = z.object({
 
 
 // Schema for the INITIAL CREATION of the Lead (Step 3)
-export const InsertLeadInputSchema = FormDataSchema;
+export const InsertLeadInputSchema = FormDataSchema.omit({ id: true }); // ID is not present on creation
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
+
+// Schema for UPDATING the lead (Step 4 & 5)
+export const UpdateLeadInputSchema = FormDataSchema.extend({
+    id: z.string().min(1, "El ID del Lead es requerido para la actualización."),
+});
+export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 
 
 // Schema for the authentication token response
@@ -86,3 +91,5 @@ export const SalesforceTokenResponseSchema = z.object({
     signature: z.string(),
 });
 export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
+
+    

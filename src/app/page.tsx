@@ -9,23 +9,22 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
-import type { InsertLeadInput } from '@/lib/salesforce-schemas';
+import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
 const TOTAL_STEPS = 5;
 
-// Helper to generate a unique operation ID
 const calculateFullOperationId = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const randStr = Array.from({ length: 2 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
     return `${Date.now()}${randStr}`;
 };
 
-
 const initialFormData: InsertLeadInput = {
   // Step 1 - Personal Details & Contact
+  id: '',
   firstName: '',
   lastName: '',
   documentType: '',
@@ -35,7 +34,17 @@ const initialFormData: InsertLeadInput = {
   phone: '',
   email: '',
   
-  // Step 2 - Vehicle Details (inside risk object)
+  // Contact Address
+  street: '123 Main St', 
+  postalCode: '12345', 
+  city: 'Puerto Rico',
+  district: 'Test', 
+  municipality: 'Test',
+  state: 'XX', 
+  country: 'PR',
+  colony: 'Central Park',
+  
+  // Step 2 - Vehicle Details
   numero_de_matricula: '',
   marca: '',
   modelo: '',
@@ -51,27 +60,19 @@ const initialFormData: InsertLeadInput = {
   
   // Step 4 - Contact Preference
   agentType: '',
+  sourceEvent: '01', // Default value
   
   // Step 5 - Emission
   convertedStatus: '',
   policyNumber: '',
 
-  // --- Static / Hardcoded data based on the provided JSON example ---
+  // --- Static / Hardcoded data ---
   idFullOperation: '', 
-  street: '123 Main St', 
-  postalCode: '12345', 
-  city: 'Puerto Rico',
-  district: 'Test', 
-  municipality: 'Test',
-  state: 'XX', 
-  country: 'PR',
-  colony: 'Central Park',
   businessLine: "01",
   sector: "XX_01",
   subsector: "XX_00",
   branch: "XX_205",
   utmCampaign: "ROPO_Auto",
-  sourceEvent: "01", 
   eventReason: "01",
   sourceSite: "Website",
   deviceType: "01",
@@ -91,50 +92,30 @@ export default function Home() {
   const { toast } = useToast();
   
   const findKey = (obj: any, keyToFind: string): string | null => {
-      if (obj === null || typeof obj !== 'object') {
-          return null;
+    if (obj === null || typeof obj !== 'object') return null;
+    if (keyToFind in obj) return obj[keyToFind];
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const found = findKey(obj[key], keyToFind);
+        if (found) return found;
       }
-      if (keyToFind in obj) {
-          return obj[keyToFind];
-      }
-      for (const key in obj) {
-          if (obj.hasOwnProperty(key)) {
-              const found = findKey(obj[key], keyToFind);
-              if (found) {
-                  return found;
-              }
-          }
-      }
-      return null;
+    }
+    return null;
   };
 
-  const handleNextStep = (data: Partial<typeof formData>) => {
+  const handleNextStep = (data: Partial<InsertLeadInput>) => {
     setDirection(1);
-    
-    let updatedData = { ...formData, ...data };
-     // Logic from old handleUpdate
-    if (data.agentType === 'APM') {
-      updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
-    } else if (data.agentType === 'ADM') {
-      updatedData = { ...updatedData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
-    }
-
-    setFormData(updatedData);
-
+    setFormData((prev) => ({ ...prev, ...data }));
     if (currentStep < TOTAL_STEPS + 1) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
-  const handleSubmit = async (data: Partial<InsertLeadInput>) => {
+  const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
-    
-    // Combine final data and set convertedStatus for submission
     const finalData: InsertLeadInput = { 
         ...formData, 
         ...data,
-        convertedStatus: '02', // Mark for conversion
-        policyNumber: 'PENDIENTE', // Send placeholder
         idFullOperation: formData.idFullOperation || calculateFullOperationId(),
     };
     setFormData(finalData);
@@ -144,18 +125,20 @@ export default function Home() {
         const response = await insertLead(finalData, token);
         
         const error = findKey(response, 'errorMessage');
-        if (error) {
-            throw new Error(error);
-        }
-        setSubmissionResponse(response);
-        handleNextStep(data); // Move to confirmation screen
+        if (error) throw new Error(error);
+
+        const leadId = findKey(response, 'leadResultId');
+        if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
+        
+        setFormData(prev => ({ ...prev, id: leadId })); // Save the returned Lead ID
+        handleNextStep(data);
 
     } catch(error) {
-        console.error('Error submitting lead:', error);
+        console.error('Error creating lead:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         toast({
           variant: 'destructive',
-          title: 'Error en el Envío',
+          title: 'Error al Crear el Lead',
           description: errorMessage,
         });
     } finally {
@@ -163,6 +146,72 @@ export default function Home() {
     }
   };
 
+  const handleUpdate = async (data: Partial<InsertLeadInput>) => {
+    setIsSubmitting(true);
+    let updatedData: UpdateLeadInput = { ...formData, ...data };
+
+    if (data.agentType === 'APM') {
+      updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
+    } else if (data.agentType === 'ADM') {
+      updatedData = { ...updatedData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
+    }
+    
+    setFormData(updatedData);
+
+    try {
+      const token = await getSalesforceToken();
+      const response = await updateLead(updatedData, token);
+      
+      const error = findKey(response, 'errorMessage');
+      if (error) throw new Error(error);
+      
+      handleNextStep(data);
+
+    } catch(error) {
+        console.error('Error updating lead:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        toast({
+          variant: 'destructive',
+          title: 'Error al Actualizar',
+          description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+  
+  const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
+      setIsSubmitting(true);
+      const finalData: UpdateLeadInput = {
+          ...formData,
+          ...data,
+          convertedStatus: '02',
+          policyNumber: 'PENDIENTE',
+      };
+      setFormData(finalData);
+
+      try {
+          const token = await getSalesforceToken();
+          const response = await updateLead(finalData, token);
+          
+          const error = findKey(response, 'errorMessage');
+          if (error) throw new Error(error);
+
+          setSubmissionResponse(response);
+          handleNextStep(data);
+
+      } catch (error) {
+          console.error('Error finalizing lead:', error);
+          const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+          toast({
+              variant: 'destructive',
+              title: 'Error al Finalizar',
+              description: errorMessage,
+          });
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
 
   const handlePrev = () => {
     if (currentStep > 1) {
@@ -203,11 +252,11 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} />;
       case 3:
-        return <QuoteForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 5:
-        return <EmissionForm onSubmit={handleSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
@@ -247,3 +296,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

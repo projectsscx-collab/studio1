@@ -3,6 +3,7 @@
 /**
  * @fileoverview Genkit flows to create and update a lead in Salesforce.
  * - insertLead: Creates a new lead with initial data.
+ * - updateLead: Updates an existing lead, used for agent selection and final conversion.
  */
 
 import { ai } from '@/ai/genkit';
@@ -10,8 +11,10 @@ import { z } from 'zod';
 import {
   SalesforceTokenResponseSchema,
   InsertLeadInputSchema,
+  UpdateLeadInputSchema,
   type SalesforceTokenResponse,
   type InsertLeadInput,
+  type UpdateLeadInput,
 } from '@/lib/salesforce-schemas';
 
 // --- Flow to get the authentication token ---
@@ -55,7 +58,7 @@ const getSalesforceTokenFlow = ai.defineFlow(
 
 
 // --- Helper function to build the lead wrapper ---
-const buildLeadWrapper = (formData: InsertLeadInput) => {
+const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   const riskObject = {
       'Número de matrícula__c': formData.numero_de_matricula,
       'Marca__c': formData.marca,
@@ -136,7 +139,6 @@ const buildLeadWrapper = (formData: InsertLeadInput) => {
     };
   }
 
-
   // Filter out any top-level keys that are undefined to keep payload clean
   for (const key in leadWrapper) {
     if (leadWrapper[key] === undefined) {
@@ -184,6 +186,44 @@ const insertLeadFlow = ai.defineFlow(
 );
 
 
+// --- Flow to UPDATE the lead (called from Step 4 & 5) ---
+const updateLeadFlow = ai.defineFlow(
+  {
+    name: 'updateLeadFlow',
+    inputSchema: z.object({
+      formData: UpdateLeadInputSchema,
+      token: SalesforceTokenResponseSchema,
+    }),
+    outputSchema: z.any(),
+  },
+  async ({ formData, token }) => {
+    const leadWrapper = buildLeadWrapper(formData);
+    const finalPayload = { leadWrappers: [leadWrapper] };
+
+    const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(finalPayload),
+    });
+
+    // It's possible for a successful update to return an empty response
+    const responseText = await leadResponse.text();
+    const responseData = responseText ? JSON.parse(responseText) : { success: true, id: formData.id };
+    
+    if (!leadResponse.ok) {
+      const errorText = JSON.stringify(responseData);
+      console.error("Salesforce Update Error Response:", errorText);
+      throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+    }
+  
+    return responseData;
+  }
+);
+
+
 // --- Exported functions to be called from the frontend ---
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
   return getSalesforceTokenFlow();
@@ -192,3 +232,9 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
 export async function insertLead(formData: InsertLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return insertLeadFlow({ formData, token });
 }
+
+export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
+  return updateLeadFlow({ formData, token });
+}
+
+    

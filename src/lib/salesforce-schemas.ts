@@ -14,8 +14,6 @@ const FormDataSchema = z.object({
     documentType: z.string().min(1, 'Tipo de documento es requerido.'),
     documentNumber: z.string().min(1, 'Número de documento es requerido.'),
     birthdate: z.string().min(1, 'Fecha de nacimiento es requerida.'),
-    sex: z.string().min(1, 'Sexo es requerido.'),
-    maritalStatus: z.string().min(1, 'Estado civil es requerido.'),
     mobilePhone: z.string().min(1, 'Teléfono móvil es requerido.'),
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),

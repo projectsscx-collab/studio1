@@ -33,8 +33,6 @@ const initialFormData: InsertLeadInput = {
   documentType: '',
   documentNumber: '',
   birthdate: '',
-  sex: '',
-  maritalStatus: '',
   mobilePhone: '',
   phone: '',
   email: '',

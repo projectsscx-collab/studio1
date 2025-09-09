@@ -105,8 +105,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       documentType: formData.documentType,
       documentNumber: formData.documentNumber,
       birthdate: formData.birthdate,
-      sex: formData.sex,
-      maritalStatus: formData.maritalStatus,
       additionalInformation: formData.additionalInformation,
       
       contactData: {

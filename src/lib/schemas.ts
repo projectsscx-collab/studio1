@@ -8,18 +8,6 @@ export const documentTypes = {
   "03": "Licencia de Conducir",
 };
 
-export const sexes = {
-  "01": "Masculino",
-  "02": "Femenino",
-};
-
-export const maritalStatuses = {
-    "01": "Soltero/a",
-    "02": "Casado/a",
-    "03": "Divorciado/a",
-    "04": "Viudo/a"
-};
-
 export const paymentMethods = {
     "01": "Tarjeta de Crédito",
     "02": "Transferencia Bancaria",
@@ -61,8 +49,6 @@ export const leadSchema = z.object({
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
   documentNumber: z.string().min(1, 'El número de documento es requerido.'),
   birthdate: z.string().min(1, { message: 'La fecha de nacimiento es requerida.'}),
-  sex: z.string().min(1, 'Seleccione un sexo.'),
-  maritalStatus: z.string().min(1, 'Seleccione un estado civil.'),
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().optional(),
   email: z.string().email('El correo electrónico no es válido.'),

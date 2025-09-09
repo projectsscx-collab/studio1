@@ -2,7 +2,7 @@
 
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { documentTypes, leadSchema, maritalStatuses, sexes } from '@/lib/schemas';
+import { documentTypes, leadSchema } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
         documentType: true,
         documentNumber: true,
         birthdate: true,
-        sex: true,
-        maritalStatus: true,
         mobilePhone: true,
         phone: true,
         email: true,
@@ -104,42 +102,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                                 </PopoverContent>
                                 </Popover>
                                 <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="sex"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Sexo</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un sexo" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {Object.entries(sexes).map(([key, value]) => (
-                                        <SelectItem key={key} value={key}>{value}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="maritalStatus"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Estado Civil</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un estado civil" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {Object.entries(maritalStatuses).map(([key, value]) => (
-                                        <SelectItem key={key} value={key}>{value}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
                             </FormItem>
                         )}
                     />

@@ -9,7 +9,7 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import { submitLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
 import type { FormData } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
@@ -83,8 +83,8 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     if (isFinalSubmission) {
         // FINAL PAYLOAD STRUCTURE (for conversion)
         leadWrapper = {
-            id: formData.id,
-            idFullOperation: formData.idFullOperation,
+            id: formData.id, // Crucial for update
+            idFullOperation: formData.idFullOperation, // Crucial for upsert
             firstName: formData.firstName,
             lastName: formData.lastName,
             documentType: formData.documentType,
@@ -238,7 +238,7 @@ export default function Home() {
 
     try {
         const token = await getSalesforceToken();
-        const response = await insertLead(leadPayload, token);
+        const response = await submitLead(leadPayload, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) throw new Error(error);
@@ -280,7 +280,12 @@ export default function Home() {
       // ** CRITICAL FIX **
       // Explicitly merge formData, data from the current step, AND the stored salesforceIds
       // This ensures that id and idFullOperation are correctly passed to buildLeadPayload.
-      const combinedData = { ...formData, ...data, ...salesforceIds };
+      const combinedData: FormData = { 
+        ...formData, 
+        ...data, 
+        id: salesforceIds.id,
+        idFullOperation: salesforceIds.idFullOperation
+      };
 
       let finalData: FormData;
       
@@ -315,14 +320,14 @@ export default function Home() {
       finalData = {
           ...finalData,
           convertedStatus: '02',
-          policyNumber: finalData.id, 
+          policyNumber: salesforceIds.id, // Use the stored Salesforce ID
       };
 
       const leadPayload = buildLeadPayload(finalData, true);
 
       try {
           const token = await getSalesforceToken();
-          const response = await updateLead(leadPayload, token);
+          const response = await submitLead(leadPayload, token);
           
           const error = findKey(response, 'errorMessage');
           if (error) {

@@ -51,10 +51,10 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Flow to CREATE the lead (called from Step 3) ---
-const insertLeadFlow = ai.defineFlow(
+// --- Consolidated Flow to SUBMIT/UPSERT the lead ---
+const submitLeadFlow = ai.defineFlow(
   {
-    name: 'insertLeadFlow',
+    name: 'submitLeadFlow',
     inputSchema: z.object({
       leadPayload: z.any(), // The payload is now built on the client
       token: SalesforceTokenResponseSchema,
@@ -63,7 +63,7 @@ const insertLeadFlow = ai.defineFlow(
   },
   async ({ leadPayload, token }) => {
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
-      method: 'POST',
+      method: 'POST', // Salesforce uses POST for both inserts and updates with this APEX class
       headers: {
         'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
@@ -71,49 +71,16 @@ const insertLeadFlow = ai.defineFlow(
       body: JSON.stringify(leadPayload),
     });
     
-    const responseData = await leadResponse.json();
-
-    if (!leadResponse.ok) {
-      const errorText = JSON.stringify(responseData);
-      console.error("Salesforce Insert Error Response:", errorText);
-      throw new Error(`Failed to create lead: ${leadResponse.status} ${errorText}`);
-    }
-
-    return responseData;
-  }
-);
-
-
-// --- Flow to UPDATE the lead (called from Step 4 & 5) ---
-const updateLeadFlow = ai.defineFlow(
-  {
-    name: 'updateLeadFlow',
-    inputSchema: z.object({
-      leadPayload: z.any(), // The payload is now built on the client
-      token: SalesforceTokenResponseSchema,
-    }),
-    outputSchema: z.any(),
-  },
-  async ({ leadPayload, token }) => {
-    const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
-      method: 'POST', // Salesforce uses POST for updates with this APEX class
-      headers: {
-        'Authorization': `Bearer ${token.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(leadPayload),
-    });
-
     const responseText = await leadResponse.text();
     // Handle empty response on success, which can happen on updates.
     const responseData = responseText ? JSON.parse(responseText) : { success: true, id: leadPayload.leadWrappers[0].id };
-    
+
     if (!leadResponse.ok) {
-      const errorText = JSON.stringify(responseData);
-      console.error("Salesforce Update Error Response:", errorText);
-      throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+        const errorText = JSON.stringify(responseData);
+        console.error("Salesforce Submission Error Response:", errorText);
+        throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
     }
-  
+
     return responseData;
   }
 );
@@ -124,10 +91,6 @@ export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
   return getSalesforceTokenFlow();
 }
 
-export async function insertLead(leadPayload: any, token: SalesforceTokenResponse): Promise<any> {
-  return insertLeadFlow({ leadPayload, token });
-}
-
-export async function updateLead(leadPayload: any, token: SalesforceTokenResponse): Promise<any> {
-  return updateLeadFlow({ leadPayload, token });
+export async function submitLead(leadPayload: any, token: SalesforceTokenResponse): Promise<any> {
+  return submitLeadFlow({ leadPayload, token });
 }

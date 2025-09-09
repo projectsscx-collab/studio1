@@ -147,7 +147,7 @@ const buildLeadPayload = (formData: FormData) => {
                 effectiveDate: formData.effectiveDate,
                 expirationDate: formData.expirationDate,
                 paymentMethod: formData.paymentMethod,
-                isSelected: !!formData.id, // false on creation, true on update
+                isSelected: !!formData.id, // isSelected is false on creation, true on update.
                 paymentPeriodicity: formData.paymentPeriodicity,
                 paymentTerm: formData.paymentTerm,
                 netPremium: formData.Amount,
@@ -156,17 +156,20 @@ const buildLeadPayload = (formData: FormData) => {
         },
         utmData: utmData,
         sourceData: sourceData,
-        conversionData: {
-            // This is the key change. StageName is now driven by the formData state.
-            // On creation, StageName is null. On final update, it's '06'.
-            convertedStatus: formData.StageName, 
-            policyNumber: formData.policyNumber || null
-        }
     };
   
     // Only include the 'id' field if it's not null for the wrapper.
     if (!formData.id) {
         delete leadWrapper.id;
+    }
+
+    // *** CRITICAL CHANGE ***
+    // The conversionData object is ONLY included for the final update, not for the initial creation.
+    if (formData.StageName) {
+        leadWrapper.conversionData = {
+            convertedStatus: formData.StageName, 
+            policyNumber: formData.policyNumber || null
+        };
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -195,7 +198,7 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Explicitly set StageName to null for creation to ensure convertedStatus is null
+    // Explicitly set StageName to null for creation to ensure `conversionData` is not built.
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -249,7 +252,7 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      // Set StageName to '06' for the final update to drive convertedStatus
+      // Set StageName to '06' for the final update to drive `conversionData` creation.
       const finalData: FormData = { 
         ...formData, 
         ...data,

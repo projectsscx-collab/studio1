@@ -114,6 +114,24 @@ const buildLeadPayload = (formData: FormData) => {
         utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
+    const quote = {
+        id: "123456",
+        effectiveDate: formData.effectiveDate,
+        expirationDate: formData.expirationDate,
+        paymentMethod: formData.paymentMethod,
+        paymentPeriodicity: formData.paymentPeriodicity,
+        paymentTerm: formData.paymentTerm,
+        netPremium: formData.Amount,
+        additionalInformation: "test"
+    };
+
+    // *** CRITICAL CHANGE ***
+    // `isSelected` is ONLY included for the final update, not for the initial creation.
+    if (formData.StageName) {
+        (quote as any).isSelected = true;
+    }
+
+
     const leadWrapper: any = {
         id: formData.id,
         idFullOperation: formData.idFullOperation,
@@ -142,17 +160,7 @@ const buildLeadPayload = (formData: FormData) => {
             subsector: "XX_00",
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
-            quotes: [{
-                id: "123456",
-                effectiveDate: formData.effectiveDate,
-                expirationDate: formData.expirationDate,
-                paymentMethod: formData.paymentMethod,
-                isSelected: !!formData.id, // isSelected is false on creation, true on update.
-                paymentPeriodicity: formData.paymentPeriodicity,
-                paymentTerm: formData.paymentTerm,
-                netPremium: formData.Amount,
-                additionalInformation: "test"
-            }]
+            quotes: [quote]
         },
         utmData: utmData,
         sourceData: sourceData,
@@ -164,7 +172,7 @@ const buildLeadPayload = (formData: FormData) => {
     }
 
     // *** CRITICAL CHANGE ***
-    // The conversionData object is ONLY included for the final update, not for the initial creation.
+    // The `conversionData` object is ONLY included for the final update, not for the initial creation.
     if (formData.StageName) {
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
@@ -376,6 +384,8 @@ export default function Home() {
     </div>
   );
 }
+    
+
     
 
     

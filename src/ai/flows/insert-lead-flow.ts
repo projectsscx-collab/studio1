@@ -62,6 +62,7 @@ const submitLeadFlow = ai.defineFlow(
   async ({ leadPayload }) => {
     const token = await getSalesforceTokenFlow();
     
+    // 1. Create the lead via Apex REST endpoint
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
       method: 'POST',
       headers: {
@@ -79,35 +80,52 @@ const submitLeadFlow = ai.defineFlow(
     
     const responseData = JSON.parse(responseText);
 
-    // The response is an array with one element, e.g., [{"leadResultId": "..."}]
-    if (!Array.isArray(responseData) || responseData.length === 0) {
+    if (!leadResponse.ok) {
         const errorDetails = JSON.stringify(responseData);
-        console.error("Salesforce response was not a non-empty array. Full response:", errorDetails);
-        throw new Error(`Unexpected Salesforce response format: ${errorDetails}`);
+        console.error("Salesforce Submission Error Response:", errorDetails);
+        throw new Error(`Failed to submit lead: ${leadResponse.status} ${errorDetails}`);
     }
 
-    const leadResult = responseData[0];
-    
-    if (!leadResponse.ok) {
-        const errorText = JSON.stringify(leadResult);
-        console.error("Salesforce Submission Error Response:", errorText);
-        throw new Error(`Failed to submit lead: ${leadResponse.status} ${errorText}`);
+    // 2. Extract Lead ID from the response
+    const leadResult = Array.isArray(responseData) ? responseData[0] : responseData;
+    const leadId = leadResult?.leadResultId;
+
+    if (!leadId) {
+      const errorDetails = JSON.stringify(responseData);
+      console.error("Salesforce response did not contain a Lead ID (leadResultId). Full response:", errorDetails);
+      throw new Error(`Lead ID not found in Salesforce response: ${errorDetails}`);
     }
     
-    // Explicitly parse the response to find the Opportunity ID
-    const opportunityId = leadResult?.leadResultId;
+    // 3. Query for the Converted Opportunity ID
+    const query = `SELECT ConvertedOpportunityId FROM Lead WHERE Id = '${leadId}'`;
+    const queryUrl = `${token.instance_url}/services/data/v61.0/query?q=${encodeURIComponent(query)}`;
+
+    const queryResponse = await fetch(queryUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.access_token}`,
+      },
+    });
+
+    if (!queryResponse.ok) {
+        const errorText = await queryResponse.text();
+        throw new Error(`Failed to query for Opportunity ID: ${queryResponse.status} ${errorText}`);
+    }
+
+    const queryResult = await queryResponse.json();
+    const opportunityId = queryResult?.records?.[0]?.ConvertedOpportunityId;
 
     if (!opportunityId) {
-      const errorDetails = JSON.stringify(leadResult);
-      console.error("Salesforce response did not contain an Opportunity ID (leadResultId). Full response:", errorDetails);
-      throw new Error(`Opportunity ID not found in Salesforce response: ${errorDetails}`);
+        const errorDetails = JSON.stringify(queryResult);
+        console.error("Could not find ConvertedOpportunityId from Lead. Full query response:", errorDetails);
+        throw new Error(`Converted Opportunity ID not found in Salesforce query response: ${errorDetails}`);
     }
 
-    // Return a clean object with the ID
+    // 4. Return a clean object with the correct Opportunity ID
     return {
       success: true,
       opportunityId: opportunityId,
-      fullResponse: leadResult, // Keep the full response for logging if needed
+      fullResponse: leadResult, // Keep the original response for logging if needed
     };
   }
 );

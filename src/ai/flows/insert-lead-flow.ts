@@ -58,7 +58,7 @@ const getSalesforceTokenFlow = ai.defineFlow(
 
 
 // --- Helper function to build the lead wrapper ---
-const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput, isUpdateOperation: boolean) => {
+const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   const riskObject = {
       'Número de matrícula__c': formData.numero_de_matricula,
       'Marca__c': formData.marca,
@@ -99,7 +99,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput, isUpdateO
           sector: 'XX_01',
           subsector: 'XX_00',
           branch: 'XX_205',
-          risk: isUpdateOperation ? riskObject : JSON.stringify(riskObject), // Conditional formatting
+          risk: JSON.stringify(riskObject), // ALWAYS stringify the risk object
           quotes: [{
               id: 'TestPSLead',
               issueDate: '2024-02-01',
@@ -163,8 +163,8 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput, isUpdateO
       },
   };
 
-  // Add 'id' only if it's an update operation
-  if (isUpdateOperation && 'id' in formData && formData.id) {
+  // Add 'id' only if it's available in the formData (for update operations)
+  if ('id' in formData && formData.id) {
     leadWrapper.id = formData.id;
   }
   
@@ -193,7 +193,7 @@ const insertLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async ({ formData, token }) => {
-    const leadWrapper = buildLeadWrapper(formData, false); // isUpdateOperation = false
+    const leadWrapper = buildLeadWrapper(formData);
     const finalPayload = { leadWrappers: [leadWrapper] };
 
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
@@ -228,7 +228,7 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      const leadWrapper = buildLeadWrapper(formData, true); // isUpdateOperation = true
+      const leadWrapper = buildLeadWrapper(formData);
       const finalPayload = { leadWrappers: [leadWrapper] };
 
       const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {

@@ -253,7 +253,8 @@ export default function Home() {
         // This ensures the IDs persist through all subsequent steps.
         setSalesforceIds(newIds);
         const nextStepData = { ...data, ...newIds };
-        handleNextStep(nextStepData);
+        setFormData(prev => ({...prev, ...nextStepData})); // Persist IDs into main state
+        handleNextStep({}); // Move to next step with updated state
 
 
     } catch(error) {
@@ -444,3 +445,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

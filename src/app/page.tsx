@@ -108,10 +108,10 @@ const buildLeadPayload = (formData: FormData) => {
     if (formData.agentType === 'APM') {
         sourceData.systemOrigin = '02';
         sourceData.leadSource = '02';
-        utmData = { campaign: 'ROPO_APMCampaign' };
+        utmData = { UTMCampaign: 'ROPO_APMCampaign' };
     } else if (formData.agentType === 'ADM') {
         sourceData.leadSource = '10';
-        utmData = { campaign: 'ROPO_ADMCampaign' };
+        utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
     const leadWrapper: any = {
@@ -362,3 +362,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

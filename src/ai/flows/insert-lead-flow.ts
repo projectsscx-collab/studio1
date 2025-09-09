@@ -58,7 +58,7 @@ const getSalesforceTokenFlow = ai.defineFlow(
 
 
 // --- Helper function to build the lead wrapper ---
-const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
+const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput, isUpdateOperation: boolean) => {
   const riskObject = {
       'Número de matrícula__c': formData.numero_de_matricula,
       'Marca__c': formData.marca,
@@ -99,7 +99,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           sector: 'XX_01',
           subsector: 'XX_00',
           branch: 'XX_205',
-          risk: riskObject, // Send as a proper JSON object
+          risk: isUpdateOperation ? riskObject : JSON.stringify(riskObject), // Conditional formatting
           quotes: [{
               id: 'TestPSLead',
               issueDate: '2024-02-01',
@@ -164,7 +164,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   };
 
   // Add 'id' only if it's an update operation
-  if ('id' in formData && formData.id) {
+  if (isUpdateOperation && 'id' in formData && formData.id) {
     leadWrapper.id = formData.id;
   }
   
@@ -193,7 +193,7 @@ const insertLeadFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async ({ formData, token }) => {
-    const leadWrapper = buildLeadWrapper(formData);
+    const leadWrapper = buildLeadWrapper(formData, false); // isUpdateOperation = false
     const finalPayload = { leadWrappers: [leadWrapper] };
 
     const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
@@ -228,7 +228,7 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      const leadWrapper = buildLeadWrapper(formData);
+      const leadWrapper = buildLeadWrapper(formData, true); // isUpdateOperation = true
       const finalPayload = { leadWrappers: [leadWrapper] };
 
       const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
@@ -240,13 +240,20 @@ const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(finalPayload),
       });
 
-      const responseText = await leadResponse.text();
       // Handle empty response on success, which can happen on updates.
-      if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
-          return { success: true, idFullOperation: formData.idFullOperation };
+      if (leadResponse.status >= 200 && leadResponse.status < 300) {
+        const responseText = await leadResponse.text();
+        if (responseText.length === 0) {
+            return { success: true, idFullOperation: formData.idFullOperation };
+        }
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+             return { success: true, responseBody: responseText };
+        }
       }
       
-      const responseData = JSON.parse(responseText);
+      const responseData = await leadResponse.json();
 
       if (!leadResponse.ok) {
           const errorText = JSON.stringify(responseData);

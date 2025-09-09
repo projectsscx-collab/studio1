@@ -76,7 +76,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       documentType: formData.documentType,
       documentNumber: formData.documentNumber,
       birthdate: formData.birthdate,
-      policyNumber: formData.policyNumber, // Add policyNumber at the top level
       
       contactData: {
           mobilePhone: formData.mobilePhone,
@@ -132,11 +131,11 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       },
   };
   
-  // Add conversion data only if it exists
+  // Add conversion data and policy number only if it exists (final step)
   if ('convertedStatus' in formData && formData.convertedStatus) {
+    leadWrapper.policyNumber = formData.policyNumber; // Add top-level policy number
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
-      // policyNumber should NOT be in here. It's a top-level field.
     };
   }
 

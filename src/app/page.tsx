@@ -88,16 +88,16 @@ const buildLeadPayload = (formData: FormData) => {
         'Número de serie__c': formData.numero_de_serie,
     };
     
-    // Base sourceData
+    // Base sourceData, starting with CC defaults
     let sourceData: any = {
         sourceEvent: formData.sourceEvent,
         eventReason: "01",
         sourceSite: "Website",
         deviceType: "01",
         deviceModel: "iPhone",
-        leadSource: "01", // Default for CC
+        leadSource: "01", 
         origin: "02",
-        systemOrigin: "06", // Default for CC
+        systemOrigin: "06", 
         ipData: {}
     };
 
@@ -115,8 +115,6 @@ const buildLeadPayload = (formData: FormData) => {
     }
     
     const leadWrapper: any = {
-        // id is only included for updates, not creation.
-        // The presence of this field tells the Apex service to update.
         id: formData.id,
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
@@ -197,7 +195,6 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // For initial submission, id must be null
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -215,13 +212,11 @@ export default function Home() {
             throw new Error('Lead ID not found in Salesforce response.');
         }
         
-        // The ID returned is the LEAD ID, which we'll use for subsequent updates.
         const leadId = response.leadId;
         const newIds: SalesforceIds = { id: leadId, idFullOperation: newIdFullOperation };
         
         setSalesforceIds(newIds);
         
-        // Pass the new IDs and the rest of the data to the next step.
         const nextStepData = { ...submissionData, ...newIds };
         handleNextStep(nextStepData);
 
@@ -246,25 +241,21 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      // This is the final state of the form data
       const finalData: FormData = { 
         ...formData, 
         ...data,
-        id: salesforceIds.id, // CRUCIAL: Add the lead ID to the payload for update
+        id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
       };
 
-      // Build the payload for the UPDATE call. 
-      // The presence of the "id" field signals an update to the Apex endpoint.
       const updatePayload = buildLeadPayload(finalData);
 
       try {
-          // Call the SAME submitLead function, but with a payload that contains the ID.
           const response = await submitLead(updatePayload);
           
           setSubmissionResponse({ success: true, ...response });
-          setFormData(finalData); // Save final state
-          handleNextStep(finalData); // Move to confirmation screen with all data
+          setFormData(finalData); 
+          handleNextStep(finalData); 
 
       } catch (error) {
           console.error('Error updating lead:', error);
@@ -371,5 +362,3 @@ export default function Home() {
     </div>
   );
 }
-    
-    

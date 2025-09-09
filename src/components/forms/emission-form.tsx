@@ -7,31 +7,33 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { format } from 'date-fns';
 
 interface EmissionFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  buildPreviewPayload: (data: any) => any;
+  // buildPreviewPayload is no longer needed here as the payload is simple
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting }: EmissionFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
-      convertedStatus: true,
-      policyNumber: true,
+      Amount: true,
     })),
     defaultValues: {
-      ...initialData,
-      convertedStatus: '02', // Pre-select "Emitido"
+      Amount: initialData.Amount || 10,
     },
     mode: 'onChange',
   });
   
-  const watchedData = form.watch();
-  const finalPayload = buildPreviewPayload(watchedData);
+  const finalPayload = {
+      StageName: "06",
+      CloseDate: format(new Date(), 'yyyy-MM-dd'),
+      Amount: form.getValues('Amount'),
+      PolicyNumber__c: initialData.id, // The Opportunity ID
+  };
 
 
   return (
@@ -40,43 +42,35 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPrevie
         <div>
           <h2 className="text-xl font-semibold mb-6">Emisión de la Póliza</h2>
           <p className="text-muted-foreground mb-6">
-              Si está de acuerdo con la información introducida, pulse "Emitir".
+              Confirme los detalles finales para emitir la póliza. El número de póliza se asignará automáticamente.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* These fields are hidden as per the requirement but necessary for the submission */}
             <FormField
                 control={form.control}
-                name="convertedStatus"
+                name="Amount"
                 render={({ field }) => (
-                    <FormItem className="hidden">
-                    <FormLabel>Estado de Conversión</FormLabel>
+                    <FormItem>
+                    <FormLabel>Importe (Amount)</FormLabel>
                     <FormControl>
-                        <Input {...field} />
+                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
                 )}
             />
-             {/* This field is now completely hidden from the UI */}
-             <FormField
-                control={form.control}
-                name="policyNumber"
-                render={({ field }) => (
-                    <FormItem className="hidden">
-                    <FormLabel>Número de Póliza</FormLabel>
-                    <FormControl>
-                        <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            />
+             <FormItem>
+                <FormLabel>Número de Póliza</FormLabel>
+                <FormControl>
+                    <Input readOnly value={initialData.id || 'Se generará al emitir'} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
           </div>
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">Payload Final a Enviar (Vista Previa)</label>
+            <label className="text-sm font-medium">Payload Final a Enviar (Actualización de Oportunidad)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(finalPayload, null, 2)}
             </pre>
@@ -88,7 +82,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPrevie
             Atrás
           </Button>
           <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'EMITIR'}
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'EMITIR PÓLIZA'}
           </Button>
         </div>
       </form>

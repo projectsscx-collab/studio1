@@ -10,14 +10,16 @@ import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
 import { submitLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import { updateOpportunity } from '@/ai/flows/update-opportunity-flow';
 import type { FormData } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
+import { format } from 'date-fns';
+
 
 const TOTAL_STEPS = 5;
 
 const calculateFullOperationId = () => {
-    // Combines timestamp with a random string to ensure uniqueness.
     const timestamp = Date.now();
     const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
     return `${timestamp}IS${randomPart}`;
@@ -26,7 +28,7 @@ const calculateFullOperationId = () => {
 
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
-  id: null,
+  id: null, // This will hold the Opportunity ID after lead creation
   idFullOperation: '',
 
   // --- Step 1: Personal Details ---
@@ -61,15 +63,18 @@ const initialFormData: FormData = {
   
   // --- Step 5: Emission ---
   convertedStatus: '',
-  policyNumber: '', // This will be set from salesforceIds.id
+  policyNumber: '', 
+  StageName: '',
+  CloseDate: '',
+  Amount: 10,
 };
 
 interface SalesforceIds {
-    id: string;
+    id: string; // This is the OPPORTUNITY ID
     idFullOperation: string;
 }
 
-const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
+const buildLeadPayload = (formData: FormData) => {
     const riskObject = {
         'numero_de_matricula': formData.numero_de_matricula,
         'marca': formData.marca,
@@ -78,116 +83,53 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
         'numero_de_serie': formData.numero_de_serie,
     };
 
-    let leadWrapper: any;
-
-    if (isFinalSubmission) {
-        // FINAL PAYLOAD STRUCTURE (for conversion)
-        leadWrapper = {
-            id: formData.id,
-            idFullOperation: formData.idFullOperation,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            documentType: formData.documentType,
-            documentNumber: formData.documentNumber,
-            birthdate: formData.birthdate,
-            contactData: {
-                mobilePhone: formData.mobilePhone,
-                phone: formData.phone,
-                email: formData.email,
-                address: {
-                    street: "123 Main St",
-                    postalCode: "12345",
-                    city: "Puerto Rico",
-                    district: "Test",
-                    municipality: "Test",
-                    state: "XX",
-                    country: "PR",
-                    colony: "Central Park"
-                }
-            },
-            interestProduct: {
-                businessLine: "01",
-                sector: "XX_01",
-                subsector: "XX_00",
-                branch: "XX_205",
-                risk: JSON.stringify(riskObject),
-                quotes: [{
-                    id: "TestWSConvertMIN",
-                    effectiveDate: formData.effectiveDate,
-                    expirationDate: formData.expirationDate,
-                    paymentMethod: formData.paymentMethod,
-                    paymentPeriodicity: formData.paymentPeriodicity,
-                    paymentTerm: formData.paymentTerm,
-                }]
-            },
-            utmData: {
-                utmCampaign: formData.utmCampaign
-            },
-            sourceData: {
-                sourceEvent: formData.sourceEvent,
-                eventReason: "01",
-                sourceSite: "Website",
-                deviceType: "01",
-                deviceModel: "iPhone",
-                leadSource: formData.leadSource, 
-                origin: formData.origin,
-                systemOrigin: formData.systemOrigin,
-            },
-            conversionData: {
-                convertedStatus: "02",
-                policyNumber: formData.policyNumber
-            }
-        };
-    } else {
-        // INITIAL PAYLOAD STRUCTURE (for creation)
-        leadWrapper = {
-            idFullOperation: formData.idFullOperation,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            documentType: formData.documentType,
-            documentNumber: formData.documentNumber,
-            birthdate: formData.birthdate,
-            contactData: {
-                mobilePhone: formData.mobilePhone,
-                phone: formData.phone,
-                email: formData.email,
-            },
-            interestProduct: {
-                businessLine: "01",
-                sector: "XX_01",
-                subsector: "XX_00",
-                branch: "XX_205",
-                risk: JSON.stringify(riskObject),
-                quotes: [{
-                    id: "TestWSConvertMIN",
-                    effectiveDate: formData.effectiveDate,
-                    expirationDate: formData.expirationDate,
-                    productCode: "PRD001",
-                    productName: "Life Insurance",
-                    netPremium: 1000,
-                    paymentMethod: formData.paymentMethod,
-                    isSelected: true,
-                    paymentPeriodicity: formData.paymentPeriodicity,
-                    paymentTerm: formData.paymentTerm,
-                    additionalInformation: "test"
-                }]
-            },
-            utmData: {
-                utmCampaign: "ROPO_Auto"
-            },
-            sourceData: {
-                sourceEvent: "01",
-                eventReason: "01",
-                sourceSite: "Website",
-                deviceType: "01",
-                deviceModel: "iPhone",
-                leadSource: "01",
-                origin: "01",
-                systemOrigin: "05",
-                ipData: {}
-            }
-        };
-    }
+    const leadWrapper = {
+        idFullOperation: formData.idFullOperation,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        documentType: formData.documentType,
+        documentNumber: formData.documentNumber,
+        birthdate: formData.birthdate,
+        contactData: {
+            mobilePhone: formData.mobilePhone,
+            phone: formData.phone,
+            email: formData.email,
+        },
+        interestProduct: {
+            businessLine: "01",
+            sector: "XX_01",
+            subsector: "XX_00",
+            branch: "XX_205",
+            risk: JSON.stringify(riskObject),
+            quotes: [{
+                id: "TestWSConvertMIN",
+                effectiveDate: formData.effectiveDate,
+                expirationDate: formData.expirationDate,
+                productCode: "PRD001",
+                productName: "Life Insurance",
+                netPremium: 1000,
+                paymentMethod: formData.paymentMethod,
+                isSelected: true,
+                paymentPeriodicity: formData.paymentPeriodicity,
+                paymentTerm: formData.paymentTerm,
+                additionalInformation: "test"
+            }]
+        },
+        utmData: {
+            utmCampaign: "ROPO_Auto"
+        },
+        sourceData: {
+            sourceEvent: "01",
+            eventReason: "01",
+            sourceSite: "Website",
+            deviceType: "01",
+            deviceModel: "iPhone",
+            leadSource: "01",
+            origin: "01",
+            systemOrigin: "05",
+            ipData: {}
+        }
+    };
   
     return { leadWrappers: [leadWrapper] };
 };
@@ -233,7 +175,7 @@ export default function Home() {
         idFullOperation: newIdFullOperation,
     };
     
-    const leadPayload = buildLeadPayload(submissionData, false);
+    const leadPayload = buildLeadPayload(submissionData);
 
     try {
         const token = await getSalesforceToken();
@@ -242,10 +184,11 @@ export default function Home() {
         const error = findKey(response, 'errorMessage');
         if (error) throw new Error(error);
 
-        const leadId = findKey(response, 'leadResultId');
-        if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
+        // IMPORTANT: The leadResultId is actually the OPPORTUNITY ID
+        const opportunityId = findKey(response, 'leadResultId');
+        if (!opportunityId) throw new Error('Opportunity ID not found in Salesforce response.');
         
-        const newIds = { id: leadId, idFullOperation: newIdFullOperation };
+        const newIds = { id: opportunityId, idFullOperation: newIdFullOperation };
         
         // ** CRITICAL FIX **
         // Update both states sequentially and robustly to prevent race conditions
@@ -271,77 +214,44 @@ export default function Home() {
   };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
-      if (!salesforceIds) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
+      if (!salesforceIds?.id) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Opportunity ID no encontrado. Por favor, reinicie el formulario.' });
         setIsSubmitting(false);
         return;
       }
       setIsSubmitting(true);
 
-      const combinedData: FormData = { 
+      const finalData: Partial<FormData> = { 
         ...formData, 
         ...data, 
-        id: salesforceIds.id,
-        idFullOperation: salesforceIds.idFullOperation
       };
 
-      let finalData: FormData;
-      
-      // Agent-based logic
-      if (combinedData.agentType === 'APM') {
-        finalData = {
-          ...combinedData,
-          systemOrigin: '02',
-          origin: '02',
-          utmCampaign: 'ROPO_APMCampaign',
-          leadSource: '02',
-        };
-      } else if (combinedData.agentType === 'ADM') {
-        finalData = {
-          ...combinedData,
-          systemOrigin: '06',
-          origin: '02',
-          utmCampaign: 'ROPO_ADMCampaign',
-          leadSource: '10',
-        };
-      } else { 
-        finalData = {
-          ...combinedData,
-          systemOrigin: '05',
-          origin: '01',
-          utmCampaign: 'Winter2024',
-          leadSource: '01',
-        }
-      }
-      
-      // Final conversion data
-      finalData = {
-          ...finalData,
-          convertedStatus: '02',
-          policyNumber: salesforceIds.id,
+      // This is the payload for the OPPORTUNITY UPDATE
+      const opportunityPayload = {
+          StageName: "06", // Ganada emitida
+          CloseDate: format(new Date(), 'yyyy-MM-dd'), // Emission date
+          Amount: finalData.Amount || 10, // Use amount from form or default
+          PolicyNumber__c: salesforceIds.id, // Using Opp ID as policy number as per logic
       };
-
-      const leadPayload = buildLeadPayload(finalData, true);
 
       try {
           const token = await getSalesforceToken();
-          const response = await submitLead(leadPayload, token);
+          const response = await updateOpportunity({
+              opportunityId: salesforceIds.id,
+              payload: opportunityPayload,
+              token: token,
+          });
           
-          const error = findKey(response, 'errorMessage');
-          if (error) {
-            throw new Error(error);
-          }
-
-          setSubmissionResponse(response);
-          setFormData(finalData); // Save final state
+          setSubmissionResponse({ success: true, ...response });
+          setFormData(prev => ({...prev, ...finalData})); // Save final state
           handleNextStep(data); // Move to confirmation screen
 
       } catch (error) {
-          console.error('Error finalizing lead:', error);
+          console.error('Error updating opportunity:', error);
           const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
           toast({
               variant: 'destructive',
-              title: 'Error al Finalizar',
+              title: 'Error al Actualizar Oportunidad',
               description: errorMessage,
           });
       } finally {
@@ -385,10 +295,13 @@ export default function Home() {
   const renderStep = () => {
     const isFinalFlow = currentStep >= 5;
     
+    // This prop is now only used for the initial lead creation preview
+    const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data });
+    
     const formProps = {
         initialData: formData,
         isSubmitting: isSubmitting,
-        buildPreviewPayload: (data: any) => buildLeadPayload({ ...formData, ...data }, isFinalFlow)
+        buildPreviewPayload: buildPreviewPayload
     };
 
     switch (currentStep) {

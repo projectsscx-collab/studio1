@@ -1,16 +1,12 @@
 import { z } from 'zod';
 
 // This schema defines ALL possible fields that can be part of the form state.
-// This is a "flat" structure that collects all user inputs.
-// The `buildLeadPayload` function in `page.tsx` will be responsible for
-// transforming this flat data into the nested structure Salesforce expects.
 export const FormDataSchema = z.object({
-    // --- DYNAMIC FIELDS (from forms) ---
-    id: z.string().optional().nullable(),
+    // --- Salesforce IDs ---
+    id: z.string().optional().nullable(), // Will hold the Opportunity ID
     idFullOperation: z.string().optional(),
-    policyNumber: z.string().optional(),
     
-    // Personal & Contact
+    // --- Personal & Contact ---
     firstName: z.string().min(1, 'Nombre es requerido.'),
     lastName: z.string().min(1, 'Apellido es requerido.'),
     documentType: z.string().min(1, 'Tipo de documento es requerido.'),
@@ -20,26 +16,30 @@ export const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // Vehicle Data
+    // --- Vehicle Data ---
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
     marca: z.string().min(1, 'Marca es requerida.'),
     modelo: z.string().min(1, 'Modelo es requerido.'),
     ano_del_vehiculo: z.string().min(1, 'Año del vehículo es requerido.'),
     numero_de_serie: z.string().min(1, 'Número de serie es requerido.'),
 
-    // Quote Data
+    // --- Quote Data ---
     effectiveDate: z.string().min(1, 'Fecha de efectividad es requerida.'),
     expirationDate: z.string().min(1, 'Fecha de expiración es requerida.'),
     paymentMethod: z.string().min(1, 'Método de pago es requerido.'),
     paymentPeriodicity: z.string().min(1, 'Periodicidad de pago es requerida.'),
     paymentTerm: z.string().min(1, 'Plazo de pago es requerido.'),
 
-    // Contact Preference Data (Step 4)
+    // --- Contact Preference Data (Step 4) ---
     agentType: z.string().optional(), // Frontend only field for logic
     sourceEvent: z.string().optional(),
 
-    // Emission Data (Step 5)
+    // --- Emission / Opportunity Data (Step 5) ---
     convertedStatus: z.string().optional(), 
+    policyNumber: z.string().optional(),
+    StageName: z.string().optional(),
+    CloseDate: z.string().optional(),
+    Amount: z.number().optional(),
 
     // --- Fields that might be set dynamically based on logic ---
     utmCampaign: z.string().optional(),

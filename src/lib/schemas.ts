@@ -71,10 +71,9 @@ export const leadSchema = z.object({
   agentType: z.string().min(1, 'Debe seleccionar un tipo de agente.'),
   
   // Step 5
-  convertedStatus: z.string().min(1, 'El estado de conversión es requerido.'),
+  Amount: z.number().positive('El importe debe ser un número positivo.'),
   policyNumber: z.string().optional().nullable(),
+  convertedStatus: z.string().optional(), // No longer directly used in a form
 });
 
 export type LeadData = z.infer<typeof leadSchema>;
-
-    

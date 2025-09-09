@@ -1,9 +1,8 @@
 'use server';
 
 /**
- * @fileoverview Genkit flow to submit lead data to Salesforce.
- * This has been simplified to a single submission flow, as the Apex
- * class handles both inserts and updates (upsert).
+ * @fileoverview Genkit flow to **CREATE** a lead in Salesforce.
+ * This flow handles the initial submission and returns an Opportunity ID.
  */
 
 import { ai } from '@/ai/genkit';
@@ -51,13 +50,12 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Consolidated Flow to SUBMIT the lead ---
-// The Apex class uses POST for both creation and updates, so we only need one flow.
+// --- Flow to SUBMIT the lead ---
 const submitLeadFlow = ai.defineFlow(
   {
     name: 'submitLeadFlow',
     inputSchema: z.object({
-      leadPayload: z.any(), // The payload is now built entirely on the client
+      leadPayload: z.any(),
       token: SalesforceTokenResponseSchema,
     }),
     outputSchema: z.any(),
@@ -73,13 +71,12 @@ const submitLeadFlow = ai.defineFlow(
     });
     
     const responseText = await leadResponse.text();
-    // Handle empty response on success, which can happen on updates.
-    const responseData = responseText ? JSON.parse(responseText) : { success: true, id: leadPayload.leadWrappers[0].id };
+    const responseData = responseText ? JSON.parse(responseText) : {};
 
     if (!leadResponse.ok) {
         const errorText = JSON.stringify(responseData);
         console.error("Salesforce Submission Error Response:", errorText);
-        throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+        throw new Error(`Failed to submit lead: ${leadResponse.status} ${errorText}`);
     }
 
     return responseData;

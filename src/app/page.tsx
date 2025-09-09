@@ -9,14 +9,13 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, updateLead, getSalesforceToken, convertLead } from '@/ai/flows/insert-lead-flow';
+import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
 import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
 const TOTAL_STEPS = 5;
 
-// This represents the full data structure across all steps, based on the new detailed JSON
 const initialFormData: InsertLeadInput & UpdateLeadInput = {
   // Step 1 - Personal Details & Contact
   firstName: '',
@@ -44,7 +43,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   paymentTerm: '',
   
   // Step 4 - Contact Preference
-  agentType: '', // Frontend-only field for logic
+  agentType: '',
   
   // Step 5 - Emission
   convertedStatus: '',
@@ -128,31 +127,26 @@ export default function Home() {
       const response = await insertLead(updatedData, token);
 
       const leadResult = response?.[0] ?? {};
-      const newLeadId = leadResult.leadResultId ?? findKey(response, 'leadResultId');
-      const error = leadResult.resultErrors?.[0];
+      // Prioritize leadResultId and idFullOperation from the first successful result
+      const successfulResult = response?.find((r: any) => r.leadResultId);
+      const newLeadId = successfulResult?.leadResultId ?? findKey(response, 'leadResultId');
+      const newFullOpId = successfulResult?.idFullOperation ?? findKey(response, 'idFullOperation');
+      const error = findKey(response, 'errorMessage');
 
       if (error) {
-        throw new Error(error.errorMessage ?? 'An unknown error occurred during lead creation.');
+        throw new Error(error);
       }
       
       if (!newLeadId) {
-        // Fallback for cases where the structure might differ
-        const successfulResult = response?.find((r: any) => r.leadResultId);
-        if (successfulResult) {
-            setLeadId(successfulResult.leadResultId);
-            // Also store idFullOperation to pass to conversion step
-            setFormData(prev => ({ ...prev, idFullOperation: successfulResult.idFullOperation ?? prev.idFullOperation }));
-        } else {
-            throw new Error("Could not retrieve leadId from Salesforce after creation.");
-        }
-      } else {
-         setLeadId(newLeadId);
-         const fullOpId = findKey(response, 'idFullOperation');
-         if (fullOpId) {
-            setFormData(prev => ({ ...prev, idFullOperation: fullOpId }));
-         }
+        throw new Error("Could not retrieve leadId from Salesforce after creation.");
       }
 
+      setLeadId(newLeadId);
+      setFormData(prev => ({ 
+        ...prev, 
+        idFullOperation: newFullOpId ?? prev.idFullOperation 
+      }));
+      
       setSubmissionResponse(response);
       handleNextStep(updatedData); 
 
@@ -173,7 +167,6 @@ export default function Home() {
     setIsSubmitting(true);
     let updatedData = { ...formData, ...data };
     
-    // Logic to update UTM campaign based on agent type from step 4
     if (data.agentType === 'APM') {
       updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
     } else if (data.agentType === 'ADM') {
@@ -213,16 +206,16 @@ export default function Home() {
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
     
-    const finalData = {
-      id: leadId!,
-      idFullOperation: formData.idFullOperation,
-      convertedStatus: data.convertedStatus!,
+    const finalData = { 
+        ...formData, 
+        ...data,
+        id: leadId!,
     };
-    setFormData(prev => ({...prev, ...data}));
+    setFormData(finalData);
     
     try {
         const token = await getSalesforceToken();
-        const response = await convertLead(finalData, token);
+        const response = await updateLead(finalData, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) {

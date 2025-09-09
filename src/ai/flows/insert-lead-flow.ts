@@ -4,7 +4,6 @@
  * @fileoverview Genkit flows to create and update a lead in Salesforce.
  * - insertLead: Creates a new lead with initial data.
  * - updateLead: Updates an existing lead with additional data from subsequent steps.
- * - convertLead: Converts an existing lead into an Account, Contact, and Opportunity.
  */
 
 import { ai } from '@/ai/genkit';
@@ -17,15 +16,6 @@ import {
   type InsertLeadInput,
   type UpdateLeadInput,
 } from '@/lib/salesforce-schemas';
-
-// --- Schema for the final conversion step ---
-const ConversionInputSchema = z.object({
-  id: z.string(),
-  idFullOperation: z.string(),
-  convertedStatus: z.string(),
-});
-type ConversionInput = z.infer<typeof ConversionInputSchema>;
-
 
 // --- Flow to get the authentication token ---
 const getSalesforceTokenFlow = ai.defineFlow(
@@ -140,6 +130,14 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       },
   };
   
+  // Add conversion data only if it exists, for the final step
+  if (formData.convertedStatus) {
+    leadWrapper.conversionData = {
+      convertedStatus: formData.convertedStatus,
+      policyNumber: formData.policyNumber || formData.id, // Use leadId as policyNumber if not provided
+    };
+  }
+
   // Filter out any top-level keys that are undefined to keep payload clean
   for (const key in leadWrapper) {
     if (leadWrapper[key] === undefined) {
@@ -186,7 +184,7 @@ const insertLeadFlow = ai.defineFlow(
   }
 );
 
-// --- Flow to UPDATE the lead (called from Step 4) ---
+// --- Flow to UPDATE the lead (called from Step 4 and 5) ---
 const updateLeadFlow = ai.defineFlow(
     {
       name: 'updateLeadFlow',
@@ -201,7 +199,7 @@ const updateLeadFlow = ai.defineFlow(
       const finalPayload = { leadWrappers: [leadWrapper] };
 
       const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
-          method: 'POST',
+          method: 'POST', // Salesforce uses POST for this upsert-like operation
           headers: {
             'Authorization': `Bearer ${token.access_token}`,
             'Content-Type': 'application/json',
@@ -235,61 +233,6 @@ const updateLeadFlow = ai.defineFlow(
     }
   );
 
-// --- Flow to CONVERT the lead (called from Step 5) ---
-const convertLeadFlow = ai.defineFlow(
-    {
-        name: 'convertLeadFlow',
-        inputSchema: z.object({
-            formData: ConversionInputSchema,
-            token: SalesforceTokenResponseSchema,
-        }),
-        outputSchema: z.any(),
-    },
-    async ({ formData, token }) => {
-        const leadWrapper = {
-            id: formData.id,
-            idFullOperation: formData.idFullOperation,
-            conversionData: {
-                convertedStatus: formData.convertedStatus,
-                policyNumber: formData.id, // Use leadId as policyNumber
-            },
-        };
-        const finalPayload = { leadWrappers: [leadWrapper] };
-
-        const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token.access_token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(finalPayload),
-        });
-
-        const responseText = await leadResponse.text();
-
-        if (!leadResponse.ok) {
-            let errorData;
-            try {
-                errorData = JSON.parse(responseText);
-            } catch (e) {
-                errorData = responseText;
-            }
-            const errorText = JSON.stringify(errorData);
-            console.error("Salesforce Conversion Error Response:", errorText);
-            throw new Error(`Failed to convert lead: ${leadResponse.status} ${errorText}`);
-        }
-
-        if (responseText.length === 0) {
-            return { success: true, idFullOperation: formData.idFullOperation };
-        }
-        try {
-            return JSON.parse(responseText);
-        } catch (e) {
-            return { success: true, responseBody: responseText };
-        }
-    }
-);
-
 
 // --- Exported functions to be called from the frontend ---
 export async function getSalesforceToken(): Promise<SalesforceTokenResponse> {
@@ -302,8 +245,4 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
-}
-
-export async function convertLead(formData: ConversionInput, token: SalesforceTokenResponse): Promise<any> {
-    return convertLeadFlow({ formData, token });
 }

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
 import type { SalesforceIds } from '@/lib/salesforce-schemas';
 import { useEffect } from 'react';
 
@@ -33,7 +32,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
   });
   
   useEffect(() => {
-    // Pre-fill policyNumber with opportunityId when the component mounts and if the field is empty.
+    // Pre-fill policyNumber with LeadId when the component mounts and if the field is empty.
     if (salesforceIds?.id && !form.getValues('policyNumber')) {
       form.setValue('policyNumber', salesforceIds.id, { shouldValidate: true });
     }
@@ -41,10 +40,9 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
 
   const watchedData = form.watch();
 
+  // This is the payload for the LEAD update
   const finalPayload = {
-      StageName: "06",
-      CloseDate: format(new Date(), 'yyyy-MM-dd'),
-      Amount: watchedData.Amount,
+      Status: "Qualified", // Example status for a converted/updated lead
       PolicyNumber__c: watchedData.policyNumber || salesforceIds?.id || '',
   };
 
@@ -89,7 +87,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">Payload Final a Enviar (Actualización de Oportunidad)</label>
+            <label className="text-sm font-medium">Payload Final a Enviar (Actualización de Lead)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(finalPayload, null, 2)}
             </pre>

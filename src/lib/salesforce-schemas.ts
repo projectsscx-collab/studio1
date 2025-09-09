@@ -3,7 +3,7 @@ import { z } from 'zod';
 // This schema defines ALL possible fields that can be part of the form state.
 export const FormDataSchema = z.object({
     // --- Salesforce IDs ---
-    id: z.string().optional().nullable(), // Will hold the Opportunity ID
+    id: z.string().optional().nullable(), // Will hold the Lead ID
     idFullOperation: z.string().optional(),
     
     // --- Personal Info ---
@@ -18,7 +18,7 @@ export const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // --- Address Info (Removed from UI, but might be needed for payload) ---
+    // --- Address Info (Hardcoded as N/A) ---
     street: z.string().optional(),
     postalCode: z.string().optional(),
     city: z.string().optional(),
@@ -44,10 +44,11 @@ export const FormDataSchema = z.object({
     // --- Contact Preference Data (Step 4) ---
     agentType: z.string().optional(), // Frontend only field for logic
     sourceEvent: z.string().optional(),
+    UTMCampaign: z.string().optional(),
 
-    // --- Emission / Opportunity Data (Step 5) ---
+    // --- Emission / Final Update Data (Step 5) ---
     policyNumber: z.string().optional(),
-    StageName: z.string().optional(),
+    StageName: z.string().optional(), // Corresponds to Lead 'Status'
     CloseDate: z.string().optional(),
     Amount: z.number().optional(),
 });
@@ -67,6 +68,6 @@ export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSche
 
 // Defines the shape of the IDs we get from Salesforce
 export interface SalesforceIds {
-    id: string; // This is the OPPORTUNITY ID
+    id: string; // This is the LEAD ID
     idFullOperation: string;
 }

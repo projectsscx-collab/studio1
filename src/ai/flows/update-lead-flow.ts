@@ -1,8 +1,8 @@
 'use server';
 
 /**
- * @fileoverview Genkit flow to UPDATE an Opportunity in Salesforce using the standard REST API.
- * This flow is called in the final step to mark the opportunity as won.
+ * @fileoverview Genkit flow to UPDATE a Lead in Salesforce using the standard REST API.
+ * This flow is called in the final step to update the lead with policy information.
  */
 
 import { ai } from '@/ai/genkit';
@@ -13,7 +13,7 @@ import { SalesforceTokenResponseSchema } from '@/lib/salesforce-schemas';
 // --- Flow to get the authentication token (can be defined in a shared file later) ---
 const getSalesforceTokenFlow = ai.defineFlow(
   {
-    name: 'getSalesforceTokenForOppUpdateFlow', // Use a different name to avoid collisions
+    name: 'getSalesforceTokenForLeadUpdateFlow', // Use a different name to avoid collisions
     inputSchema: z.void(),
     outputSchema: SalesforceTokenResponseSchema,
   },
@@ -50,27 +50,36 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-const UpdateOpportunityInputSchema = z.object({
-  opportunityId: z.string(),
+const UpdateLeadInputSchema = z.object({
+  leadId: z.string(),
   payload: z.object({
-    StageName: z.string(),
-    CloseDate: z.string(),
-    Amount: z.number(),
-    PolicyNumber__c: z.string(),
+    Status: z.string(), // For Leads, the field is 'Status', not 'StageName'
+    // Map other opportunity fields to potential custom lead fields if necessary
+    // For now, we only update the status and maybe a policy number field.
+    PolicyNumber__c: z.string().optional(),
   }),
 });
 
-const updateOpportunityFlow = ai.defineFlow(
+const updateLeadFlow = ai.defineFlow(
   {
-    name: 'updateOpportunityFlow',
-    inputSchema: UpdateOpportunityInputSchema,
+    name: 'updateLeadFlow',
+    inputSchema: UpdateLeadInputSchema,
     outputSchema: z.any(),
   },
-  async ({ opportunityId, payload }) => {
+  async ({ leadId, payload }) => {
     const token = await getSalesforceTokenFlow();
     
-    // The standard Salesforce REST API endpoint for updating a record is used here.
-    const endpoint = `${token.instance_url}/services/data/v61.0/sobjects/Opportunity/${opportunityId}`;
+    // The standard Salesforce REST API endpoint for updating a Lead record.
+    const endpoint = `${token.instance_url}/services/data/v61.0/sobjects/Lead/${leadId}`;
+
+    // Salesforce requires a Status for a converted Lead. Let's map "06" to a standard Lead status.
+    // This is an assumption. 'Qualified' is a common converted status.
+    // The payload needs to be adjusted for the Lead object.
+    const leadPayload = {
+      Status: 'Qualified', // A standard Lead status. The stage is on the opportunity.
+      PolicyNumber__c: payload.PolicyNumber__c,
+    };
+
 
     const response = await fetch(endpoint, {
       method: 'PATCH',
@@ -78,7 +87,7 @@ const updateOpportunityFlow = ai.defineFlow(
         'Authorization': `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(leadPayload),
     });
 
     if (response.status !== 204) { // Successful PATCH returns 204 No Content
@@ -89,17 +98,17 @@ const updateOpportunityFlow = ai.defineFlow(
       } catch (e) {
         // Ignore if not json
       }
-      console.error("Salesforce Opportunity Update Error Response:", errorText);
-      throw new Error(`Failed to update opportunity: ${response.status} ${errorText}`);
+      console.error("Salesforce Lead Update Error Response:", errorText);
+      throw new Error(`Failed to update lead: ${response.status} ${errorText}`);
     }
 
     // A 204 No Content is a successful response for a PATCH request.
     // Return a custom success object as there's no body.
-    return { success: true, status: response.status, statusText: response.statusText, opportunityId: opportunityId };
+    return { success: true, status: response.status, statusText: response.statusText, leadId: leadId };
   }
 );
 
 // --- Exported function to be called from the frontend ---
-export async function updateOpportunity(input: z.infer<typeof UpdateOpportunityInputSchema>): Promise<any> {
-  return updateOpportunityFlow(input);
+export async function updateLead(input: z.infer<typeof UpdateLeadInputSchema>): Promise<any> {
+  return updateLeadFlow(input);
 }

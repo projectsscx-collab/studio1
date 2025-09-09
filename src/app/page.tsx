@@ -11,7 +11,7 @@ import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
 import { submitLead } from '@/ai/flows/insert-lead-flow';
-import { updateOpportunity } from '@/ai/flows/update-opportunity-flow';
+import { updateLead } from '@/ai/flows/update-lead-flow';
 import type { FormData, SalesforceIds } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
@@ -29,7 +29,7 @@ const calculateFullOperationId = () => {
 
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
-  id: null, // This will hold the Opportunity ID after lead creation
+  id: null, // This will hold the Lead ID after creation
   idFullOperation: '',
 
   // --- Step 1: Personal Details ---
@@ -73,7 +73,7 @@ const initialFormData: FormData = {
   
   // --- Step 5: Emission ---
   policyNumber: '', 
-  StageName: '06', // Hardcoded as per business logic
+  StageName: '06', // This corresponds to a Lead's 'Status' field, not StageName
   CloseDate: '',
   Amount: 10,
 };
@@ -167,8 +167,6 @@ const buildLeadPayload = (formData: FormData) => {
     };
   
     // Only include the 'id' field if it's not null.
-    // In the initial creation, it will be null and thus omitted.
-    // In the final update, it will have the opportunityId and will be included.
     if (formData.id) {
         leadWrapper.id = formData.id;
     }
@@ -214,16 +212,15 @@ export default function Home() {
         const response = await submitLead(leadPayload);
 
         if (!response?.success || !response?.opportunityId) {
-            console.error("Salesforce Response does not contain Opportunity ID:", response);
-            throw new Error('Opportunity ID not found in Salesforce response.');
+            console.error("Salesforce Response does not contain Lead ID:", response);
+            throw new Error('Lead ID not found in Salesforce response.');
         }
         
-        const opportunityId = response.opportunityId;
-        const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
+        const leadId = response.opportunityId; // It's actually the Lead ID
+        const newIds: SalesforceIds = { id: leadId, idFullOperation: newIdFullOperation };
         
         setSalesforceIds(newIds);
         
-        // Pass the new IDs along with the rest of the form data to the next step
         const nextStepData = { ...submissionData, ...newIds };
         
         handleNextStep(nextStepData);
@@ -241,10 +238,10 @@ export default function Home() {
     }
   };
   
-  // Step 2: Update the Opportunity
+  // Step 2: Update the Lead
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds?.id) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Opportunity ID no encontrado. Por favor, reinicie el formulario.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
         setIsSubmitting(false);
         return;
       }
@@ -255,18 +252,16 @@ export default function Home() {
         ...data, 
       };
 
-      // This is the payload for the OPPORTUNITY UPDATE
-      const opportunityPayload = {
-          StageName: finalData.StageName || "06", // Ganada emitida
-          CloseDate: format(new Date(), 'yyyy-MM-dd'), // Emission date
-          Amount: finalData.Amount || 10,
+      // This is the payload for the LEAD UPDATE
+      const leadUpdatePayload = {
+          Status: "Qualified", // Example of a final status for a Lead
           PolicyNumber__c: finalData.policyNumber || salesforceIds.id, // Use form data or default
       };
 
       try {
-          const response = await updateOpportunity({
-              opportunityId: salesforceIds.id,
-              payload: opportunityPayload,
+          const response = await updateLead({
+              leadId: salesforceIds.id,
+              payload: leadUpdatePayload,
           });
           
           setSubmissionResponse({ success: true, ...response });
@@ -274,11 +269,11 @@ export default function Home() {
           handleNextStep(finalData); // Move to confirmation screen with all data
 
       } catch (error) {
-          console.error('Error updating opportunity:', error);
+          console.error('Error updating lead:', error);
           const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
           toast({
               variant: 'destructive',
-              title: 'Error al Actualizar Oportunidad',
+              title: 'Error al Actualizar Lead',
               description: errorMessage,
           });
       } finally {

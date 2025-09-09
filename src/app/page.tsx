@@ -113,12 +113,13 @@ export default function Home() {
 
   const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
+    const newIdFullOperation = calculateFullOperationId();
     const finalData: InsertLeadInput = { 
         ...formData, 
         ...data,
-        idFullOperation: formData.idFullOperation || calculateFullOperationId(),
+        idFullOperation: newIdFullOperation,
     };
-    setFormData(finalData);
+    setFormData(finalData); // Persist the new ID to the state
     
     try {
         const token = await getSalesforceToken();
@@ -130,7 +131,7 @@ export default function Home() {
         const leadId = findKey(response, 'leadResultId');
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
-        setFormData(prev => ({ ...prev, id: leadId })); // Save the returned Lead ID
+        setFormData(prev => ({ ...prev, id: leadId, idFullOperation: newIdFullOperation })); // Save returned Lead ID and full operation ID
         handleNextStep(data);
 
     } catch(error) {
@@ -296,5 +297,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     

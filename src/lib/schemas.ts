@@ -56,7 +56,6 @@ export const leadSchema = z.object({
   city: z.string().min(1, 'La ciudad es requerida.'),
   district: z.string().min(1, 'El distrito es requerido.'),
   municipality: z.string().min(1, 'El municipio es requerido.'),
-  colony: z.string().min(1, 'La colonia es requerida.'),
   
   // Step 2: Vehicle Details
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),

@@ -37,7 +37,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
         city: true,
         district: true,
         municipality: true,
-        colony: true,
     })),
     defaultValues: {
       ...initialData,
@@ -188,7 +187,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                     <FormField control={form.control} name="postalCode" render={({ field }) => ( <FormItem> <FormLabel>Código Postal</FormLabel> <FormControl><Input placeholder="E.g. 00901" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="district" render={({ field }) => ( <FormItem> <FormLabel>Distrito</FormLabel> <FormControl><Input placeholder="E.g. Santurce" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="municipality" render={({ field }) => ( <FormItem> <FormLabel>Municipio</FormLabel> <FormControl><Input placeholder="E.g. San Juan" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="colony" render={({ field }) => ( <FormItem> <FormLabel>Colonia</FormLabel> <FormControl><Input placeholder="E.g. Miramar" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                 </div>
             </div>
             

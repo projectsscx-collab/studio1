@@ -26,7 +26,6 @@ export const FormDataSchema = z.object({
     municipality: z.string().min(1, "El municipio es requerido."),
     state: z.string().min(1, "El estado es requerido."),
     country: z.string().min(1, "El país es requerido."),
-    colony: z.string().min(1, "La colonia es requerida."),
     
     // --- Vehicle Data ---
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),

@@ -50,7 +50,6 @@ const initialFormData: FormData = {
   municipality: '',
   state: 'XX', // Default value
   country: 'PR', // Default value
-  colony: '',
 
   // --- Step 2: Vehicle Details ---
   numero_de_matricula: '',
@@ -107,7 +106,6 @@ const buildLeadPayload = (formData: FormData) => {
               municipality: formData.municipality,
               state: formData.state,
               country: formData.country,
-              colony: formData.colony
             }
         },
         interestProduct: {

@@ -11,11 +11,11 @@ import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
 import { submitLead } from '@/ai/flows/insert-lead-flow';
-import { updateLead } from '@/ai/flows/update-lead-flow';
+import { updateOpportunity } from '@/ai/flows/update-opportunity-flow';
 import type { FormData, SalesforceIds } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
-import { format } from 'date-fns';
+import { format, addYears } from 'date-fns';
 
 
 const TOTAL_STEPS = 5;
@@ -29,7 +29,7 @@ const calculateFullOperationId = () => {
 
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
-  id: null, // This will hold the Lead ID after creation
+  id: null, // This will hold the Opportunity ID after creation
   idFullOperation: '',
 
   // --- Step 1: Personal Details ---
@@ -67,15 +67,15 @@ const initialFormData: FormData = {
   paymentTerm: '',
   
   // --- Step 4: Contact Preference ---
-  agentType: '', // Frontend only field for agent logic
+  agentType: 'CC', // Default to Contact Center
   sourceEvent: '01',
   UTMCampaign: '',
   
   // --- Step 5: Emission ---
   policyNumber: '', 
-  StageName: '06', // This corresponds to a Lead's 'Status' field, not StageName
-  CloseDate: '',
-  Amount: 10,
+  StageName: '06', 
+  CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
+  Amount: 1000,
 };
 
 
@@ -89,36 +89,31 @@ const buildLeadPayload = (formData: FormData) => {
     };
     
     // Base sourceData
-    let sourceData = {
+    let sourceData: any = {
         sourceEvent: formData.sourceEvent,
         eventReason: "01",
         sourceSite: "Website",
         deviceType: "01",
         deviceModel: "iPhone",
-        leadSource: "01",
+        leadSource: "01", // Default for CC
         origin: "02",
-        systemOrigin: "06",
+        systemOrigin: "06", // Default for CC
         ipData: {}
     };
 
     // Base utmData
-    let utmData = {};
+    let utmData: any = {};
 
     // Conditional logic based on agentType
     if (formData.agentType === 'APM') {
         sourceData.systemOrigin = '02';
-        sourceData.origin = '02';
         sourceData.leadSource = '02';
         utmData = { campaign: 'ROPO_APMCampaign' };
     } else if (formData.agentType === 'ADM') {
-        sourceData.systemOrigin = '06';
-        sourceData.origin = '02';
         sourceData.leadSource = '10';
         utmData = { campaign: 'ROPO_ADMCampaign' };
     }
-    // If agentType is 'CC' or anything else, the defaults remain.
-
-
+    
     const leadWrapper: any = {
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
@@ -193,16 +188,14 @@ export default function Home() {
     }
   };
 
-  // Step 1: Create the Lead in Salesforce
   const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Combine form data with the generated ID, but ensure 'id' is null for creation
     const submissionData: FormData = { 
         ...formData, 
         ...data,
-        id: null, // Explicitly set id to null for creation
+        id: null,
         idFullOperation: newIdFullOperation,
     };
     
@@ -212,12 +205,12 @@ export default function Home() {
         const response = await submitLead(leadPayload);
 
         if (!response?.success || !response?.opportunityId) {
-            console.error("Salesforce Response does not contain Lead ID:", response);
-            throw new Error('Lead ID not found in Salesforce response.');
+            console.error("Salesforce Response does not contain Opportunity ID:", response);
+            throw new Error('Opportunity ID not found in Salesforce response.');
         }
         
-        const leadId = response.opportunityId; // It's actually the Lead ID
-        const newIds: SalesforceIds = { id: leadId, idFullOperation: newIdFullOperation };
+        const opportunityId = response.opportunityId;
+        const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
         
         setSalesforceIds(newIds);
         
@@ -226,11 +219,11 @@ export default function Home() {
         handleNextStep(nextStepData);
 
     } catch(error) {
-        console.error('Error creating lead:', error);
+        console.error('Error creating lead/opportunity:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         toast({
           variant: 'destructive',
-          title: 'Error al Crear el Lead',
+          title: 'Error al Crear Oportunidad',
           description: errorMessage,
         });
     } finally {
@@ -238,10 +231,9 @@ export default function Home() {
     }
   };
   
-  // Step 2: Update the Lead
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds?.id) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Opportunity ID no encontrado. Por favor, reinicie el formulario.' });
         setIsSubmitting(false);
         return;
       }
@@ -252,16 +244,16 @@ export default function Home() {
         ...data, 
       };
 
-      // This is the payload for the LEAD UPDATE
-      const leadUpdatePayload = {
-          Status: "Qualified", // Example of a final status for a Lead
-          PolicyNumber__c: finalData.policyNumber || salesforceIds.id, // Use form data or default
+      const opportunityUpdatePayload = {
+          StageName: "Ganada emitida", // Final stage for the Opportunity
+          CloseDate: finalData.CloseDate,
+          PolicyNumber__c: finalData.policyNumber || salesforceIds.id,
       };
 
       try {
-          const response = await updateLead({
-              leadId: salesforceIds.id,
-              payload: leadUpdatePayload,
+          const response = await updateOpportunity({
+              opportunityId: salesforceIds.id,
+              payload: opportunityUpdatePayload,
           });
           
           setSubmissionResponse({ success: true, ...response });
@@ -269,11 +261,11 @@ export default function Home() {
           handleNextStep(finalData); // Move to confirmation screen with all data
 
       } catch (error) {
-          console.error('Error updating lead:', error);
+          console.error('Error updating opportunity:', error);
           const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
           toast({
               variant: 'destructive',
-              title: 'Error al Actualizar Lead',
+              title: 'Error al Actualizar Oportunidad',
               description: errorMessage,
           });
       } finally {

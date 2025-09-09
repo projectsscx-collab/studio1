@@ -1,9 +1,10 @@
+
 'use server';
 
 /**
- * @fileoverview Genkit flow to CREATE a lead in Salesforce by calling the custom Apex REST endpoint.
- * This flow handles the initial submission and returns the full response from Salesforce,
- * which includes the Lead ID (mistakenly called Opportunity ID before).
+ * @fileoverview Genkit flow to CREATE a Lead/Opportunity in Salesforce via Apex REST.
+ * This flow handles the initial submission and returns the Opportunity ID from the response.
+ * The key insight is that 'leadResultId' from this endpoint is the Opportunity ID needed for subsequent updates.
  */
 
 import { ai } from '@/ai/genkit';
@@ -50,7 +51,7 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Flow to SUBMIT the lead ---
+// --- Flow to SUBMIT the lead and get the Opportunity ID ---
 const submitLeadFlow = ai.defineFlow(
   {
     name: 'submitLeadFlow',
@@ -78,7 +79,12 @@ const submitLeadFlow = ai.defineFlow(
         throw new Error(`Salesforce returned an empty response. Status: ${leadResponse.status}`);
     }
     
-    const responseData = JSON.parse(responseText);
+    let responseData;
+    try {
+        responseData = JSON.parse(responseText);
+    } catch (e) {
+        throw new Error(`Failed to parse Salesforce JSON response: ${responseText}`);
+    }
 
     if (!leadResponse.ok) {
         const errorDetails = JSON.stringify(responseData);
@@ -86,21 +92,20 @@ const submitLeadFlow = ai.defineFlow(
         throw new Error(`Failed to submit lead: ${leadResponse.status} ${errorDetails}`);
     }
 
-    // 2. Extract Lead ID from the response
+    // 2. Extract Opportunity ID from the response. It's in leadResultId.
     const leadResult = Array.isArray(responseData) ? responseData[0] : responseData;
-    const leadId = leadResult?.leadResultId;
+    const opportunityId = leadResult?.leadResultId;
 
-    if (!leadId) {
+    if (!opportunityId) {
       const errorDetails = JSON.stringify(responseData);
-      console.error("Salesforce response did not contain a Lead ID (leadResultId). Full response:", errorDetails);
-      throw new Error(`Lead ID not found in Salesforce response: ${errorDetails}`);
+      console.error("Salesforce response did not contain an Opportunity ID (leadResultId). Full response:", errorDetails);
+      throw new Error(`Opportunity ID not found in Salesforce response: ${errorDetails}`);
     }
     
-    // 3. Return a clean object with the Lead ID
-    // Note: We are calling it 'opportunityId' for minimal frontend changes, but it's a Lead ID.
+    // 3. Return a clean object with the Opportunity ID
     return {
       success: true,
-      opportunityId: leadId, 
+      opportunityId: opportunityId, 
       fullResponse: leadResult,
     };
   }
@@ -111,3 +116,5 @@ const submitLeadFlow = ai.defineFlow(
 export async function submitLead(leadPayload: any): Promise<any> {
   return submitLeadFlow({ leadPayload });
 }
+
+    

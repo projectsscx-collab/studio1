@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, FormProvider } from 'react-hook-form';
@@ -23,16 +24,20 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
     resolver: zodResolver(leadSchema.pick({
       Amount: true,
       policyNumber: true,
+      CloseDate: true,
+      StageName: true,
     })),
     defaultValues: {
-      Amount: initialData.Amount || 10,
+      Amount: initialData.Amount || 1000,
       policyNumber: initialData.policyNumber || '',
+      CloseDate: initialData.CloseDate,
+      StageName: initialData.StageName,
     },
     mode: 'onChange',
   });
   
   useEffect(() => {
-    // Pre-fill policyNumber with LeadId when the component mounts and if the field is empty.
+    // Pre-fill policyNumber with Opportunity ID when the component mounts and if the field is empty.
     if (salesforceIds?.id && !form.getValues('policyNumber')) {
       form.setValue('policyNumber', salesforceIds.id, { shouldValidate: true });
     }
@@ -40,9 +45,10 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
 
   const watchedData = form.watch();
 
-  // This is the payload for the LEAD update
+  // This is the payload for the OPPORTUNITY update
   const finalPayload = {
-      Status: "Qualified", // Example status for a converted/updated lead
+      StageName: "Ganada emitida",
+      CloseDate: watchedData.CloseDate,
       PolicyNumber__c: watchedData.policyNumber || salesforceIds?.id || '',
   };
 
@@ -64,7 +70,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
                     <FormItem>
                     <FormLabel>Importe (Amount)</FormLabel>
                     <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                        <Input type="number" readOnly {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -77,7 +83,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
                     <FormItem>
                     <FormLabel>Número de Póliza (Opcional)</FormLabel>
                     <FormControl>
-                        <Input placeholder="Se autocompletará con el ID" {...field} />
+                        <Input placeholder="Se autocompletará con el ID de Oportunidad" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -87,7 +93,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">Payload Final a Enviar (Actualización de Lead)</label>
+            <label className="text-sm font-medium">Payload Final a Enviar (Actualización de Oportunidad)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(finalPayload, null, 2)}
             </pre>
@@ -108,3 +114,5 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
 };
 
 export default EmissionForm;
+
+    

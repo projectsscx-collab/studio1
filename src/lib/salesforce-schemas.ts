@@ -1,100 +1,7 @@
 import { z } from 'zod';
 
-const AddressSchema = z.object({
-  street: z.string(),
-  postalCode: z.string(),
-  city: z.string(),
-  district: z.string(),
-  municipality: z.string(),
-  state: z.string(),
-  country: z.string(),
-  colony: z.string(),
-});
-
-const ContactDataSchema = z.object({
-  mobilePhone: z.string(),
-  phone: z.string(),
-  email: z.string().email(),
-  address: AddressSchema,
-});
-
-const QuoteSchema = z.object({
-    id: z.string(),
-    issueDate: z.string(),
-    dueDate: z.string(),
-    effectiveDate: z.string(),
-    expirationDate: z.string(),
-    productCode: z.string(),
-    productName: z.string(),
-    netPremium: z.number(),
-    totalPremium: z.number(),
-    paymentMethod: z.string(),
-    currencyIsoCode: z.string(),
-    isSelected: z.boolean(),
-    discount: z.string(),
-    paymentPeriodicity: z.string(),
-    paymentTerm: z.string(),
-    additionalInformation: z.string(),
-});
-
-const InterestProductSchema = z.object({
-    businessLine: z.string(),
-    sector: z.string(),
-    subsector: z.string(),
-    branch: z.string(),
-    risk: z.string(),
-    quotes: z.array(QuoteSchema),
-});
-
-const QualificationDataSchema = z.object({
-  scoring: z.number(),
-  rating: z.string(),
-});
-
-const GoogleAnalyticsDataSchema = z.object({
-    gaClientId: z.string(),
-    gaUserId: z.string(),
-    gaTrackId: z.string(),
-    gaTerm: z.string(),
-    gaMedium: z.string(),
-});
-
-const UTMDataSchema = z.object({
-    utmCampaign: z.string(),
-    utmContent: z.string(),
-    utmSource: z.string(),
-});
-
-const IpDataSchema = z.object({
-    ipSubmitter: z.string(),
-    ipHostName: z.string(),
-    ipCity: z.string(),
-    ipRegion: z.string(),
-    ipCountry: z.string(),
-    ipPostalCode: z.string(),
-    ipLocation: z.string(),
-    ipOrganization: z.string(),
-});
-
-const SourceDataSchema = z.object({
-    sourceEvent: z.string(),
-    eventReason: z.string(),
-    sourceSite: z.string(),
-    screenName: z.string(),
-    deviceType: z.string(),
-    deviceModel: z.string(),
-    leadSource: z.string(),
-    origin: z.string(),
-    systemOrigin: z.string(),
-    ipData: IpDataSchema,
-});
-
-const ConversionDataSchema = z.object({
-  convertedStatus: z.string(),
-  policyNumber: z.string().nullable(),
-});
-
-// Base schema for data collected from forms
+// This is the main schema that contains ALL possible fields from the JSON.
+// Individual forms will pick the fields they need from this master schema.
 const FormDataSchema = z.object({
     idFullOperation: z.string().min(1, 'ID de operación es requerido.'),
     idOwner: z.string(),
@@ -174,20 +81,22 @@ const FormDataSchema = z.object({
     ipOrganization: z.string(),
 
     // Conversion Data
-    convertedStatus: z.string(),
-    policyNumber: z.string().nullable(),
+    convertedStatus: z.string().optional(), // Optional, as it's not always present
+    policyNumber: z.string().nullable().optional(),
 });
 
 
 // Schema for the INITIAL CREATION of the Lead (Step 3)
+// It doesn't include 'id' because it doesn't exist yet.
 export const InsertLeadInputSchema = FormDataSchema;
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
 
 // Schema for SUBSEQUENT UPDATES of the Lead (Steps 4 and 5)
+// It requires the 'id' of the lead to update.
 export const UpdateLeadInputSchema = FormDataSchema.extend({
     id: z.string().min(1, "El ID del Lead es requerido para la actualización."),
-    agentType: z.string().optional(), // Frontend only
+    agentType: z.string().optional(), // Frontend only field
 });
 export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 

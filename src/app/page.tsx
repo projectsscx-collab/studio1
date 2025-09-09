@@ -16,9 +16,9 @@ import Header from '@/components/header';
 
 const TOTAL_STEPS = 5;
 
-// This represents the full data structure across all steps
+// This represents the full data structure across all steps, based on the example JSON
 const initialFormData: InsertLeadInput & UpdateLeadInput = {
-  // Step 1 - Personal Details
+  // Step 1 - Personal Details & Address
   firstName: '',
   lastName: '',
   documentType: '',
@@ -27,17 +27,14 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   mobilePhone: '',
   phone: '',
   email: '',
-  company: 'TestPSLead', // Default value from JSON
-  sex: '01', // Default value from JSON
-  maritalStatus: '01', // Default value from JSON
-  street: '123 Main St', // Default value from JSON
-  postalCode: '12345', // Default value from JSON
-  city: 'Puerto Rico', // Default value from JSON
-  district: 'Test', // Default value from JSON
-  municipality: 'Test', // Default value from JSON
-  state: 'XX', // Default value from JSON
-  country: 'XX', // Default value from JSON
-  colony: 'Central Park', // Default value from JSON
+  street: '123 Main St', 
+  postalCode: '12345', 
+  city: 'Puerto Rico',
+  district: 'Test', 
+  municipality: 'Test',
+  state: 'XX', 
+  country: 'XX', 
+  colony: 'Central Park',
 
   // Step 2 - Vehicle Details
   numero_de_matricula: '',
@@ -47,51 +44,64 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   numero_de_serie: '',
 
   // Step 3 - Quote Details
-  idFullOperation: '',
+  idFullOperation: '', // Will be generated in QuoteForm
   effectiveDate: '',
   expirationDate: '',
   paymentMethod: '',
   paymentPeriodicity: '',
   paymentTerm: '',
-  currencyIsoCode: 'EUR', // Default value from JSON
-
+  
   // Step 4 - Contact Preference
-  sourceEvent: '01', // Default value
-  agentType: '', // This is frontend-only logic
-  systemOrigin: '05',
-  origin: '01',
-  utmCampaign: 'ROPO_Auto',
-  leadSource: '01',
+  sourceEvent: '01', 
+  agentType: '', // This is frontend-only logic, used to derive other values
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: '',
-  idOwner: '005Hs00000HeTcVIAV', // Default value from JSON
+  policyNumber: null, // Set to leadId on final submission
 
-  // Additional data from JSON example
+  // --- Static data based on the provided JSON example ---
+  idOwner: '005Hs00000HeTcVIAV',
+  company: 'TestPSLead',
+  sex: '01',
+  maritalStatus: '01',
   additionalInformation: 'test',
+  currencyIsoCode: 'EUR',
+
+  // Qualification Data
   scoring: 21,
   rating: '01',
+
+  // GA Data
   gaClientId: "GA12345",
   gaUserId: "User123",
   gaTrackId: "Track123",
   gaTerm: "Insurance",
   gaMedium: "Email",
+  
+  // UTM Data
+  utmCampaign: "ROPO_Auto",
   utmContent: "EmailMarketing",
   utmSource: "Google",
-  eventReason : "01",
+  
+  // Source Data
+  eventReason: "01",
   sourceSite: "Website",
   screenName: "HomePage",
   deviceType: "01",
   deviceModel: "iPhone",
-  ipSubmitter : "Test",
-  ipHostName : "Test",
-  ipCity : "Test",
-  ipRegion : "Test",
-  ipCountry : "Test",
-  ipPostalCode : "Test",
-  ipLocation : "Test",
-  ipOrganization : "Test"
+  leadSource: "01",
+  origin: "01",
+  systemOrigin: "05",
+  
+  // IP Data
+  ipSubmitter: "Test",
+  ipHostName: "Test",
+  ipCity: "Test",
+  ipRegion: "Test",
+  ipCountry: "Test",
+  ipPostalCode: "Test",
+  ipLocation: "Test",
+  ipOrganization: "Test",
 };
 
 export default function Home() {
@@ -149,11 +159,10 @@ export default function Home() {
       }
       
       if (!newLeadId) {
-        throw new Error("Could not retrieve required IDs from Salesforce after creation.");
+        throw new Error("Could not retrieve leadId from Salesforce after creation.");
       }
 
       setLeadId(newLeadId);
-      
       setSubmissionResponse(response);
       handleNextStep(updatedData); 
 
@@ -212,11 +221,7 @@ export default function Home() {
   
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
-    let updatedData = { ...formData, ...data };
-    
-    if (data.convertedStatus === '02') {
-        updatedData = { ...updatedData, policyNumber: leadId! };
-    }
+    let updatedData = { ...formData, ...data, policyNumber: leadId };
     
     setFormData(updatedData);
     
@@ -227,7 +232,7 @@ export default function Home() {
             id: leadId!,
         };
         const response = await updateLead(payload, token);
-
+        
         const error = findKey(response, 'errorMessage');
         if (error) {
             // As per user request, ignore policy number error if operation is successful otherwise

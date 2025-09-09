@@ -156,12 +156,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
               ipOrganization: formData.ipOrganization,
           },
       },
-      conversionData: {
-          convertedStatus: formData.convertedStatus,
-          policyNumber: formData.policyNumber,
-          netPremium: null,
-          totalPremium: null,
-      },
       // Static data from example
       commercialStructureData: {
           idIntermediary: null,
@@ -174,10 +168,15 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   if ('id' in formData && formData.id) {
     leadWrapper.id = formData.id;
   }
-
-  // Clean up conversionData if status is empty
-  if (!formData.convertedStatus) {
-    delete leadWrapper.conversionData;
+  
+  // Conditionally add conversionData
+  if (formData.convertedStatus) {
+    leadWrapper.conversionData = {
+        convertedStatus: formData.convertedStatus,
+        policyNumber: formData.policyNumber,
+        netPremium: null,
+        totalPremium: null,
+    };
   }
 
   return leadWrapper;
@@ -243,6 +242,7 @@ const updateLeadFlow = ai.defineFlow(
       });
 
       const responseText = await leadResponse.text();
+      // Handle empty response on success, which can happen on updates.
       if (leadResponse.ok && (leadResponse.status === 204 || responseText.length === 0)) {
           return { success: true, idFullOperation: formData.idFullOperation };
       }

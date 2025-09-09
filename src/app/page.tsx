@@ -64,7 +64,7 @@ const initialFormData: InsertLeadInput = {
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: '',
+  policyNumber: null,
 
   // --- Static / Hardcoded data ---
   businessLine: "01",
@@ -136,6 +136,7 @@ export default function Home() {
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
         setSalesforceIds({ id: leadId, idFullOperation: newIdFullOperation });
+        setFormData(prev => ({...prev, ...data})); // Persist current step data
         handleNextStep(data);
 
     } catch(error) {
@@ -202,7 +203,7 @@ export default function Home() {
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: 'PENDIENTE',
+          policyNumber: null,
       };
       setFormData(finalData);
 

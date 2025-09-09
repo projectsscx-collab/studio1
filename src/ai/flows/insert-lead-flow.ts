@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -135,7 +136,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
       // Only include policyNumber if it has a value
-      ...(formData.policyNumber && { policyNumber: formData.policyNumber }),
+      policyNumber: formData.policyNumber,
     };
   }
 
@@ -241,3 +242,4 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
 }
+

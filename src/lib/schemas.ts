@@ -61,6 +61,8 @@ export const leadSchema = z.object({
   documentType: z.string().min(1, 'Seleccione un tipo de documento.'),
   documentNumber: z.string().min(1, 'El número de documento es requerido.'),
   birthdate: z.string().min(1, { message: 'La fecha de nacimiento es requerida.'}),
+  sex: z.string().min(1, 'Seleccione un sexo.'),
+  maritalStatus: z.string().min(1, 'Seleccione un estado civil.'),
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().optional(),
   email: z.string().email('El correo electrónico no es válido.'),

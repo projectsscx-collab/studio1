@@ -69,23 +69,28 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   };
   
   const quote = {
-      id: "TestWSConvertMIN",
+      id: formData.quoteId,
+      issueDate: formData.issueDate,
+      dueDate: formData.dueDate,
       effectiveDate: formData.effectiveDate,
       expirationDate: formData.expirationDate,
-      productCode: "PRD001",
-      productName: "Life Insurance",
-      netPremium: 1000.00,
+      productCode: formData.productCode,
+      productName: formData.productName,
+      netPremium: formData.netPremiumQuote,
+      totalPremium: formData.totalPremium,
       paymentMethod: formData.paymentMethod,
-      isSelected: true,
+      currencyIsoCode: formData.currencyIsoCode,
+      isSelected: formData.isSelected,
+      discount: formData.discount,
       paymentPeriodicity: formData.paymentPeriodicity,
       paymentTerm: formData.paymentTerm,
-      additionalInformation: 'test',
-      policyNumber: undefined as string | undefined, // Define it here
+      additionalInformation: formData.quoteAdditionalInfo,
+      policyNumber: undefined as string | null | undefined,
   };
   
   // Add policyNumber to the quote ONLY during the final conversion step
-  if ('convertedStatus' in formData && formData.convertedStatus && 'policyNumber' in formData) {
-      quote.policyNumber = formData.policyNumber || undefined;
+  if ('convertedStatus' in formData && formData.convertedStatus) {
+      quote.policyNumber = formData.policyNumber || null;
   } else {
       delete quote.policyNumber; // Ensure it's not present otherwise
   }
@@ -93,11 +98,16 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   const leadWrapper: any = {
       id: formData.id,
       idFullOperation: formData.idFullOperation,
+      idOwner: formData.idOwner,
+      company: formData.company,
       firstName: formData.firstName,
       lastName: formData.lastName,
       documentType: formData.documentType,
       documentNumber: formData.documentNumber,
       birthdate: formData.birthdate,
+      sex: formData.sex,
+      maritalStatus: formData.maritalStatus,
+      additionalInformation: formData.additionalInformation,
       
       contactData: {
           mobilePhone: formData.mobilePhone,
@@ -121,23 +131,54 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           subsector: formData.subsector,
           branch: formData.branch,
           risk: JSON.stringify(riskObject),
-          quotes: [quote], // Add the dynamically constructed quote
+          quotes: [quote],
+      },
+
+      commercialStructureData: {
+        idIntermediary: formData.idIntermediary,
+        regionalOffice: formData.regionalOffice,
+        managerOffice: formData.managerOffice,
+      },
+
+      qualificationData: {
+        scoring: formData.scoring,
+        rating: formData.rating,
+      },
+
+      googleAnalyticsData: {
+        gaClientId: formData.gaClientId,
+        gaUserId: formData.gaUserId,
+        gaTrackId: formData.gaTrackId,
+        gaTerm: formData.gaTerm,
+        gaMedium: formData.gaMedium,
       },
 
       utmData: {
           utmCampaign: formData.utmCampaign,
+          utmContent: formData.utmContent,
+          utmSource: formData.utmSource,
       },
 
       sourceData: {
           sourceEvent: formData.sourceEvent,
           eventReason: formData.eventReason,
           sourceSite: formData.sourceSite,
+          screenName: formData.screenName,
           deviceType: formData.deviceType,
           deviceModel: formData.deviceModel,
           leadSource: formData.leadSource,
           origin: formData.origin,
           systemOrigin: formData.systemOrigin,
-          ipData: {},
+          ipData: {
+            ipSubmitter: formData.ipSubmitter,
+            ipHostName: formData.ipHostName,
+            ipCity: formData.ipCity,
+            ipRegion: formData.ipRegion,
+            ipCountry: formData.ipCountry,
+            ipPostalCode: formData.ipPostalCode,
+            ipLocation: formData.ipLocation,
+            ipOrganization: formData.ipOrganization,
+          },
       },
   };
   
@@ -145,18 +186,13 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   if ('convertedStatus' in formData && formData.convertedStatus) {
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
+      policyNumber: null,
+      netPremium: null,
+      totalPremium: null,
     };
   }
 
-  // Filter out any top-level keys that are undefined to keep payload clean
-  for (const key in leadWrapper) {
-    if (leadWrapper[key] === undefined) {
-      delete leadWrapper[key];
-    }
-  }
-  
-  // Salesforce throws an error if an empty string is passed for the ID on creation.
-  // We must remove it from the payload if it's not a valid ID.
+  // Salesforce throws an error if an empty string or null is passed for the ID on creation.
   if (!leadWrapper.id) {
     delete leadWrapper.id;
   }

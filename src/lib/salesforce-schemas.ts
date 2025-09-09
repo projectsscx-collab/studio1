@@ -5,12 +5,17 @@ import { z } from 'zod';
 // depending on the operation.
 const FormDataSchema = z.object({
     // --- DYNAMIC FIELDS (from forms) ---
-    id: z.string().optional(), // Required for updates, absent for creation
+    id: z.string().optional().nullable(),
+    idFullOperation: z.string().optional(),
+    
+    // Personal & Contact
     firstName: z.string().min(1, 'Nombre es requerido.'),
     lastName: z.string().min(1, 'Apellido es requerido.'),
     documentType: z.string().min(1, 'Tipo de documento es requerido.'),
     documentNumber: z.string().min(1, 'Número de documento es requerido.'),
     birthdate: z.string().min(1, 'Fecha de nacimiento es requerida.'),
+    sex: z.string().min(1, 'Sexo es requerido.'),
+    maritalStatus: z.string().min(1, 'Estado civil es requerido.'),
     mobilePhone: z.string().min(1, 'Teléfono móvil es requerido.'),
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
@@ -36,9 +41,11 @@ const FormDataSchema = z.object({
     convertedStatus: z.string().optional(), 
     policyNumber: z.string().optional().nullable(),
 
-    // --- STATIC & HARDCODED FIELDS (part of state, but not form UI) ---
-    idFullOperation: z.string().optional(),
-    
+    // --- STATIC & HARDCODED FIELDS ---
+    idOwner: z.string().optional().nullable(),
+    company: z.string().optional(),
+    additionalInformation: z.string().optional(),
+
     // Contact Address (Hardcoded)
     street: z.string().optional(),
     postalCode: z.string().optional(),
@@ -55,23 +62,65 @@ const FormDataSchema = z.object({
     subsector: z.string().optional(),
     branch: z.string().optional(),
     
-    // UTM Data (Hardcoded)
-    utmCampaign: z.string().optional(),
+    // Quotes array fields (Hardcoded)
+    quoteId: z.string().optional(),
+    issueDate: z.string().optional(),
+    dueDate: z.string().optional(),
+    productCode: z.string().optional(),
+    productName: z.string().optional(),
+    netPremiumQuote: z.number().optional(),
+    totalPremium: z.number().optional(),
+    currencyIsoCode: z.string().optional(),
+    isSelected: z.boolean().optional(),
+    discount: z.string().optional(),
+    quoteAdditionalInfo: z.string().optional(),
     
-    // Source Data (Hardcoded)
+    // commercialStructureData (Hardcoded)
+    idIntermediary: z.string().optional().nullable(),
+    regionalOffice: z.string().optional().nullable(),
+    managerOffice: z.string().optional().nullable(),
+    
+    // qualificationData (Hardcoded)
+    scoring: z.string().optional(),
+    rating: z.string().optional(),
+
+    // googleAnalyticsData (Hardcoded)
+    gaClientId: z.string().optional(),
+    gaUserId: z.string().optional(),
+    gaTrackId: z.string().optional(),
+    gaTerm: z.string().optional(),
+    gaMedium: z.string().optional(),
+
+    // utmData (Hardcoded)
+    utmCampaign: z.string().optional(),
+    utmContent: z.string().optional(),
+    utmSource: z.string().optional(),
+    
+    // sourceData (Hardcoded)
     sourceEvent: z.string().optional(),
     eventReason: z.string().optional(),
     sourceSite: z.string().optional(),
+    screenName: z.string().optional(),
     deviceType: z.string().optional(),
     deviceModel: z.string().optional(),
     leadSource: z.string().optional(),
     origin: z.string().optional(),
     systemOrigin: z.string().optional(),
+    
+    // ipData (Hardcoded)
+    ipSubmitter: z.string().optional(),
+    ipHostName: z.string().optional(),
+    ipCity: z.string().optional(),
+    ipRegion: z.string().optional(),
+    ipCountry: z.string().optional(),
+    ipPostalCode: z.string().optional(),
+    ipLocation: z.string().optional(),
+    ipOrganization: z.string().optional(),
 });
 
 
 // Schema for the INITIAL CREATION of the Lead (Step 3)
-export const InsertLeadInputSchema = FormDataSchema.omit({ id: true }); // ID is not present on creation
+export const InsertLeadInputSchema = FormDataSchema;
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
 // Schema for UPDATING the lead (Step 4 & 5)
@@ -91,5 +140,3 @@ export const SalesforceTokenResponseSchema = z.object({
     signature: z.string(),
 });
 export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
-
-    

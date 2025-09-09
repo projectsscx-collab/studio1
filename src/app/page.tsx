@@ -18,21 +18,52 @@ import Header from '@/components/header';
 const TOTAL_STEPS = 5;
 
 const calculateFullOperationId = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const randStr = Array.from({ length: 2 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
-    return `${Date.now()}${randStr}`;
+    return Date.now().toString();
 };
 
 const initialFormData: InsertLeadInput = {
-  // Step 1 - Personal Details & Contact
+  // --- Salesforce IDs ---
+  id: null,
+  idFullOperation: '',
+  policyNumber: '',
+
+  // --- Step 1: Personal Details ---
   firstName: '',
   lastName: '',
   documentType: '',
   documentNumber: '',
   birthdate: '',
+  sex: '',
+  maritalStatus: '',
   mobilePhone: '',
   phone: '',
   email: '',
+  
+  // --- Step 2: Vehicle Details ---
+  numero_de_matricula: '',
+  marca: '',
+  modelo: '',
+  ano_del_vehiculo: '',
+  numero_de_serie: '',
+
+  // --- Step 3: Quote Details ---
+  effectiveDate: '',
+  expirationDate: '',
+  paymentMethod: '',
+  paymentPeriodicity: '',
+  paymentTerm: '',
+  
+  // --- Step 4: Contact Preference ---
+  agentType: '', // Frontend only
+  sourceEvent: '01',
+  
+  // --- Step 5: Emission ---
+  convertedStatus: '',
+  
+  // --- Hardcoded / Static Data (based on JSON example) ---
+  idOwner: "005Hs00000HeTcVIAV",
+  company: "TestPSLead",
+  additionalInformation: "test",
   
   // Contact Address
   street: '123 Main St', 
@@ -44,41 +75,65 @@ const initialFormData: InsertLeadInput = {
   country: 'PR',
   colony: 'Central Park',
   
-  // Step 2 - Vehicle Details
-  numero_de_matricula: '',
-  marca: '',
-  modelo: '',
-  ano_del_vehiculo: '',
-  numero_de_serie: '',
-
-  // Step 3 - Quote Details
-  effectiveDate: '',
-  expirationDate: '',
-  paymentMethod: '',
-  paymentPeriodicity: '',
-  paymentTerm: '',
-  
-  // Step 4 - Contact Preference
-  agentType: '',
-  sourceEvent: '01', // Default value
-  
-  // Step 5 - Emission
-  convertedStatus: '',
-  policyNumber: '', // Initialize as an empty string to avoid React "null" error
-
-  // --- Static / Hardcoded data ---
+  // Interest Product
   businessLine: "01",
   sector: "XX_01",
   subsector: "XX_00",
   branch: "XX_205",
-  utmCampaign: "ROPO_Auto",
+
+  // Quote Details (in `quotes` array)
+  quoteId: "TestPSLead",
+  issueDate: "2024-02-01",
+  dueDate: "2025-01-01",
+  productCode: "PRD001",
+  productName: "Life Insurance",
+  netPremiumQuote: 1000.00,
+  totalPremium: 1200.00,
+  currencyIsoCode: "EUR",
+  isSelected: true,
+  discount: "0.24",
+  quoteAdditionalInfo: "test",
+
+  // Commercial Structure
+  idIntermediary: null,
+  regionalOffice: null,
+  managerOffice: null,
+
+  // Qualification Data
+  scoring: "21",
+  rating: "01",
+
+  // Google Analytics
+  gaClientId: "GA12345",
+  gaUserId: "User123",
+  gaTrackId: "Track123",
+  gaTerm: "Insurance",
+  gaMedium: "Email",
+
+  // UTM Data
+  utmCampaign: "Winter2024",
+  utmContent: "EmailMarketing",
+  utmSource: "Google",
+
+  // Source Data
   eventReason: "01",
   sourceSite: "Website",
+  screenName: "HomePage",
   deviceType: "01",
   deviceModel: "iPhone",
   leadSource: "01",
   origin: "01",
   systemOrigin: "05",
+  
+  // IP Data
+  ipSubmitter: "Test",
+  ipHostName: "Test",
+  ipCity: "Test",
+  ipRegion: "Test",
+  ipCountry: "Test",
+  ipPostalCode: "Test",
+  ipLocation: "Test",
+  ipOrganization: "Test",
 };
 
 interface SalesforceIds {
@@ -119,7 +174,7 @@ export default function Home() {
   const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
-    const finalData: InsertLeadInput = { 
+    const submissionData: InsertLeadInput = { 
         ...formData, 
         ...data,
         idFullOperation: newIdFullOperation,
@@ -127,7 +182,7 @@ export default function Home() {
     
     try {
         const token = await getSalesforceToken();
-        const response = await insertLead(finalData, token);
+        const response = await insertLead(submissionData, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) throw new Error(error);
@@ -137,6 +192,7 @@ export default function Home() {
         
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
         setSalesforceIds(newIds);
+        
         // Persist all data, including the new IDs, into the main form state
         setFormData(prev => ({...prev, ...data, ...newIds }));
         handleNextStep(data);
@@ -181,11 +237,7 @@ export default function Home() {
     
     try {
       const token = await getSalesforceToken();
-      const response = await updateLead(updatedData, token);
-      
-      const error = findKey(response, 'errorMessage');
-      if (error) throw new Error(error);
-      
+      await updateLead(updatedData, token);
       setFormData(updatedData); // Persist updated data
       handleNextStep(data);
 
@@ -213,7 +265,7 @@ export default function Home() {
           ...formData,
           ...data,
           ...salesforceIds,
-          convertedStatus: '02',
+          convertedStatus: '01',
           policyNumber: salesforceIds.id, // Set policyNumber to the lead ID for the final conversion call
       };
 

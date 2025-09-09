@@ -2,7 +2,7 @@
 
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { documentTypes, leadSchema } from '@/lib/schemas';
+import { documentTypes, leadSchema, maritalStatuses, sexes } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,8 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
         documentType: true,
         documentNumber: true,
         birthdate: true,
+        sex: true,
+        maritalStatus: true,
         mobilePhone: true,
         phone: true,
         email: true,
@@ -70,35 +72,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="documentType"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Tipo de Documento</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {Object.entries(documentTypes).map(([key, value]) => (
-                                        <SelectItem key={key} value={key}>{value}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="documentNumber"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Número de Documento</FormLabel>
-                            <FormControl><Input placeholder="E.g. 12345678X" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
                      <FormField
                         control={form.control}
                         name="birthdate"
@@ -134,14 +107,79 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             </FormItem>
                         )}
                     />
+                    <FormField
+                        control={form.control}
+                        name="sex"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Sexo</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un sexo" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {Object.entries(sexes).map(([key, value]) => (
+                                        <SelectItem key={key} value={key}>{value}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="maritalStatus"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Estado Civil</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un estado civil" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {Object.entries(maritalStatuses).map(([key, value]) => (
+                                        <SelectItem key={key} value={key}>{value}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
             </div>
 
             <hr/>
             
              <div>
-                <h2 className="text-xl font-semibold mb-6">Datos de Contacto</h2>
+                <h2 className="text-xl font-semibold mb-6">Documento y Contacto</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="documentType"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Tipo de Documento</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {Object.entries(documentTypes).map(([key, value]) => (
+                                        <SelectItem key={key} value={key}>{value}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="documentNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Número de Documento</FormLabel>
+                            <FormControl><Input placeholder="E.g. 12345678X" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                      <FormField
                         control={form.control}
                         name="mobilePhone"

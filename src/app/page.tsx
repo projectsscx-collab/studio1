@@ -206,10 +206,11 @@ export default function Home() {
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
     
-    const finalData = { 
+    const finalData: UpdateLeadInput = { 
         ...formData, 
         ...data,
         id: leadId!,
+        policyNumber: '', // Send an empty string, not the lead ID
     };
     setFormData(finalData);
     

@@ -134,9 +134,11 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   if (formData.convertedStatus) {
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
-      policyNumber: formData.policyNumber || formData.id, // Use leadId as policyNumber if not provided
+      // Only include policyNumber if it has a value
+      ...(formData.policyNumber && { policyNumber: formData.policyNumber }),
     };
   }
+
 
   // Filter out any top-level keys that are undefined to keep payload clean
   for (const key in leadWrapper) {

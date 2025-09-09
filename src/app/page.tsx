@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +25,6 @@ const calculateFullOperationId = () => {
 
 const initialFormData: InsertLeadInput = {
   // Step 1 - Personal Details & Contact
-  id: '',
   firstName: '',
   lastName: '',
   documentType: '',
@@ -67,7 +67,6 @@ const initialFormData: InsertLeadInput = {
   policyNumber: '',
 
   // --- Static / Hardcoded data ---
-  idFullOperation: '', 
   businessLine: "01",
   sector: "XX_01",
   subsector: "XX_00",
@@ -82,9 +81,15 @@ const initialFormData: InsertLeadInput = {
   systemOrigin: "05",
 };
 
+interface SalesforceIds {
+    id: string;
+    idFullOperation: string;
+}
+
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<InsertLeadInput>(initialFormData);
+  const [salesforceIds, setSalesforceIds] = useState<SalesforceIds | null>(null);
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
@@ -130,7 +135,7 @@ export default function Home() {
         const leadId = findKey(response, 'leadResultId');
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
-        setFormData(prev => ({ ...prev, ...data, id: leadId, idFullOperation: newIdFullOperation }));
+        setSalesforceIds({ id: leadId, idFullOperation: newIdFullOperation });
         handleNextStep(data);
 
     } catch(error) {
@@ -147,20 +152,25 @@ export default function Home() {
   };
 
   const handleUpdate = async (data: Partial<InsertLeadInput>) => {
+    if (!salesforceIds) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
+        return;
+    }
     setIsSubmitting(true);
-    let updatedData: UpdateLeadInput = { ...formData, ...data };
+    
+    let baseData: UpdateLeadInput = { ...formData, ...data, ...salesforceIds };
 
     if (data.agentType === 'APM') {
-      updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
+      baseData = { ...baseData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
     } else if (data.agentType === 'ADM') {
-      updatedData = { ...updatedData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
+      baseData = { ...baseData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
     }
     
-    setFormData(updatedData);
+    setFormData(baseData);
 
     try {
       const token = await getSalesforceToken();
-      const response = await updateLead(updatedData, token);
+      const response = await updateLead(baseData, token);
       
       const error = findKey(response, 'errorMessage');
       if (error) throw new Error(error);
@@ -181,10 +191,16 @@ export default function Home() {
   };
   
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
+      if (!salesforceIds) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
+        return;
+      }
       setIsSubmitting(true);
+      
       const finalData: UpdateLeadInput = {
           ...formData,
           ...data,
+          ...salesforceIds,
           convertedStatus: '02',
           policyNumber: 'PENDIENTE',
       };
@@ -223,6 +239,7 @@ export default function Home() {
   const handleStartOver = () => {
     setDirection(1);
     setFormData(initialFormData);
+    setSalesforceIds(null);
     setSubmissionResponse(null);
     setCurrentStep(1);
     setIsSubmitting(false);
@@ -246,17 +263,18 @@ export default function Home() {
   };
 
   const renderStep = () => {
+    const combinedData = { ...formData, ...(salesforceIds || {}) };
     switch (currentStep) {
       case 1:
-        return <PersonalDetailsForm onSubmit={handleNextStep} initialData={formData} />;
+        return <PersonalDetailsForm onSubmit={handleNextStep} initialData={combinedData} />;
       case 2:
-        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} initialData={formData} />;
+        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} initialData={combinedData} />;
       case 3:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} initialData={combinedData} isSubmitting={isSubmitting} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} initialData={combinedData} isSubmitting={isSubmitting} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={formData} isSubmitting={isSubmitting} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} initialData={combinedData} isSubmitting={isSubmitting} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:
@@ -296,3 +314,6 @@ export default function Home() {
     </div>
   );
 }
+
+
+    

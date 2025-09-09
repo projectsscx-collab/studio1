@@ -6,9 +6,7 @@ import { leadSchema, agentTypes, sourceEvents } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
-import { Textarea } from '../ui/textarea';
 
 interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;

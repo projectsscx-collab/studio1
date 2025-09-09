@@ -139,7 +139,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
         // INITIAL PAYLOAD STRUCTURE (for creation)
         leadWrapper = {
             id: null,
-            idFullOperation: formData.idFullOperation, 
+            idFullOperation: formData.idFullOperation,
             firstName: formData.firstName,
             lastName: formData.lastName,
             documentType: formData.documentType,
@@ -263,72 +263,6 @@ export default function Home() {
         setIsSubmitting(false);
     }
   };
-
-  const handleUpdate = async (data: Partial<FormData>) => {
-    if (!salesforceIds) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
-        return;
-    }
-    setIsSubmitting(true);
-
-    let baseData = { ...formData, ...data, ...salesforceIds };
-    
-    let updatedData: FormData;
-    
-    if (data.agentType === 'APM') {
-      updatedData = {
-        ...baseData,
-        systemOrigin: '02',
-        origin: '02',
-        utmCampaign: 'ROPO_APMCampaign',
-        leadSource: '02',
-      };
-    } else if (data.agentType === 'ADM') {
-      updatedData = {
-        ...baseData,
-        systemOrigin: '06',
-        origin: '02',
-        utmCampaign: 'ROPO_ADMCampaign',
-        leadSource: '10',
-      };
-    } else { 
-      updatedData = {
-        ...baseData,
-        systemOrigin: '05',
-        origin: '01',
-        utmCampaign: 'Winter2024',
-        leadSource: '01',
-      }
-    }
-    
-    // Now we must send the update to salesforce
-    const leadPayload = buildLeadPayload(updatedData, true); // Using final payload structure
-    // We remove conversionData as it's not needed for this intermediate update
-    delete leadPayload.leadWrappers[0].conversionData; 
-
-
-    try {
-      const token = await getSalesforceToken();
-      const response = await updateLead(leadPayload, token);
-      
-      const error = findKey(response, 'errorMessage');
-      if (error) throw new Error(error);
-      
-      setFormData(updatedData);
-      handleNextStep(data);
-
-    } catch (error) {
-        console.error('Error updating lead:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-        toast({
-            variant: 'destructive',
-            title: 'Error al Actualizar',
-            description: errorMessage,
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds) {
@@ -336,11 +270,39 @@ export default function Home() {
         return;
       }
       setIsSubmitting(true);
+
+      let baseData = { ...formData, ...data, ...salesforceIds };
+    
+      let finalData: FormData;
       
-      const finalData: FormData = {
-          ...formData,
-          ...data,
-          ...salesforceIds,
+      if (data.agentType === 'APM') {
+        finalData = {
+          ...baseData,
+          systemOrigin: '02',
+          origin: '02',
+          utmCampaign: 'ROPO_APMCampaign',
+          leadSource: '02',
+        };
+      } else if (data.agentType === 'ADM') {
+        finalData = {
+          ...baseData,
+          systemOrigin: '06',
+          origin: '02',
+          utmCampaign: 'ROPO_ADMCampaign',
+          leadSource: '10',
+        };
+      } else { 
+        finalData = {
+          ...baseData,
+          systemOrigin: '05',
+          origin: '01',
+          utmCampaign: 'Winter2024',
+          leadSource: '01',
+        }
+      }
+      
+      finalData = {
+          ...finalData,
           convertedStatus: '02',
           policyNumber: salesforceIds.id, 
       };
@@ -409,9 +371,6 @@ export default function Home() {
   const renderStep = () => {
     const combinedData = { ...formData, ...(salesforceIds || {}) };
     
-    // For the preview, we decide which payload to show based on the step.
-    // Steps 1-3 show the initial creation payload.
-    // Steps 4-5 show the final conversion payload.
     const isFinalFlow = currentStep >= 4; 
     
     const formProps = {
@@ -428,7 +387,7 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} {...formProps} />;
+        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} />;
       case 6:

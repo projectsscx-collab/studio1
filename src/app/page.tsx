@@ -157,7 +157,6 @@ const buildLeadPayload = (formData: FormData) => {
         utmData: utmData,
         sourceData: sourceData,
         conversionData: {
-          // This is now conditional. It's '06' for the final update, and null for creation.
           convertedStatus: formData.id ? "06" : null,
           policyNumber: formData.policyNumber || null
         }
@@ -195,10 +194,11 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // Create the submission data, ensuring ID is null for creation
     const submissionData: FormData = { 
         ...formData, 
         ...data,
-        id: null, // Ensure ID is null for creation
+        id: null,
         idFullOperation: newIdFullOperation,
     };
     
@@ -362,5 +362,6 @@ export default function Home() {
     </div>
   );
 }
+    
 
     

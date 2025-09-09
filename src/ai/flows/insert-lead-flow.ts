@@ -99,7 +99,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           sector: 'XX_01',
           subsector: 'XX_00',
           branch: 'XX_205',
-          risk: JSON.stringify(riskObject),
+          risk: riskObject, // Send as a proper JSON object
           quotes: [{
               id: 'TestPSLead',
               issueDate: '2024-02-01',
@@ -156,7 +156,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
               ipOrganization: formData.ipOrganization,
           },
       },
-      // Static data from example
       commercialStructureData: {
           idIntermediary: null,
           regionalOffice: null,
@@ -169,7 +168,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
     leadWrapper.id = formData.id;
   }
   
-  // Conditionally add conversionData
+  // Conditionally add conversionData only when convertedStatus has a value
   if (formData.convertedStatus) {
     leadWrapper.conversionData = {
         convertedStatus: formData.convertedStatus,
@@ -272,5 +271,3 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
 }
-
-    

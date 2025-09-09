@@ -64,7 +64,7 @@ const initialFormData: InsertLeadInput = {
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: null,
+  policyNumber: '', // Use empty string to avoid React null error
 
   // --- Static / Hardcoded data ---
   businessLine: "01",
@@ -88,7 +88,7 @@ interface SalesforceIds {
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<InsertLeadInput>(initialFormData);
+  const [formData, setFormData] = useState<InsertLeadInput | UpdateLeadInput>(initialFormData);
   const [salesforceIds, setSalesforceIds] = useState<SalesforceIds | null>(null);
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,7 +136,8 @@ export default function Home() {
         if (!leadId) throw new Error('Lead ID not found in Salesforce response.');
         
         setSalesforceIds({ id: leadId, idFullOperation: newIdFullOperation });
-        setFormData(prev => ({...prev, ...data})); // Persist current step data
+        // Persist all data, including the new IDs, into the main form state
+        setFormData(prev => ({...prev, ...data, id: leadId, idFullOperation: newIdFullOperation }));
         handleNextStep(data);
 
     } catch(error) {
@@ -159,23 +160,32 @@ export default function Home() {
     }
     setIsSubmitting(true);
     
-    let baseData: UpdateLeadInput = { ...formData, ...data, ...salesforceIds };
-
+    const updatedData: UpdateLeadInput = { 
+        ...formData, 
+        ...data, 
+        ...salesforceIds 
+    };
+    
     if (data.agentType === 'APM') {
-      baseData = { ...baseData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
+      updatedData.systemOrigin = '02';
+      updatedData.origin = '02';
+      updatedData.utmCampaign = 'ROPO_APMCampaign';
+      updatedData.leadSource = '02';
     } else if (data.agentType === 'ADM') {
-      baseData = { ...baseData, systemOrigin: '06', origin: '02', utmCampaign: 'ROPO_ADMCampaign', leadSource: '10' };
+      updatedData.systemOrigin = '06';
+      updatedData.origin = '02';
+      updatedData.utmCampaign = 'ROPO_ADMCampaign';
+      updatedData.leadSource = '10';
     }
     
-    setFormData(baseData);
-
     try {
       const token = await getSalesforceToken();
-      const response = await updateLead(baseData, token);
+      const response = await updateLead(updatedData, token);
       
       const error = findKey(response, 'errorMessage');
       if (error) throw new Error(error);
       
+      setFormData(updatedData); // Persist updated data
       handleNextStep(data);
 
     } catch(error) {
@@ -203,18 +213,20 @@ export default function Home() {
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: null,
+          policyNumber: salesforceIds.id, // Set policyNumber to the lead ID
       };
-      setFormData(finalData);
 
       try {
           const token = await getSalesforceToken();
           const response = await updateLead(finalData, token);
           
           const error = findKey(response, 'errorMessage');
-          if (error) throw new Error(error);
+          if (error) {
+            throw new Error(error);
+          }
 
           setSubmissionResponse(response);
+          setFormData(finalData);
           handleNextStep(data);
 
       } catch (error) {
@@ -315,6 +327,3 @@ export default function Home() {
     </div>
   );
 }
-
-
-    

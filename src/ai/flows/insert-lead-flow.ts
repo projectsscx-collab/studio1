@@ -76,6 +76,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       documentType: formData.documentType,
       documentNumber: formData.documentNumber,
       birthdate: formData.birthdate,
+      policyNumber: formData.policyNumber, // Add policyNumber at the top level
       
       contactData: {
           mobilePhone: formData.mobilePhone,
@@ -135,8 +136,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   if ('convertedStatus' in formData && formData.convertedStatus) {
     leadWrapper.conversionData = {
       convertedStatus: formData.convertedStatus,
-      // Only include policyNumber if it has a value
-      policyNumber: formData.policyNumber,
+      // policyNumber should NOT be in here. It's a top-level field.
     };
   }
 
@@ -146,7 +146,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       delete leadWrapper[key];
     }
   }
-
+  
   // Salesforce throws an error if an empty string is passed for the ID on creation.
   // We must remove it from the payload if it's not a valid ID.
   if (!leadWrapper.id) {
@@ -217,6 +217,7 @@ const updateLeadFlow = ai.defineFlow(
     });
 
     const responseText = await leadResponse.text();
+    // Handle empty response on success, which can happen on updates.
     const responseData = responseText ? JSON.parse(responseText) : { success: true, id: formData.id };
     
     if (!leadResponse.ok) {
@@ -242,4 +243,3 @@ export async function insertLead(formData: InsertLeadInput, token: SalesforceTok
 export async function updateLead(formData: UpdateLeadInput, token: SalesforceTokenResponse): Promise<any> {
   return updateLeadFlow({ formData, token });
 }
-

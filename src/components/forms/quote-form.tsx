@@ -37,12 +37,9 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         paymentMethod: true,
         paymentPeriodicity: true,
         paymentTerm: true,
-        currencyIsoCode: true,
     })),
     defaultValues: {
         ...initialData,
-        netPremium: '1000.00',
-        totalPremium: '1200.00',
         idFullOperation: initialData.idFullOperation || calculateFullOperationId(),
     },
     mode: 'onChange'
@@ -186,23 +183,6 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
                         <Input readOnly value="1000.00" />
                     </FormControl>
                 </FormItem>
-                 <FormItem>
-                    <FormLabel>Prima Total</FormLabel>
-                    <FormControl>
-                        <Input readOnly value="1200.00" />
-                    </FormControl>
-                </FormItem>
-                 <FormField
-                    control={form.control}
-                    name="currencyIsoCode"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Moneda</FormLabel>
-                        <FormControl><Input placeholder="EUR" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                 control={form.control}
                 name="paymentMethod"

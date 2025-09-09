@@ -9,7 +9,7 @@ import ContactPreferenceForm from '@/components/forms/contact-preference-form';
 import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
-import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
+import { insertLead, updateLead, getSalesforceToken, convertLead } from '@/ai/flows/insert-lead-flow';
 import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
@@ -44,8 +44,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   paymentTerm: '',
   
   // Step 4 - Contact Preference
-  sourceEvent: '01', 
-  agentType: '',
+  agentType: '', // Frontend-only field for logic
   
   // Step 5 - Emission
   convertedStatus: '',
@@ -72,6 +71,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   utmCampaign: "ROPO_Auto",
   
   // Source Data (using new defaults)
+  sourceEvent: "01", 
   eventReason: "01",
   sourceSite: "Website",
   deviceType: "01",
@@ -140,11 +140,17 @@ export default function Home() {
         const successfulResult = response?.find((r: any) => r.leadResultId);
         if (successfulResult) {
             setLeadId(successfulResult.leadResultId);
+            // Also store idFullOperation to pass to conversion step
+            setFormData(prev => ({ ...prev, idFullOperation: successfulResult.idFullOperation ?? prev.idFullOperation }));
         } else {
             throw new Error("Could not retrieve leadId from Salesforce after creation.");
         }
       } else {
          setLeadId(newLeadId);
+         const fullOpId = findKey(response, 'idFullOperation');
+         if (fullOpId) {
+            setFormData(prev => ({ ...prev, idFullOperation: fullOpId }));
+         }
       }
 
       setSubmissionResponse(response);
@@ -209,13 +215,14 @@ export default function Home() {
     
     const finalData = {
       id: leadId!,
-      convertedStatus: data.convertedStatus,
+      idFullOperation: formData.idFullOperation,
+      convertedStatus: data.convertedStatus!,
     };
     setFormData(prev => ({...prev, ...data}));
     
     try {
         const token = await getSalesforceToken();
-        const response = await updateLead(finalData as UpdateLeadInput, token);
+        const response = await convertLead(finalData, token);
         
         const error = findKey(response, 'errorMessage');
         if (error) {

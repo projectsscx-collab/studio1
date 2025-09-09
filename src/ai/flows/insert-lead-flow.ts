@@ -57,7 +57,7 @@ const getSalesforceTokenFlow = ai.defineFlow(
 );
 
 
-// --- Helper function to build the lead wrapper for CREATION ---
+// --- Helper function to build the lead wrapper ---
 const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   
   // Create the risk object, which will be stringified
@@ -145,6 +145,10 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       delete leadWrapper[key];
     }
   }
+  
+  if (formData.id) {
+    leadWrapper.id = formData.id;
+  }
 
   return leadWrapper;
 };
@@ -196,24 +200,22 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      // For updates, especially conversion, send a minimal payload
-      const leadWrapper = {
-        id: formData.id,
-        idFullOperation: formData.idFullOperation,
-        conversionData: {
-            convertedStatus: formData.convertedStatus,
-            policyNumber: formData.policyNumber,
-        },
-        // Include any other fields that change in this step, e.g. from ContactPreference
-        sourceData: {
-          systemOrigin: formData.systemOrigin,
-          origin: formData.origin,
-          leadSource: formData.leadSource
-        },
-        utmData: {
-          utmCampaign: formData.utmCampaign
-        }
-      };
+      let leadWrapper;
+
+      // If we are in the final conversion step, send a minimal payload.
+      if (formData.convertedStatus) {
+        leadWrapper = {
+            id: formData.id,
+            idFullOperation: formData.idFullOperation,
+            conversionData: {
+                convertedStatus: formData.convertedStatus,
+                policyNumber: formData.policyNumber,
+            },
+        };
+      } else {
+        // For intermediate updates (like step 4), build a fuller payload to pass validation.
+        leadWrapper = buildLeadWrapper(formData);
+      }
 
       const finalPayload = { leadWrappers: [leadWrapper] };
 
@@ -226,20 +228,22 @@ const updateLeadFlow = ai.defineFlow(
           body: JSON.stringify(finalPayload),
       });
       
+      const responseText = await leadResponse.text();
+
+      // First, check if the response is OK. If not, parse and throw the error.
       if (!leadResponse.ok) {
-        let responseData;
+        let errorData;
         try {
-          responseData = await leadResponse.json();
+          errorData = JSON.parse(responseText);
         } catch (e) {
-          responseData = await leadResponse.text();
+          errorData = responseText;
         }
-        const errorText = JSON.stringify(responseData);
+        const errorText = JSON.stringify(errorData);
         console.error("Salesforce Update Error Response:", errorText);
         throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
       }
     
       // Handle empty response on success, which can happen on updates.
-      const responseText = await leadResponse.text();
       if (responseText.length === 0) {
           return { success: true, idFullOperation: formData.idFullOperation };
       }

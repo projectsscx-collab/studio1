@@ -17,8 +17,12 @@ import Header from '@/components/header';
 const TOTAL_STEPS = 5;
 
 const calculateFullOperationId = () => {
-    return Date.now().toString() + "IS";
+    // Combines timestamp with a random string to ensure uniqueness.
+    const timestamp = Date.now();
+    const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+    return `${timestamp}IS${randomPart}`;
 };
+
 
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
@@ -223,6 +227,7 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // Create the full data object for submission, including the new ID
     const submissionData: FormData = { 
         ...formData, 
         ...data,
@@ -243,11 +248,13 @@ export default function Home() {
         
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
 
+        // ** CRITICAL FIX **
+        // Update both the salesforceIds state AND the main formData state
+        // This ensures the IDs persist through all subsequent steps.
         setSalesforceIds(newIds);
-        
-        // CRITICAL FIX: Merge the new IDs and the form data together for the next step.
         const nextStepData = { ...data, ...newIds };
         handleNextStep(nextStepData);
+
 
     } catch(error) {
         console.error('Error creating lead:', error);
@@ -264,26 +271,31 @@ export default function Home() {
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
+        setIsSubmitting(false);
         return;
       }
       setIsSubmitting(true);
 
-      const baseData = { ...formData, ...data, ...salesforceIds };
-    
+      // ** CRITICAL FIX **
+      // Explicitly merge formData, data from the current step, AND the stored salesforceIds
+      // This ensures that id and idFullOperation are correctly passed to buildLeadPayload.
+      const combinedData = { ...formData, ...data, ...salesforceIds };
+
       let finalData: FormData;
       
-      if (baseData.agentType === 'APM') {
+      // Agent-based logic
+      if (combinedData.agentType === 'APM') {
         finalData = {
-          ...baseData,
+          ...combinedData,
           systemOrigin: '02',
           origin: '02',
           utmCampaign: 'ROPO_APMCampaign',
           leadSource: '02',
         };
-      } else if (baseData.agentType === 'ADM') {
+      } else if (combinedData.agentType === 'ADM') {
         finalData = {
-          ...baseData,
+          ...combinedData,
           systemOrigin: '06',
           origin: '02',
           utmCampaign: 'ROPO_ADMCampaign',
@@ -291,7 +303,7 @@ export default function Home() {
         };
       } else { 
         finalData = {
-          ...baseData,
+          ...combinedData,
           systemOrigin: '05',
           origin: '01',
           utmCampaign: 'Winter2024',
@@ -299,6 +311,7 @@ export default function Home() {
         }
       }
       
+      // Final conversion data
       finalData = {
           ...finalData,
           convertedStatus: '02',
@@ -318,7 +331,7 @@ export default function Home() {
 
           setSubmissionResponse(response);
           setFormData(finalData); // Save final state
-          handleNextStep(data);
+          handleNextStep(data); // Move to confirmation screen
 
       } catch (error) {
           console.error('Error finalizing lead:', error);
@@ -367,14 +380,12 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    const combinedData = { ...formData, ...(salesforceIds || {}) };
-    
-    const isFinalFlow = currentStep >= 5; // Step 5 is the final submission
+    const isFinalFlow = currentStep >= 5;
     
     const formProps = {
-        initialData: combinedData,
+        initialData: formData,
         isSubmitting: isSubmitting,
-        buildPreviewPayload: (data: any) => buildLeadPayload({ ...combinedData, ...data }, isFinalFlow)
+        buildPreviewPayload: (data: any) => buildLeadPayload({ ...formData, ...data }, isFinalFlow)
     };
 
     switch (currentStep) {
@@ -385,6 +396,7 @@ export default function Home() {
       case 3:
         return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} />;
       case 4:
+        // Now just moves to the next step without a backend call
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} />;

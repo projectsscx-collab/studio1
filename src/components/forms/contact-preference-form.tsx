@@ -16,6 +16,8 @@ interface ContactPreferenceFormProps {
   buildPreviewPayload: (data: any) => any;
 }
 
+// This form now only updates the local state and moves to the next step.
+// It no longer triggers a backend call.
 const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: ContactPreferenceFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({

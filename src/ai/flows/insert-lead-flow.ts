@@ -59,8 +59,6 @@ const getSalesforceTokenFlow = ai.defineFlow(
 
 // --- Helper function to build the lead wrapper ---
 const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
-  
-  // Create the risk object, which will be stringified
   const riskObject = {
       'Número de matrícula__c': formData.numero_de_matricula,
       'Marca__c': formData.marca,
@@ -70,6 +68,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
   };
 
   const leadWrapper: any = {
+      id: formData.id,
       idFullOperation: formData.idFullOperation,
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -145,10 +144,6 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
       delete leadWrapper[key];
     }
   }
-  
-  if (formData.id) {
-    leadWrapper.id = formData.id;
-  }
 
   return leadWrapper;
 };
@@ -200,23 +195,17 @@ const updateLeadFlow = ai.defineFlow(
       outputSchema: z.any(),
     },
     async ({ formData, token }) => {
-      let leadWrapper;
+      // Always build the full wrapper to pass validation
+      const leadWrapper = buildLeadWrapper(formData);
 
-      // If we are in the final conversion step, send a minimal payload.
+      // If this is the final conversion step, ensure conversionData is present
       if (formData.convertedStatus) {
-        leadWrapper = {
-            id: formData.id,
-            idFullOperation: formData.idFullOperation,
-            conversionData: {
-                convertedStatus: formData.convertedStatus,
-                policyNumber: formData.policyNumber,
-            },
-        };
-      } else {
-        // For intermediate updates (like step 4), build a fuller payload to pass validation.
-        leadWrapper = buildLeadWrapper(formData);
+          leadWrapper.conversionData = {
+              convertedStatus: formData.convertedStatus,
+              policyNumber: formData.policyNumber,
+          };
       }
-
+      
       const finalPayload = { leadWrappers: [leadWrapper] };
 
       const leadResponse = await fetch(`${token.instance_url}/services/apexrest/core/lead/`, {
@@ -230,7 +219,6 @@ const updateLeadFlow = ai.defineFlow(
       
       const responseText = await leadResponse.text();
 
-      // First, check if the response is OK. If not, parse and throw the error.
       if (!leadResponse.ok) {
         let errorData;
         try {

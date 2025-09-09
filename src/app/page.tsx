@@ -217,8 +217,16 @@ export default function Home() {
         
         setSalesforceIds(newIds);
         
+        // Update formData with the new IDs before moving to the next step
         const nextStepData = { ...submissionData, ...newIds };
-        handleNextStep(nextStepData);
+        setFormData(nextStepData);
+        
+        // Directly proceed to the next step without relying on the callback in handleNextStep
+        // This ensures the most up-to-date form data is used.
+        setDirection(1);
+        if (currentStep < TOTAL_STEPS + 1) {
+            setCurrentStep((prev) => prev + 1);
+        }
 
     } catch(error) {
         console.error('Error creating lead:', error);
@@ -362,6 +370,4 @@ export default function Home() {
     </div>
   );
 }
-    
-
     

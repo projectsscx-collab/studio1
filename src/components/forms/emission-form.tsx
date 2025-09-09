@@ -17,9 +17,10 @@ interface EmissionFormProps {
   initialData: any;
   isSubmitting: boolean;
   salesforceIds: SalesforceIds | null;
+  buildPreviewPayload: (data: any) => any;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceIds }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceIds, buildPreviewPayload }: EmissionFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
       Amount: true,
@@ -40,17 +41,14 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
   }, [salesforceIds, form]);
 
   const watchedData = form.watch();
-
-  // This is just a preview of the fields being submitted for the update.
-  // The full payload is constructed in page.tsx
-  const finalPayloadPreview = {
-      conversionData: {
-        convertedStatus: "06", // Ganada emitida
-        policyNumber: watchedData.policyNumber || salesforceIds?.id || '',
-      },
-      id: salesforceIds?.id || "PENDIENTE",
-      // ...other data from the form will be included...
-  };
+  
+  // Construct the full preview payload by combining all existing data with the current form's data
+  const finalPayloadPreview = buildPreviewPayload({
+    ...initialData,
+    ...watchedData,
+    id: salesforceIds?.id,
+    idFullOperation: initialData.idFullOperation,
+  });
 
 
   return (

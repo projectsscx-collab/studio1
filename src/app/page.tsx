@@ -147,7 +147,7 @@ const buildLeadPayload = (formData: FormData) => {
                 effectiveDate: formData.effectiveDate,
                 expirationDate: formData.expirationDate,
                 paymentMethod: formData.paymentMethod,
-                isSelected: true,
+                isSelected: !!formData.id, // false on creation, true on update
                 paymentPeriodicity: formData.paymentPeriodicity,
                 paymentTerm: formData.paymentTerm,
                 netPremium: formData.Amount,
@@ -157,7 +157,7 @@ const buildLeadPayload = (formData: FormData) => {
         utmData: utmData,
         sourceData: sourceData,
         conversionData: {
-          convertedStatus: formData.StageName, // Directly use the value from form data
+          convertedStatus: formData.StageName,
           policyNumber: formData.policyNumber || null
         }
     };
@@ -194,12 +194,11 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    // Create the submission data, ensuring ID and StageName are null for creation
     const submissionData: FormData = { 
         ...formData, 
         ...data,
         id: null,
-        StageName: null,
+        StageName: null, // Explicitly set StageName to null for creation
         idFullOperation: newIdFullOperation,
     };
     
@@ -222,8 +221,6 @@ export default function Home() {
         const nextStepData = { ...submissionData, ...newIds };
         setFormData(nextStepData);
         
-        // Directly proceed to the next step without relying on the callback in handleNextStep
-        // This ensures the most up-to-date form data is used.
         setDirection(1);
         if (currentStep < TOTAL_STEPS + 1) {
             setCurrentStep((prev) => prev + 1);

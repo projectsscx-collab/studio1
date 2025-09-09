@@ -65,7 +65,6 @@ interface SalesforceIds {
     idFullOperation: string;
 }
 
-
 const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     const riskObject = {
         'numero_de_matricula': formData.numero_de_matricula,
@@ -79,7 +78,7 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
 
     if (isFinalSubmission) {
         // FINAL PAYLOAD STRUCTURE (for conversion)
-        leadWrapper = {
+         leadWrapper = {
             id: formData.id,
             idFullOperation: formData.idFullOperation,
             firstName: formData.firstName,
@@ -138,7 +137,6 @@ const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     } else {
         // INITIAL PAYLOAD STRUCTURE (for creation)
         leadWrapper = {
-            id: null,
             idFullOperation: formData.idFullOperation,
             firstName: formData.firstName,
             lastName: formData.lastName,
@@ -271,7 +269,7 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      let baseData = { ...formData, ...data, ...salesforceIds };
+      const baseData = { ...formData, ...data };
     
       let finalData: FormData;
       
@@ -303,6 +301,8 @@ export default function Home() {
       
       finalData = {
           ...finalData,
+          id: salesforceIds.id, // Ensure ID is correctly passed
+          idFullOperation: salesforceIds.idFullOperation, // Ensure FullOperationID is correctly passed
           convertedStatus: '02',
           policyNumber: salesforceIds.id, 
       };

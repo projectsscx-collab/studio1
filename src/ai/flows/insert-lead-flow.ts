@@ -58,7 +58,10 @@ const getSalesforceTokenFlow = ai.defineFlow(
 
 
 // --- Helper function to build the lead wrapper ---
+// This function now takes the entire form state and builds the complex payload
 const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
+  
+  // Create the risk object, which will be stringified
   const riskObject = {
       'Número de matrícula__c': formData.numero_de_matricula,
       'Marca__c': formData.marca,
@@ -69,20 +72,17 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
 
   const leadWrapper: any = {
       idFullOperation: formData.idFullOperation,
-      idOwner: formData.idOwner,
-      company: formData.company,
       firstName: formData.firstName,
       lastName: formData.lastName,
       documentType: formData.documentType,
       documentNumber: formData.documentNumber,
       birthdate: formData.birthdate,
-      sex: formData.sex,
-      maritalStatus: formData.maritalStatus,
-      additionalInformation: formData.additionalInformation,
+      
       contactData: {
           mobilePhone: formData.mobilePhone,
           phone: formData.phone,
           email: formData.email,
+          // Address is now hardcoded/static, coming from the initial state
           address: {
               street: formData.street,
               postalCode: formData.postalCode,
@@ -94,6 +94,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
               colony: formData.colony,
           },
       },
+      
       interestProduct: {
           businessLine: formData.businessLine,
           sector: formData.sector,
@@ -101,66 +102,43 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
           branch: formData.branch,
           risk: JSON.stringify(riskObject), // ALWAYS stringify the risk object
           quotes: [{
-              id: formData.idFullOperation, // Using idFullOperation as quote ID as per new example
-              issueDate: '2024-02-01',
-              dueDate: '2025-01-01',
+              id: "TestWSConvertMIN", // Hardcoded based on new example
               effectiveDate: formData.effectiveDate,
               expirationDate: formData.expirationDate,
-              productCode: 'PRD001',
-              productName: 'Life Insurance',
-              netPremium: 1000.0,
-              totalPremium: 1200.0,
+              productCode: "PRD001", // Hardcoded
+              productName: "Life Insurance", // Hardcoded
+              netPremium: 1000.00, // Hardcoded
               paymentMethod: formData.paymentMethod,
-              currencyIsoCode: formData.currencyIsoCode,
               isSelected: true,
-              discount: '0.24',
               paymentPeriodicity: formData.paymentPeriodicity,
               paymentTerm: formData.paymentTerm,
-              additionalInformation: formData.additionalInformation,
+              additionalInformation: 'test'
           }],
       },
-      qualificationData: {
-          scoring: formData.scoring,
-          rating: formData.rating,
-      },
-      googleAnalyticsData: {
-          gaClientId: formData.gaClientId,
-          gaUserId: formData.gaUserId,
-          gaTrackId: formData.gaTrackId,
-          gaTerm: formData.gaTerm,
-          gaMedium: formData.gaMedium,
-      },
+
       utmData: {
           utmCampaign: formData.utmCampaign,
-          utmContent: formData.utmContent,
-          utmSource: formData.utmSource,
+          // utmContent and utmSource are removed as per new JSON
       },
+
       sourceData: {
           sourceEvent: formData.sourceEvent,
           eventReason: formData.eventReason,
           sourceSite: formData.sourceSite,
-          screenName: formData.screenName,
           deviceType: formData.deviceType,
           deviceModel: formData.deviceModel,
           leadSource: formData.leadSource,
           origin: formData.origin,
           systemOrigin: formData.systemOrigin,
-          ipData: {
-              ipSubmitter: formData.ipSubmitter,
-              ipHostName: formData.ipHostName,
-              ipCity: formData.ipCity,
-              ipRegion: formData.ipRegion,
-              ipCountry: formData.ipCountry,
-              ipPostalCode: formData.ipPostalCode,
-              ipLocation: formData.ipLocation,
-              ipOrganization: formData.ipOrganization,
-          },
+          ipData: {},
       },
-      commercialStructureData: {
-          idIntermediary: null,
-          regionalOffice: null,
-          managerOffice: null,
-      },
+      
+      // These top-level objects are sent if they have data
+      idOwner: formData.idOwner,
+      company: formData.company,
+      sex: formData.sex,
+      maritalStatus: formData.maritalStatus,
+      additionalInformation: formData.additionalInformation,
   };
 
   // Add 'id' only if it's available in the formData (for update operations)
@@ -178,7 +156,7 @@ const buildLeadWrapper = (formData: InsertLeadInput | UpdateLeadInput) => {
     };
   }
 
-  // Filter out any top-level keys that are undefined
+  // Filter out any top-level keys that are undefined to keep payload clean
   for (const key in leadWrapper) {
     if (leadWrapper[key] === undefined) {
       delete leadWrapper[key];
@@ -246,29 +224,32 @@ const updateLeadFlow = ai.defineFlow(
           },
           body: JSON.stringify(finalPayload),
       });
-
+      
+      const responseText = await leadResponse.text();
       // Handle empty response on success, which can happen on updates.
       if (leadResponse.status >= 200 && leadResponse.status < 300) {
-        const responseText = await leadResponse.text();
         if (responseText.length === 0) {
             return { success: true, idFullOperation: formData.idFullOperation };
         }
         try {
             return JSON.parse(responseText);
         } catch (e) {
+             // If parsing fails but status is ok, return success with body
              return { success: true, responseBody: responseText };
         }
       }
       
-      const responseData = await leadResponse.json();
-
-      if (!leadResponse.ok) {
-          const errorText = JSON.stringify(responseData);
-          console.error("Salesforce Update Error Response:", errorText);
-          throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
+      // If we are here, it's an error response
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        responseData = responseText; // The error might not be JSON
       }
-    
-      return responseData;
+
+      const errorText = JSON.stringify(responseData);
+      console.error("Salesforce Update Error Response:", errorText);
+      throw new Error(`Failed to update lead: ${leadResponse.status} ${errorText}`);
     }
   );
 

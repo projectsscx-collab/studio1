@@ -1,24 +1,51 @@
 import { z } from 'zod';
 
-// This is the main schema that contains ALL possible fields from the JSON.
-// Individual forms will pick the fields they need from this master schema.
+// This schema defines ALL possible fields that can be part of the form state.
+// Many of these will be hardcoded or optional, but they need to be defined here
+// to be part of the state object that gets passed around.
 const FormDataSchema = z.object({
-    idFullOperation: z.string().optional(),
-    idOwner: z.string().optional(),
-    company: z.string().optional(),
+    // --- DYNAMIC FIELDS (from forms) ---
+    id: z.string().optional(), // For updates
     firstName: z.string().min(1, 'Nombre es requerido.'),
     lastName: z.string().min(1, 'Apellido es requerido.'),
     documentType: z.string().min(1, 'Tipo de documento es requerido.'),
     documentNumber: z.string().min(1, 'Número de documento es requerido.'),
     birthdate: z.string().min(1, 'Fecha de nacimiento es requerida.'),
+    mobilePhone: z.string().min(1, 'Teléfono móvil es requerido.'),
+    phone: z.string().optional(),
+    email: z.string().email('Correo electrónico no válido.'),
+    
+    // Vehicle Data (will be stringified into 'risk')
+    numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
+    marca: z.string().min(1, 'Marca es requerida.'),
+    modelo: z.string().min(1, 'Modelo es requerido.'),
+    ano_del_vehiculo: z.string().min(1, 'Año del vehículo es requerido.'),
+    numero_de_serie: z.string().min(1, 'Número de serie es requerido.'),
+
+    // Quote Data
+    effectiveDate: z.string().min(1, 'Fecha de efectividad es requerida.'),
+    expirationDate: z.string().min(1, 'Fecha de expiración es requerida.'),
+    paymentMethod: z.string().min(1, 'Método de pago es requerido.'),
+    paymentPeriodicity: z.string().min(1, 'Periodicidad de pago es requerida.'),
+    paymentTerm: z.string().min(1, 'Plazo de pago es requerido.'),
+
+    // Contact Preference Data
+    agentType: z.string().optional(), // Frontend only field for logic
+
+    // Emission Data
+    convertedStatus: z.string().optional(), 
+    policyNumber: z.string().optional().nullable(),
+
+
+    // --- STATIC & HARDCODED FIELDS (part of state, but not form UI) ---
+    idFullOperation: z.string().optional(),
+    idOwner: z.string().optional(),
+    company: z.string().optional(),
     sex: z.string().optional(),
     maritalStatus: z.string().optional(),
     additionalInformation: z.string().optional(),
     
-    // Contact Data (flattened for form state)
-    mobilePhone: z.string().min(1, 'Teléfono móvil es requerido.'),
-    phone: z.string().min(1, 'Teléfono es requerido.'),
-    email: z.string().email('Correo electrónico no válido.'),
+    // Contact Address (Hardcoded)
     street: z.string().optional(),
     postalCode: z.string().optional(),
     city: z.string().optional(),
@@ -28,42 +55,30 @@ const FormDataSchema = z.object({
     country: z.string().optional(),
     colony: z.string().optional(),
 
-    // Vehicle Data (from risk object)
-    numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
-    marca: z.string().min(1, 'Marca es requerida.'),
-    modelo: z.string().min(1, 'Modelo es requerido.'),
-    ano_del_vehiculo: z.string().min(1, 'Año del vehículo es requerido.'),
-    numero_de_serie: z.string().min(1, 'Número de serie es requerido.'),
-
-    // Quote and Interest Product Data
+    // Interest Product (Hardcoded)
     businessLine: z.string().optional(),
     sector: z.string().optional(),
     subsector: z.string().optional(),
     branch: z.string().optional(),
-    effectiveDate: z.string().min(1, 'Fecha de efectividad es requerida.'),
-    expirationDate: z.string().min(1, 'Fecha de expiración es requerida.'),
-    paymentMethod: z.string().min(1, 'Método de pago es requerido.'),
-    paymentPeriodicity: z.string().min(1, 'Periodicidad de pago es requerida.'),
-    paymentTerm: z.string().min(1, 'Plazo de pago es requerido.'),
     currencyIsoCode: z.string().optional(),
     
-    // Qualification Data
+    // Qualification Data (Hardcoded)
     scoring: z.number().optional(),
     rating: z.string().optional(),
 
-    // GA Data
+    // GA Data (Hardcoded)
     gaClientId: z.string().optional(),
     gaUserId: z.string().optional(),
     gaTrackId: z.string().optional(),
     gaTerm: z.string().optional(),
     gaMedium: z.string().optional(),
     
-    // UTM Data
+    // UTM Data (Hardcoded)
     utmCampaign: z.string().optional(),
     utmContent: z.string().optional(),
     utmSource: z.string().optional(),
     
-    // Source Data
+    // Source Data (Hardcoded)
     sourceEvent: z.string().optional(),
     eventReason: z.string().optional(),
     sourceSite: z.string().optional(),
@@ -74,7 +89,7 @@ const FormDataSchema = z.object({
     origin: z.string().optional(),
     systemOrigin: z.string().optional(),
     
-    // IP Data
+    // IP Data (Hardcoded)
     ipSubmitter: z.string().optional(),
     ipHostName: z.string().optional(),
     ipCity: z.string().optional(),
@@ -83,15 +98,10 @@ const FormDataSchema = z.object({
     ipPostalCode: z.string().optional(),
     ipLocation: z.string().optional(),
     ipOrganization: z.string().optional(),
-
-    // Conversion Data
-    convertedStatus: z.string().optional(), 
-    policyNumber: z.string().optional(),
 });
 
 
 // Schema for the INITIAL CREATION of the Lead (Step 3)
-// It doesn't include 'id' because it doesn't exist yet.
 export const InsertLeadInputSchema = FormDataSchema;
 export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 
@@ -100,7 +110,6 @@ export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
 // It requires the 'id' of the lead to update.
 export const UpdateLeadInputSchema = FormDataSchema.extend({
     id: z.string().min(1, "El ID del Lead es requerido para la actualización."),
-    agentType: z.string().optional(), // Frontend only field
 });
 export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
 

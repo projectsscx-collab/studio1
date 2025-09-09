@@ -53,9 +53,9 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
         idFullOperation: allData.idFullOperation,
         firstName: allData.firstName,
         lastName: allData.lastName,
-        // ... other fields from previous steps
+        documentNumber: allData.documentNumber,
+        email: allData.email,
         interestProduct: {
-            // ... other interest product fields
             risk: JSON.stringify({
                 'Número de matrícula__c': allData.numero_de_matricula,
                 'Marca__c': allData.marca,
@@ -65,20 +65,24 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormPro
             }),
             quotes: [
                 {
-                    id: 'TestPSLead',
+                    id: 'TestWSConvertMIN',
                     effectiveDate: allData.effectiveDate,
                     expirationDate: allData.expirationDate,
                     netPremium: 1000.0,
-                    totalPremium: 1200.0,
                     paymentMethod: allData.paymentMethod,
                     paymentPeriodicity: allData.paymentPeriodicity,
                     paymentTerm: allData.paymentTerm,
-                    currencyIsoCode: allData.currencyIsoCode,
-                    // ... other static quote fields
+                    additionalInformation: "test",
                 },
             ],
         },
-        // ... other wrapper fields
+        utmData: {
+            utmCampaign: allData.utmCampaign
+        },
+        sourceData: {
+            sourceEvent: allData.sourceEvent,
+            systemOrigin: allData.systemOrigin,
+        }
       }],
     };
   

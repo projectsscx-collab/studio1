@@ -50,6 +50,8 @@ export const agentTypes = {
     "ADM": "Agente (ADM)",
 };
 
+// This schema validates only the fields the user actively fills in the forms.
+// Other data is managed as static state and is not part of this validation schema.
 export const leadSchema = z.object({
   idFullOperation: z.string().optional(), 
   
@@ -60,7 +62,7 @@ export const leadSchema = z.object({
   documentNumber: z.string().min(1, 'El número de documento es requerido.'),
   birthdate: z.string().min(1, { message: 'La fecha de nacimiento es requerida.'}),
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
-  phone: z.string().min(1, 'El teléfono es requerido.'),
+  phone: z.string().optional(),
   email: z.string().email('El correo electrónico no es válido.'),
   
   // Step 2
@@ -80,12 +82,10 @@ export const leadSchema = z.object({
   // Step 4
   sourceEvent: z.string().min(1, 'Seleccione una opción de contacto.'),
   agentType: z.string().min(1, 'Debe seleccionar un tipo de agente.'),
-  agentId: z.string().optional(),
-  additionalInformation: z.string().optional(),
-
+  
   // Step 5
   convertedStatus: z.string().min(1, 'El estado de conversión es requerido.'),
-  policyNumber: z.string().optional(),
+  policyNumber: z.string().optional().nullable(),
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

@@ -16,7 +16,7 @@ import Header from '@/components/header';
 
 const TOTAL_STEPS = 5;
 
-// This represents the full data structure across all steps, based on the example JSON
+// This represents the full data structure across all steps, based on the new detailed JSON
 const initialFormData: InsertLeadInput & UpdateLeadInput = {
   // Step 1 - Personal Details & Contact
   firstName: '',
@@ -28,17 +28,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   phone: '',
   email: '',
   
-  // Minimal address data
-  street: '', 
-  postalCode: '', 
-  city: '',
-  district: '', 
-  municipality: '',
-  state: '', 
-  country: 'PR',
-  colony: '',
-
-  // Step 2 - Vehicle Details
+  // Step 2 - Vehicle Details (inside risk object)
   numero_de_matricula: '',
   marca: '',
   modelo: '',
@@ -55,19 +45,35 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   
   // Step 4 - Contact Preference
   sourceEvent: '01', 
-  agentType: '', // This is frontend-only logic, used to derive other values
+  agentType: '',
   
   // Step 5 - Emission
   convertedStatus: '',
-  policyNumber: '', 
+  policyNumber: '',
 
-  // --- Static data based on the provided JSON example ---
+  // --- Static / Hardcoded data based on the provided JSON example ---
   idOwner: '005Hs00000HeTcVIAV',
   company: 'TestPSLead',
   sex: '01',
   maritalStatus: '01',
   additionalInformation: 'test',
   currencyIsoCode: 'EUR',
+
+  // Address Data (Hardcoded for this prototype)
+  street: '123 Main St', 
+  postalCode: '12345', 
+  city: 'Puerto Rico',
+  district: 'Test', 
+  municipality: 'Test',
+  state: 'XX', 
+  country: 'PR', // Set to PR to avoid ISO code errors
+  colony: 'Central Park',
+
+  // Interest Product (Hardcoded parts)
+  businessLine: "01",
+  sector: "XX_01",
+  subsector: "XX_00",
+  branch: "XX_205",
 
   // Qualification Data
   scoring: 21,
@@ -88,7 +94,7 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   // Source Data (using new defaults)
   eventReason: "01",
   sourceSite: "Website",
-  screenName: "",
+  screenName: "HomePage",
   deviceType: "01",
   deviceModel: "iPhone",
   leadSource: "01",
@@ -96,14 +102,14 @@ const initialFormData: InsertLeadInput & UpdateLeadInput = {
   systemOrigin: "05",
   
   // IP Data
-  ipSubmitter: "",
-  ipHostName: "",
-  ipCity: "",
-  ipRegion: "",
-  ipCountry: "",
-  ipPostalCode: "",
-  ipLocation: "",
-  ipOrganization: "",
+  ipSubmitter: "Test",
+  ipHostName: "Test",
+  ipCity: "Test",
+  ipRegion: "Test",
+  ipCountry: "Test",
+  ipPostalCode: "Test",
+  ipLocation: "Test",
+  ipOrganization: "Test",
 };
 
 export default function Home() {
@@ -161,10 +167,17 @@ export default function Home() {
       }
       
       if (!newLeadId) {
-        throw new Error("Could not retrieve leadId from Salesforce after creation.");
+        // Fallback for cases where the structure might differ
+        const successfulResult = response?.find((r: any) => r.leadResultId);
+        if (successfulResult) {
+            setLeadId(successfulResult.leadResultId);
+        } else {
+            throw new Error("Could not retrieve leadId from Salesforce after creation.");
+        }
+      } else {
+         setLeadId(newLeadId);
       }
 
-      setLeadId(newLeadId);
       setSubmissionResponse(response);
       handleNextStep(updatedData); 
 
@@ -185,6 +198,7 @@ export default function Home() {
     setIsSubmitting(true);
     let updatedData = { ...formData, ...data };
     
+    // Logic to update UTM campaign based on agent type from step 4
     if (data.agentType === 'APM') {
       updatedData = { ...updatedData, systemOrigin: '02', origin: '02', utmCampaign: 'ROPO_APMCampaign', leadSource: '02' };
     } else if (data.agentType === 'ADM') {
@@ -223,7 +237,7 @@ export default function Home() {
   
   const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
     setIsSubmitting(true);
-    let updatedData = { ...formData, ...data, policyNumber: leadId };
+    const updatedData = { ...formData, ...data, policyNumber: leadId };
     
     setFormData(updatedData);
     

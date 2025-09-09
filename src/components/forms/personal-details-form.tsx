@@ -32,6 +32,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
     })),
     defaultValues: {
       ...initialData,
+      phone: initialData.phone || '', // Ensure phone is not null/undefined
     },
     mode: 'onChange',
   });
@@ -173,7 +174,7 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
             </div>
             
             <div className="flex justify-end">
-                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={!form.formState.isValid}>
                     CONTINUAR >
                 </Button>
             </div>

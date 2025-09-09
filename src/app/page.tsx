@@ -28,7 +28,7 @@ const calculateFullOperationId = () => {
 
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
-  id: null, // This will hold the Lead ID after creation
+  id: null,
   idFullOperation: '',
 
   // --- Step 1: Personal Details ---
@@ -73,8 +73,8 @@ const initialFormData: FormData = {
   
   // --- Step 5: Emission ---
   policyNumber: '', 
-  StageName: null, // Default to null for creation
-  CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
+  StageName: null, 
+  CloseDate: null, // Set to null initially
   Amount: 1000,
 };
 
@@ -156,16 +156,18 @@ const buildLeadPayload = (formData: FormData) => {
         },
         utmData: utmData,
         sourceData: sourceData,
-        conversionData: {
-          convertedStatus: formData.StageName,
-          policyNumber: formData.policyNumber || null
-        }
     };
   
     // Only include the 'id' field if it's not null.
     // This is crucial for distinguishing create vs. update calls.
     if (!formData.id) {
         delete leadWrapper.id;
+    } else {
+        // Only add conversionData for the final update call
+        leadWrapper.conversionData = {
+          convertedStatus: formData.StageName,
+          policyNumber: formData.policyNumber || null
+        }
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -194,11 +196,12 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // Explicitly set StageName to null for creation
     const submissionData: FormData = { 
         ...formData, 
         ...data,
         id: null,
-        StageName: null, // Explicitly set StageName to null for creation
+        StageName: null, 
         idFullOperation: newIdFullOperation,
     };
     
@@ -253,6 +256,7 @@ export default function Home() {
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
         StageName: '06', // Set StageName to '06' for the final update
+        CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
       };
 
       const updatePayload = buildLeadPayload(finalData);

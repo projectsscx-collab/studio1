@@ -159,8 +159,9 @@ const buildLeadPayload = (formData: FormData) => {
         utmData: utmData,
         sourceData: sourceData,
         conversionData: {
-          convertedStatus: "06", // '06' seems to indicate "Ganada emitida"
-          policyNumber: formData.policyNumber || formData.id
+          // This is now conditional. It's '06' for the final update, and null for creation.
+          convertedStatus: formData.id ? "06" : null,
+          policyNumber: formData.policyNumber || null
         }
     };
   
@@ -370,4 +371,5 @@ export default function Home() {
     </div>
   );
 }
+    
     

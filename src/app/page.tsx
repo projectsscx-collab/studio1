@@ -59,10 +59,6 @@ const initialFormData: InsertLeadInput = {
   convertedStatus: '',
   
   // --- Hardcoded / Static Data ---
-  idOwner: "005Hs00000HeTcVIAV",
-  company: "TestPSLead",
-  additionalInformation: "test",
-  
   // Address
   street: '123 Main St', 
   postalCode: '12345', 
@@ -79,12 +75,10 @@ const initialFormData: InsertLeadInput = {
   subsector: "XX_00",
   branch: "XX_205",
 
-  // UTM Data (Can be dynamic)
+  // UTM Data (Will be overwritten by agentType)
   utmCampaign: "Winter2024",
-  utmContent: "EmailMarketing",
-  utmSource: "Google",
 
-  // Source Data (Can be dynamic)
+  // Source Data (Will be overwritten by agentType)
   sourceEvent: "01",
   eventReason: "01",
   sourceSite: "Website",
@@ -154,8 +148,6 @@ const buildLeadPayload = (formData: InsertLeadInput | UpdateLeadInput) => {
           ]
       },
 
-      riskDetail: JSON.stringify(riskObject),
-
       utmData: {
           utmCampaign: formData.utmCampaign,
       },
@@ -177,15 +169,11 @@ const buildLeadPayload = (formData: InsertLeadInput | UpdateLeadInput) => {
         convertedStatus: formData.convertedStatus,
         policyNumber: (formData as UpdateLeadInput).policyNumber, 
       };
-    } else {
-        // Add fields only needed for initial/update, not final conversion
-        leadWrapper.idOwner = formData.idOwner;
-        leadWrapper.company = formData.company;
-        leadWrapper.additionalInformation = formData.additionalInformation;
-        // Salesforce throws an error if an empty string or null is passed for the ID on creation.
-        if (!leadWrapper.id) {
-            delete leadWrapper.id;
-        }
+    }
+
+    // Salesforce throws an error if an empty string or null is passed for the ID on creation.
+    if (!leadWrapper.id) {
+        delete leadWrapper.id;
     }
   
     return { leadWrappers: [leadWrapper] };
@@ -248,7 +236,7 @@ export default function Home() {
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
         setSalesforceIds(newIds);
         
-        setFormData(prev => ({...prev, ...newIds, idFullOperation: newIdFullOperation }));
+        setFormData(prev => ({...prev, ...data, ...newIds }));
         handleNextStep(data);
 
     } catch(error) {
@@ -270,16 +258,14 @@ export default function Home() {
         return;
     }
     setIsSubmitting(true);
+
+    const baseData = { ...formData, ...data, ...salesforceIds };
     
-    let updatedData: UpdateLeadInput = { 
-        ...formData, 
-        ...data, 
-        ...salesforceIds 
-    };
+    let updatedData: UpdateLeadInput;
     
     if (data.agentType === 'APM') {
       updatedData = {
-        ...updatedData,
+        ...baseData,
         systemOrigin: '02',
         origin: '02',
         utmCampaign: 'ROPO_APMCampaign',
@@ -287,7 +273,7 @@ export default function Home() {
       };
     } else if (data.agentType === 'ADM') {
       updatedData = {
-        ...updatedData,
+        ...baseData,
         systemOrigin: '06',
         origin: '02',
         utmCampaign: 'ROPO_ADMCampaign',
@@ -295,7 +281,7 @@ export default function Home() {
       };
     } else { // Default to Contact Center (CC)
       updatedData = {
-        ...updatedData,
+        ...baseData,
         systemOrigin: '05',
         origin: '01',
         utmCampaign: 'Winter2024',
@@ -336,7 +322,7 @@ export default function Home() {
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id,
+          policyNumber: salesforceIds.id, // Set policy number to lead ID
       };
 
       const leadPayload = buildLeadPayload(finalData);

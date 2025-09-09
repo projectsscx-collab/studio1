@@ -16,7 +16,7 @@ const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // Vehicle Data (will be stringified into 'risk' and 'riskDetail')
+    // Vehicle Data (will be stringified into 'risk')
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
     marca: z.string().min(1, 'Marca es requerida.'),
     modelo: z.string().min(1, 'Modelo es requerido.'),
@@ -38,10 +38,6 @@ const FormDataSchema = z.object({
     policyNumber: z.string().optional().nullable(),
 
     // --- STATIC & HARDCODED FIELDS ---
-    idOwner: z.string().optional().nullable(),
-    company: z.string().optional(),
-    additionalInformation: z.string().optional(),
-
     // Contact Address (Hardcoded)
     street: z.string().optional(),
     postalCode: z.string().optional(),
@@ -60,8 +56,6 @@ const FormDataSchema = z.object({
     
     // utmData (Can be dynamic)
     utmCampaign: z.string().optional(),
-    utmContent: z.string().optional(),
-    utmSource: z.string().optional(),
     
     // sourceData (Can be dynamic)
     sourceEvent: z.string().optional(),
@@ -96,5 +90,3 @@ export const SalesforceTokenResponseSchema = z.object({
     signature: z.string(),
 });
 export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSchema>;
-
-    

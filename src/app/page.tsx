@@ -216,19 +216,14 @@ export default function Home() {
 
     try {
         const response = await submitLead(leadPayload);
-        
-        const error = findKey(response, 'errorMessage');
-        if (error) throw new Error(error);
 
-        // IMPORTANT: The leadResultId is actually the OPPORTUNITY ID
-        // Direct access to the ID to avoid errors with the generic findKey function.
-        const opportunityId = response?.leadResults?.[0]?.leadResultId;
-        
-        if (!opportunityId) {
-          console.error("Salesforce Response does not contain Opportunity ID:", response);
-          throw new Error('Opportunity ID not found in Salesforce response.');
+        // The backend flow now guarantees 'opportunityId' on success.
+        if (!response?.success || !response?.opportunityId) {
+            console.error("Salesforce Response does not contain Opportunity ID:", response);
+            throw new Error('Opportunity ID not found in Salesforce response.');
         }
         
+        const opportunityId = response.opportunityId;
         const newIds: SalesforceIds = { id: opportunityId, idFullOperation: newIdFullOperation };
         
         setSalesforceIds(newIds);
@@ -387,5 +382,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

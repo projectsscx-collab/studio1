@@ -79,8 +79,22 @@ const submitLeadFlow = ai.defineFlow(
         console.error("Salesforce Submission Error Response:", errorText);
         throw new Error(`Failed to submit lead: ${leadResponse.status} ${errorText}`);
     }
+    
+    // Explicitly parse the response to find the Opportunity ID
+    const opportunityId = responseData?.leadResults?.[0]?.leadResultId;
 
-    return responseData;
+    if (!opportunityId) {
+      const errorDetails = JSON.stringify(responseData);
+      console.error("Salesforce response did not contain an Opportunity ID. Full response:", errorDetails);
+      throw new Error(`Opportunity ID not found in Salesforce response: ${errorDetails}`);
+    }
+
+    // Return a clean object with the ID
+    return {
+      success: true,
+      opportunityId: opportunityId,
+      fullResponse: responseData, // Keep the full response for logging if needed
+    };
   }
 );
 

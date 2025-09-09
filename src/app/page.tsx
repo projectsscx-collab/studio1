@@ -43,11 +43,11 @@ const initialFormData: FormData = {
   phone: '',
   email: '',
   
-  street: '',
-  postalCode: '',
-  city: '',
-  district: '',
-  municipality: '',
+  street: 'N/A',
+  postalCode: 'N/A',
+  city: 'N/A',
+  district: 'N/A',
+  municipality: 'N/A',
   state: 'XX', // Default value
   country: 'PR', // Default value
 

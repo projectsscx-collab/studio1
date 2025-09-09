@@ -18,14 +18,14 @@ export const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // --- Address Info ---
-    street: z.string().min(1, "La calle es requerida."),
-    postalCode: z.string().min(1, "El código postal es requerido."),
-    city: z.string().min(1, "La ciudad es requerida."),
-    district: z.string().min(1, "El distrito es requerido."),
-    municipality: z.string().min(1, "El municipio es requerido."),
-    state: z.string().min(1, "El estado es requerido."),
-    country: z.string().min(1, "El país es requerido."),
+    // --- Address Info (Removed from UI, but might be needed for payload) ---
+    street: z.string().optional(),
+    postalCode: z.string().optional(),
+    city: z.string().optional(),
+    district: z.string().optional(),
+    municipality: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
     
     // --- Vehicle Data ---
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),

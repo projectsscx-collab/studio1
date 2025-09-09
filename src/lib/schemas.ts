@@ -51,11 +51,11 @@ export const leadSchema = z.object({
   mobilePhone: z.string().min(1, 'El teléfono móvil es requerido.'),
   phone: z.string().optional(),
   email: z.string().email('El correo electrónico no es válido.'),
-  street: z.string().min(1, 'La calle es requerida.'),
-  postalCode: z.string().min(1, 'El código postal es requerido.'),
-  city: z.string().min(1, 'La ciudad es requerida.'),
-  district: z.string().min(1, 'El distrito es requerido.'),
-  municipality: z.string().min(1, 'El municipio es requerido.'),
+  street: z.string().optional(),
+  postalCode: z.string().optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  municipality: z.string().optional(),
   
   // Step 2: Vehicle Details
   numero_de_matricula: z.string().min(1, 'El número de matrícula es requerido.'),

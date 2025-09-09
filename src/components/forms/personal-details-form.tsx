@@ -32,11 +32,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
         mobilePhone: true,
         phone: true,
         email: true,
-        street: true,
-        postalCode: true,
-        city: true,
-        district: true,
-        municipality: true,
     })),
     defaultValues: {
       ...initialData,
@@ -176,17 +171,6 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                             </FormItem>
                         )}
                     />
-                </div>
-            </div>
-            <hr/>
-             <div>
-                <h2 className="text-xl font-semibold mb-6">Dirección</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <FormField control={form.control} name="street" render={({ field }) => ( <FormItem> <FormLabel>Calle</FormLabel> <FormControl><Input placeholder="E.g. 123 Main St" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="city" render={({ field }) => ( <FormItem> <FormLabel>Ciudad</FormLabel> <FormControl><Input placeholder="E.g. San Juan" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="postalCode" render={({ field }) => ( <FormItem> <FormLabel>Código Postal</FormLabel> <FormControl><Input placeholder="E.g. 00901" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="district" render={({ field }) => ( <FormItem> <FormLabel>Distrito</FormLabel> <FormControl><Input placeholder="E.g. Santurce" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="municipality" render={({ field }) => ( <FormItem> <FormLabel>Municipio</FormLabel> <FormControl><Input placeholder="E.g. San Juan" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                 </div>
             </div>
             

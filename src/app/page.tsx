@@ -119,8 +119,7 @@ const buildLeadPayload = (formData: FormData) => {
     // If agentType is 'CC' or anything else, the defaults remain.
 
 
-    const leadWrapper = {
-        id: formData.id,
+    const leadWrapper: any = {
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -167,6 +166,13 @@ const buildLeadPayload = (formData: FormData) => {
         }
     };
   
+    // Only include the 'id' field if it's not null.
+    // In the initial creation, it will be null and thus omitted.
+    // In the final update, it will have the opportunityId and will be included.
+    if (formData.id) {
+        leadWrapper.id = formData.id;
+    }
+
     return { leadWrappers: [leadWrapper] };
 };
 
@@ -180,18 +186,6 @@ export default function Home() {
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
   
   const { toast } = useToast();
-  
-  const findKey = (obj: any, keyToFind: string): string | null => {
-    if (obj === null || typeof obj !== 'object') return null;
-    if (keyToFind in obj) return obj[keyToFind];
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const found = findKey(obj[key], keyToFind);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
 
   const handleNextStep = (data: Partial<FormData>) => {
     setDirection(1);
@@ -206,9 +200,11 @@ export default function Home() {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
+    // Combine form data with the generated ID, but ensure 'id' is null for creation
     const submissionData: FormData = { 
         ...formData, 
         ...data,
+        id: null, // Explicitly set id to null for creation
         idFullOperation: newIdFullOperation,
     };
     
@@ -217,7 +213,6 @@ export default function Home() {
     try {
         const response = await submitLead(leadPayload);
 
-        // The backend flow now guarantees 'opportunityId' on success.
         if (!response?.success || !response?.opportunityId) {
             console.error("Salesforce Response does not contain Opportunity ID:", response);
             throw new Error('Opportunity ID not found in Salesforce response.');
@@ -228,6 +223,7 @@ export default function Home() {
         
         setSalesforceIds(newIds);
         
+        // Pass the new IDs along with the rest of the form data to the next step
         const nextStepData = { ...submissionData, ...newIds };
         
         handleNextStep(nextStepData);
@@ -324,7 +320,7 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data });
+    const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data, id: null });
     
     const formProps = {
         initialData: formData,
@@ -382,3 +378,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

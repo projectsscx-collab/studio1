@@ -24,7 +24,6 @@ const initialFormData: FormData = {
   // --- Salesforce IDs ---
   id: null,
   idFullOperation: '',
-  policyNumber: '',
 
   // --- Step 1: Personal Details ---
   firstName: '',
@@ -58,6 +57,7 @@ const initialFormData: FormData = {
   
   // --- Step 5: Emission ---
   convertedStatus: '',
+  policyNumber: '', // This will be set from salesforceIds.id
 };
 
 interface SalesforceIds {
@@ -245,6 +245,7 @@ export default function Home() {
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
 
         setSalesforceIds(newIds);
+        // Also update the main form state with the new IDs
         setFormData(prev => ({...prev, ...data, ...newIds }));
         
         handleNextStep(data);
@@ -301,8 +302,8 @@ export default function Home() {
       
       finalData = {
           ...finalData,
-          id: salesforceIds.id, // Ensure ID is correctly passed
-          idFullOperation: salesforceIds.idFullOperation, // Ensure FullOperationID is correctly passed
+          id: salesforceIds.id, 
+          idFullOperation: salesforceIds.idFullOperation,
           convertedStatus: '02',
           policyNumber: salesforceIds.id, 
       };
@@ -319,7 +320,7 @@ export default function Home() {
           }
 
           setSubmissionResponse(response);
-          setFormData(finalData);
+          setFormData(finalData); // Save final state
           handleNextStep(data);
 
       } catch (error) {
@@ -369,8 +370,10 @@ export default function Home() {
   };
 
   const renderStep = () => {
+    // Combine the base form data with any new data from the current step's form
     const combinedData = { ...formData, ...(salesforceIds || {}) };
     
+    // Determine if we are in the final submission flow (for payload structure)
     const isFinalFlow = currentStep >= 4; 
     
     const formProps = {

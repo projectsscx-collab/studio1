@@ -163,7 +163,7 @@ const updateLeadFlow = ai.defineFlow(
     async ({ formData, token }) => {
 
       // Base structure with the IDs to identify the record
-      const leadWrapperBase = {
+      const leadWrapperBase: any = {
         id: formData.id,
         idFullOperation: formData.idFullOperation,
         // Always include basic identification data for validation
@@ -189,17 +189,30 @@ const updateLeadFlow = ai.defineFlow(
       if (formData.utmCampaign) utmData.utmCampaign = formData.utmCampaign;
 
       const conversionData: any = {};
-      if (formData.convertedStatus) conversionData.convertedStatus = formData.convertedStatus;
-      // Only include policyNumber if it has a value
-      if (formData.policyNumber) conversionData.policyNumber = formData.policyNumber;
+       if (formData.convertedStatus) {
+         conversionData.convertedStatus = formData.convertedStatus;
+         // Only include policyNumber if it has a value
+         if (formData.policyNumber) {
+           conversionData.policyNumber = formData.policyNumber;
+         }
+       }
        
-      const leadWrapper = {
+      const leadWrapper: any = {
         ...leadWrapperBase,
-        ...(Object.keys(sourceData).length > 0 && { sourceData: { ...sourceData, eventReason: '01', sourceSite: 'Website', deviceType: '01', deviceModel: 'iPhone', ipData: {} } }),
-        ...(Object.keys(utmData).length > 0 && { utmData }),
-        ...(Object.keys(conversionData).length > 0 && { conversionData }),
-        ...(formData.idOwner && { idOwner: formData.idOwner }),
       };
+
+      if (Object.keys(sourceData).length > 0) {
+        leadWrapper.sourceData = { ...sourceData, eventReason: '01', sourceSite: 'Website', deviceType: '01', deviceModel: 'iPhone', ipData: {} };
+      }
+      if (Object.keys(utmData).length > 0) {
+        leadWrapper.utmData = utmData;
+      }
+      if (Object.keys(conversionData).length > 0) {
+        leadWrapper.conversionData = conversionData;
+      }
+      if (formData.idOwner) {
+        leadWrapper.idOwner = formData.idOwner;
+      }
 
       const finalPayload = { leadWrappers: [leadWrapper] };
 

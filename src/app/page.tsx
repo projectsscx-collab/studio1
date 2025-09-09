@@ -198,7 +198,7 @@ export default function Home() {
     const submissionData: FormData = { 
         ...formData, 
         ...data,
-        id: null,
+        id: null, // Ensure ID is null for creation
         idFullOperation: newIdFullOperation,
     };
     

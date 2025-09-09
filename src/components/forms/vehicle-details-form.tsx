@@ -11,6 +11,7 @@ interface VehicleDetailsFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
+  isSubmitting: boolean;
   buildPreviewPayload: (data: any) => any;
 }
 

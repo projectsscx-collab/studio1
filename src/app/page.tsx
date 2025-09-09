@@ -10,7 +10,7 @@ import EmissionForm from '@/components/forms/emission-form';
 import SubmissionConfirmation from '@/components/forms/submission-confirmation';
 import FormStepper from '@/components/form-stepper';
 import { insertLead, updateLead, getSalesforceToken } from '@/ai/flows/insert-lead-flow';
-import type { InsertLeadInput, UpdateLeadInput } from '@/lib/salesforce-schemas';
+import type { FormData } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
 
@@ -20,11 +20,10 @@ const calculateFullOperationId = () => {
     return Date.now().toString() + "IS";
 };
 
-const initialFormData: InsertLeadInput = {
+const initialFormData: FormData = {
   // --- Salesforce IDs ---
   id: null,
   idFullOperation: '',
-  policyNumber: '',
 
   // --- Step 1: Personal Details ---
   firstName: '',
@@ -54,39 +53,11 @@ const initialFormData: InsertLeadInput = {
   
   // --- Step 4: Contact Preference ---
   agentType: '', // Frontend only field for agent logic
+  sourceEvent: '01',
   
   // --- Step 5: Emission ---
   convertedStatus: '',
-  
-  // --- Hardcoded / Static Data ---
-  // Address
-  street: '123 Main St', 
-  postalCode: '12345', 
-  city: 'Puerto Rico',
-  district: 'Test', 
-  municipality: 'Test',
-  state: 'XX', 
-  country: 'PR',
-  colony: 'Central Park',
-  
-  // Interest Product
-  businessLine: "01",
-  sector: "XX_01",
-  subsector: "XX_00",
-  branch: "XX_205",
-
-  // UTM Data (Will be overwritten by agentType)
-  utmCampaign: "Winter2024",
-
-  // Source Data (Will be overwritten by agentType)
-  sourceEvent: "01",
-  eventReason: "01",
-  sourceSite: "Website",
-  deviceType: "01",
-  deviceModel: "iPhone",
-  leadSource: "01",
-  origin: "01",
-  systemOrigin: "05",
+  policyNumber: '',
 };
 
 interface SalesforceIds {
@@ -94,10 +65,8 @@ interface SalesforceIds {
     idFullOperation: string;
 }
 
-// This function now lives on the client to be used by the preview
-const buildLeadPayload = (formData: InsertLeadInput | UpdateLeadInput) => {
-    const isFinalConversion = 'convertedStatus' in formData && formData.convertedStatus === '02';
-
+// This function now lives on the client to be used by the preview and submissions
+const buildLeadPayload = (formData: FormData, isFinalSubmission: boolean) => {
     const riskObject = {
         'numero_de_matricula': formData.numero_de_matricula,
         'marca': formData.marca,
@@ -105,73 +74,118 @@ const buildLeadPayload = (formData: InsertLeadInput | UpdateLeadInput) => {
         'ano_del_vehiculo': formData.ano_del_vehiculo,
         'numero_de_serie': formData.numero_de_serie,
     };
-  
-    const leadWrapper: any = {
-      id: formData.id,
-      idFullOperation: formData.idFullOperation,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      documentType: formData.documentType,
-      documentNumber: formData.documentNumber,
-      birthdate: formData.birthdate,
-      
-      contactData: {
-          mobilePhone: formData.mobilePhone,
-          phone: formData.phone,
-          email: formData.email,
-          address: {
-              street: formData.street,
-              postalCode: formData.postalCode,
-              city: formData.city,
-              district: formData.district,
-              municipality: formData.municipality,
-              state: formData.state,
-              country: formData.country,
-              colony: formData.colony,
-          },
-      },
-    
-      interestProduct: {
-          businessLine: formData.businessLine,
-          sector: formData.sector,
-          subsector: formData.subsector,
-          branch: formData.branch,
-          risk: JSON.stringify(riskObject),
-          quotes: [
-            {
-              effectiveDate: formData.effectiveDate,
-              expirationDate: formData.expirationDate,
-              paymentMethod: formData.paymentMethod,
-              paymentPeriodicity: formData.paymentPeriodicity,
-              paymentTerm: formData.paymentTerm,
+
+    let leadWrapper: any;
+
+    if (isFinalSubmission) {
+        // FINAL PAYLOAD STRUCTURE (from user spec)
+        leadWrapper = {
+            id: formData.id,
+            idFullOperation: formData.idFullOperation,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            documentType: formData.documentType,
+            documentNumber: formData.documentNumber,
+            birthdate: formData.birthdate,
+            contactData: {
+                mobilePhone: formData.mobilePhone,
+                phone: formData.phone,
+                email: formData.email,
+                address: {
+                    street: "123 Main St",
+                    postalCode: "12345",
+                    city: "Puerto Rico",
+                    district: "Test",
+                    municipality: "Test",
+                    state: "XX",
+                    country: "PR",
+                    colony: "Central Park"
+                }
+            },
+            interestProduct: {
+                businessLine: "01",
+                sector: "XX_01",
+                subsector: "XX_00",
+                branch: "XX_205",
+                risk: JSON.stringify(riskObject),
+                quotes: [{
+                    effectiveDate: formData.effectiveDate,
+                    expirationDate: formData.expirationDate,
+                    paymentMethod: formData.paymentMethod,
+                    paymentPeriodicity: formData.paymentPeriodicity,
+                    paymentTerm: formData.paymentTerm,
+                }]
+            },
+            utmData: {
+                utmCampaign: formData.utmCampaign
+            },
+            sourceData: {
+                sourceEvent: formData.sourceEvent,
+                eventReason: "01",
+                sourceSite: "Website",
+                deviceType: "01",
+                deviceModel: "iPhone",
+                leadSource: formData.leadSource,
+                origin: formData.origin,
+                systemOrigin: formData.systemOrigin,
+            },
+            conversionData: {
+                convertedStatus: "02",
+                policyNumber: formData.policyNumber
             }
-          ]
-      },
-
-      utmData: {
-          utmCampaign: formData.utmCampaign,
-      },
-
-      sourceData: {
-          sourceEvent: formData.sourceEvent,
-          eventReason: formData.eventReason,
-          sourceSite: formData.sourceSite,
-          deviceType: formData.deviceType,
-          deviceModel: formData.deviceModel,
-          leadSource: formData.leadSource,
-          origin: formData.origin,
-          systemOrigin: formData.systemOrigin,
-      },
-    };
-  
-    if (isFinalConversion) {
-      leadWrapper.conversionData = {
-        convertedStatus: formData.convertedStatus,
-        policyNumber: (formData as UpdateLeadInput).policyNumber, 
-      };
+        };
+    } else {
+        // INITIAL PAYLOAD STRUCTURE (from user spec)
+        leadWrapper = {
+            id: formData.id,
+            idFullOperation: formData.idFullOperation,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            documentType: formData.documentType,
+            documentNumber: formData.documentNumber,
+            birthdate: formData.birthdate,
+            contactData: {
+                mobilePhone: formData.mobilePhone,
+                phone: formData.phone,
+                email: formData.email,
+            },
+            interestProduct: {
+                businessLine: "01",
+                sector: "XX_01",
+                subsector: "XX_00",
+                branch: "XX_205",
+                risk: JSON.stringify(riskObject),
+                quotes: [{
+                    id: "TestWSConvertMIN",
+                    effectiveDate: formData.effectiveDate,
+                    expirationDate: formData.expirationDate,
+                    productCode: "PRD001",
+                    productName: "Life Insurance",
+                    netPremium: 1000,
+                    paymentMethod: formData.paymentMethod,
+                    isSelected: true,
+                    paymentPeriodicity: formData.paymentPeriodicity,
+                    paymentTerm: formData.paymentTerm,
+                    additionalInformation: "test"
+                }]
+            },
+            utmData: {
+                utmCampaign: "ROPO_Auto"
+            },
+            sourceData: {
+                sourceEvent: "01",
+                eventReason: "01",
+                sourceSite: "Website",
+                deviceType: "01",
+                deviceModel: "iPhone",
+                leadSource: "01",
+                origin: "01",
+                systemOrigin: "05",
+                ipData: {}
+            }
+        };
     }
 
-    // Salesforce throws an error if an empty string or null is passed for the ID on creation.
     if (!leadWrapper.id) {
         delete leadWrapper.id;
     }
@@ -182,7 +196,7 @@ const buildLeadPayload = (formData: InsertLeadInput | UpdateLeadInput) => {
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<InsertLeadInput | UpdateLeadInput>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [salesforceIds, setSalesforceIds] = useState<SalesforceIds | null>(null);
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -202,7 +216,7 @@ export default function Home() {
     return null;
   };
 
-  const handleNextStep = (data: Partial<InsertLeadInput>) => {
+  const handleNextStep = (data: Partial<FormData>) => {
     setDirection(1);
     setFormData((prev) => ({ ...prev, ...data }));
     if (currentStep < TOTAL_STEPS + 1) {
@@ -210,18 +224,17 @@ export default function Home() {
     }
   };
 
-  const handleInitialSubmit = async (data: Partial<InsertLeadInput>) => {
+  const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
     const newIdFullOperation = calculateFullOperationId();
     
-    const submissionData: InsertLeadInput = { 
+    const submissionData: FormData = { 
         ...formData, 
         ...data,
         idFullOperation: newIdFullOperation,
     };
     
-    setFormData(submissionData);
-    const leadPayload = buildLeadPayload(submissionData);
+    const leadPayload = buildLeadPayload(submissionData, false);
 
     try {
         const token = await getSalesforceToken();
@@ -235,8 +248,8 @@ export default function Home() {
         
         const newIds = { id: leadId, idFullOperation: newIdFullOperation };
         setSalesforceIds(newIds);
-        
         setFormData(prev => ({...prev, ...data, ...newIds }));
+        
         handleNextStep(data);
 
     } catch(error) {
@@ -252,7 +265,7 @@ export default function Home() {
     }
   };
 
-  const handleUpdate = async (data: Partial<UpdateLeadInput>) => {
+  const handleUpdate = async (data: Partial<FormData>) => {
     if (!salesforceIds) {
         toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
         return;
@@ -261,7 +274,7 @@ export default function Home() {
 
     const baseData = { ...formData, ...data, ...salesforceIds };
     
-    let updatedData: UpdateLeadInput;
+    let updatedData: FormData;
     
     if (data.agentType === 'APM') {
       updatedData = {
@@ -288,8 +301,8 @@ export default function Home() {
         leadSource: '01',
       }
     }
-
-    const leadPayload = buildLeadPayload(updatedData);
+    
+    const leadPayload = buildLeadPayload(updatedData, true); // Use final structure for updates for now
     
     try {
       const token = await getSalesforceToken();
@@ -310,22 +323,22 @@ export default function Home() {
     }
   };
   
-  const handleFinalSubmit = async (data: Partial<UpdateLeadInput>) => {
+  const handleFinalSubmit = async (data: Partial<FormData>) => {
       if (!salesforceIds) {
         toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado.' });
         return;
       }
       setIsSubmitting(true);
       
-      const finalData: UpdateLeadInput = {
+      const finalData: FormData = {
           ...formData,
           ...data,
           ...salesforceIds,
           convertedStatus: '02',
-          policyNumber: salesforceIds.id, // Set policy number to lead ID
+          policyNumber: salesforceIds.id,
       };
 
-      const leadPayload = buildLeadPayload(finalData);
+      const leadPayload = buildLeadPayload(finalData, true);
 
       try {
           const token = await getSalesforceToken();
@@ -388,23 +401,26 @@ export default function Home() {
 
   const renderStep = () => {
     const combinedData = { ...formData, ...(salesforceIds || {}) };
-    // Pass the builder function to the forms for the preview
+    
+    // Determine which payload structure to use for the preview
+    const isFinalFlow = currentStep >= 4;
     const formProps = {
         initialData: combinedData,
-        buildPreviewPayload: (data: any) => buildLeadPayload({ ...combinedData, ...data })
+        isSubmitting: isSubmitting,
+        buildPreviewPayload: (data: any) => buildLeadPayload({ ...combinedData, ...data }, isFinalFlow)
     };
 
     switch (currentStep) {
       case 1:
-        return <PersonalDetailsForm onSubmit={handleNextStep} {...formProps} />;
+        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 2:
         return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 3:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} isSubmitting={isSubmitting} {...formProps} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} isSubmitting={isSubmitting} {...formProps} />;
+        return <ContactPreferenceForm onSubmit={handleUpdate} onBack={handlePrev} {...formProps} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} isSubmitting={isSubmitting} {...formProps} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} />;
       default:

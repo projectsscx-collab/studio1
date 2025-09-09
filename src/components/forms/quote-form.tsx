@@ -24,7 +24,6 @@ interface QuoteFormProps {
 const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
-        idFullOperation: true,
         effectiveDate: true,
         expirationDate: true,
         paymentMethod: true,
@@ -46,20 +45,6 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
         <div>
             <h2 className="text-xl font-semibold mb-6">Detalles de la Cotización</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {/* This field is hidden, but required for the form submission */}
-                <FormField
-                    control={form.control}
-                    name="idFullOperation"
-                    render={({ field }) => (
-                        <FormItem className="hidden">
-                        <FormLabel>Operation ID</FormLabel>
-                        <FormControl>
-                            <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="effectiveDate"

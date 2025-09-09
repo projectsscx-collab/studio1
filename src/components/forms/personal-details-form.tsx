@@ -15,7 +15,9 @@ import { format } from 'date-fns';
 
 interface PersonalDetailsFormProps {
   onSubmit: (data: any) => void;
+  onBack: () => void;
   initialData: any;
+  isSubmitting: boolean;
   buildPreviewPayload: (data: any) => any;
 }
 

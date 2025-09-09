@@ -2,20 +2,14 @@
 
 /**
  * @fileoverview Genkit flows to create and update a lead in Salesforce.
- * - insertLead: Creates a new lead with initial data.
- * - updateLead: Updates an existing lead, used for agent selection and final conversion.
+ * These flows now act as simple proxies, receiving a fully constructed payload
+ * from the client and forwarding it to Salesforce.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import {
-  SalesforceTokenResponseSchema,
-  InsertLeadInputSchema,
-  UpdateLeadInputSchema,
-  type SalesforceTokenResponse,
-  type InsertLeadInput,
-  type UpdateLeadInput,
-} from '@/lib/salesforce-schemas';
+import { SalesforceTokenResponseSchema } from '@/lib/salesforce-schemas';
+import type { SalesforceTokenResponse } from '@/lib/salesforce-schemas';
 
 // --- Flow to get the authentication token ---
 const getSalesforceTokenFlow = ai.defineFlow(

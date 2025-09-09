@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 // This schema defines ALL possible fields that can be part of the form state.
-const FormDataSchema = z.object({
+// This is a "flat" structure that collects all user inputs.
+// The `buildLeadPayload` function in `page.tsx` will be responsible for
+// transforming this flat data into the nested structure Salesforce expects.
+export const FormDataSchema = z.object({
     // --- DYNAMIC FIELDS (from forms) ---
     id: z.string().optional().nullable(),
     idFullOperation: z.string().optional(),
@@ -16,7 +19,7 @@ const FormDataSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email('Correo electrónico no válido.'),
     
-    // Vehicle Data (will be stringified into 'risk')
+    // Vehicle Data
     numero_de_matricula: z.string().min(1, 'Matrícula es requerida.'),
     marca: z.string().min(1, 'Marca es requerida.'),
     modelo: z.string().min(1, 'Modelo es requerido.'),
@@ -30,57 +33,24 @@ const FormDataSchema = z.object({
     paymentPeriodicity: z.string().min(1, 'Periodicidad de pago es requerida.'),
     paymentTerm: z.string().min(1, 'Plazo de pago es requerido.'),
 
-    // Contact Preference Data
+    // Contact Preference Data (Step 4)
     agentType: z.string().optional(), // Frontend only field for logic
+    sourceEvent: z.string().optional(),
 
-    // Emission Data
+    // Emission Data (Step 5)
     convertedStatus: z.string().optional(), 
     policyNumber: z.string().optional().nullable(),
 
-    // --- STATIC & HARDCODED FIELDS ---
-    // Contact Address (Hardcoded)
-    street: z.string().optional(),
-    postalCode: z.string().optional(),
-    city: z.string().optional(),
-    district: z.string().optional(),
-    municipality: z.string().optional(),
-    state: z.string().optional(),
-    country: z.string().optional(),
-    colony: z.string().optional(),
-
-    // Interest Product (Hardcoded)
-    businessLine: z.string().optional(),
-    sector: z.string().optional(),
-    subsector: z.string().optional(),
-    branch: z.string().optional(),
-    
-    // utmData (Can be dynamic)
+    // --- Fields that might be set dynamically based on logic ---
     utmCampaign: z.string().optional(),
-    
-    // sourceData (Can be dynamic)
-    sourceEvent: z.string().optional(),
-    eventReason: z.string().optional(),
-    sourceSite: z.string().optional(),
-    deviceType: z.string().optional(),
-    deviceModel: z.string().optional(),
     leadSource: z.string().optional(),
     origin: z.string().optional(),
     systemOrigin: z.string().optional(),
 });
 
+export type FormData = z.infer<typeof FormDataSchema>;
 
-// Schema for the INITIAL CREATION of the Lead (Step 3)
-export const InsertLeadInputSchema = FormDataSchema;
-export type InsertLeadInput = z.infer<typeof InsertLeadInputSchema>;
-
-// Schema for UPDATING the lead (Step 4 & 5)
-export const UpdateLeadInputSchema = FormDataSchema.extend({
-    id: z.string().min(1, "El ID del Lead es requerido para la actualización."),
-});
-export type UpdateLeadInput = z.infer<typeof UpdateLeadInputSchema>;
-
-
-// Schema for the authentication token response
+// Schema for the authentication token response (remains the same)
 export const SalesforceTokenResponseSchema = z.object({
     access_token: z.string(),
     instance_url: z.string(),

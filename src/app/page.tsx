@@ -159,7 +159,7 @@ const buildLeadPayload = (formData: FormData) => {
     // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
     if (formData.StageName) { 
         leadWrapper.interestProduct.quotes = [{
-            id: calculateUniqueId('QT'), // Generate a dynamic ID for the quote
+            id: calculateUniqueId('QT'),
             effectiveDate: formData.effectiveDate,
             expirationDate: formData.expirationDate,
             paymentMethod: formData.paymentMethod,
@@ -171,7 +171,7 @@ const buildLeadPayload = (formData: FormData) => {
         }];
 
         leadWrapper.conversionData = {
-            convertedStatus: '02', // Set final status for conversion
+            convertedStatus: '02',
         };
     }
 
@@ -268,7 +268,7 @@ export default function Home() {
       try {
           const response = await submitLead(updatePayload);
           
-          setSubmissionResponse({ success: true, ...response });
+          setSubmissionResponse(response);
           setFormData(finalData); 
           handleNextStep(finalData); 
 

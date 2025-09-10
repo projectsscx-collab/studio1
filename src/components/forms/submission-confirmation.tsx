@@ -49,7 +49,7 @@ const SubmissionConfirmation = ({ onStartOver, creationResponse, updateResponse,
                     <AccordionTrigger>Respuesta de Salesforce (Creación)</AccordionTrigger>
                     <AccordionContent>
                          <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto max-h-96">
-                            {JSON.stringify(creationResponse, null, 2)}
+                            {JSON.stringify(creationResponse.fullResponse, null, 2)}
                         </pre>
                     </AccordionContent>
                 </AccordionItem>
@@ -59,7 +59,7 @@ const SubmissionConfirmation = ({ onStartOver, creationResponse, updateResponse,
                     <AccordionTrigger>Respuesta de Salesforce (Actualización)</AccordionTrigger>
                     <AccordionContent>
                          <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto max-h-96">
-                            {JSON.stringify(updateResponse, null, 2)}
+                            {JSON.stringify(updateResponse.fullResponse, null, 2)}
                         </pre>
                     </AccordionContent>
                 </AccordionItem>

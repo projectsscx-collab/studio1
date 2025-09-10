@@ -106,6 +106,18 @@ const buildLeadPayload = (formData: FormData) => {
     
     // Base wrapper object for all calls
     let leadWrapper: any = {
+        // The 'id' field for updates is handled by passing it in the payload,
+        // but it should be at the top level, so we handle it conditionally.
+    };
+
+    // For updates, the lead ID from Salesforce must be the first property.
+    if (formData.id) {
+       // No longer adding the ID to the payload as per user request
+    }
+    
+    // Add the rest of the properties
+    leadWrapper = {
+        ...leadWrapper,
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -137,8 +149,8 @@ const buildLeadPayload = (formData: FormData) => {
         'Año del vehículo__c': formData.ano_del_vehiculo,
         'Número de serie__c': formData.numero_de_serie,
     };
-
-    // The interestProduct object is always present
+    
+    // For all calls, interestProduct is present
     leadWrapper.interestProduct = {
         businessLine: "01",
         sector: "XX_01",
@@ -146,10 +158,11 @@ const buildLeadPayload = (formData: FormData) => {
         branch: "XX_205",
         risk: JSON.stringify(riskObject),
     };
-    
+
     // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
     if (formData.StageName) { 
         leadWrapper.interestProduct.quotes = [{
+            id: calculateUniqueId('QT'), // Add random quote ID
             effectiveDate: formData.effectiveDate,
             expirationDate: formData.expirationDate,
             paymentMethod: formData.paymentMethod,
@@ -162,6 +175,7 @@ const buildLeadPayload = (formData: FormData) => {
 
         leadWrapper.conversionData = {
             convertedStatus: '02',
+            policyNumber: calculateUniqueId('POL'), // Add random policy number
         };
     }
 
@@ -376,6 +390,8 @@ export default function Home() {
     </div>
   );
 }
+    
+
     
 
     

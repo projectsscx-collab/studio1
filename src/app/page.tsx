@@ -175,7 +175,7 @@ const buildLeadPayload = (formData: FormData) => {
 
         leadWrapper.conversionData = {
             convertedStatus: '02',
-            policyNumber: calculateUniqueId('POL'), // Add random policy number
+            policyNumber: Math.random().toString(36).substring(2, 10).toUpperCase(),
         };
     }
 

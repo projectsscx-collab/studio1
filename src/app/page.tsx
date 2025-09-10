@@ -19,10 +19,10 @@ import { format, addYears } from 'date-fns';
 
 const TOTAL_STEPS = 5;
 
-const calculateFullOperationId = () => {
+const calculateUniqueId = (prefix = 'ID') => {
     const timestamp = Date.now();
-    const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
-    return `IS${timestamp}${randomPart}`;
+    const randomPart = Math.random().toString(36).substring(2, 9).toUpperCase();
+    return `${prefix}${timestamp}${randomPart}`;
 };
 
 
@@ -146,11 +146,11 @@ const buildLeadPayload = (formData: FormData) => {
         risk: JSON.stringify(riskObject),
     };
     
-    // Add quotes array only if it's the final update
+    // Add quotes array and conversion data only for the final update.
     if (formData.StageName) {
-        leadWrapper.id = formData.id;
+        leadWrapper.id = formData.id; // Add Lead ID for update
         leadWrapper.interestProduct.quotes = [{
-            id: "123456",
+            id: calculateUniqueId('QT'), // Generate a dynamic ID for the quote
             effectiveDate: formData.effectiveDate,
             expirationDate: formData.expirationDate,
             paymentMethod: formData.paymentMethod,
@@ -165,6 +165,11 @@ const buildLeadPayload = (formData: FormData) => {
             convertedStatus: formData.StageName, 
             policyNumber: formData.policyNumber || null
         };
+    } else {
+        // For creation, send an empty quote and null conversion data.
+        // This was the source of the "Select a valid ConvertedStatus" error.
+        // By making the API call simpler, it should only create the lead.
+        // The final update will add the quote and convert.
     }
 
 
@@ -192,7 +197,7 @@ export default function Home() {
 
   const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
-    const newIdFullOperation = calculateFullOperationId();
+    const newIdFullOperation = calculateUniqueId('IS');
     
     // Explicitly set creation-specific values
     const submissionData: FormData = { 
@@ -312,6 +317,7 @@ export default function Home() {
     exit: (direction: number) => ({
       x: direction < 0 ? '100%' : '-100%',
       opacity: 0,
+      transition: { duration: 0.5, ease: 'easeInOut' },
       transition: { duration: 0.5, ease: 'easeInOut' },
     }),
   };

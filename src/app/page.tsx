@@ -167,7 +167,7 @@ const buildLeadPayload = (formData: FormData) => {
     }
 
     // *** CRITICAL CHANGE ***
-    // The `conversionData` object is ONLY included for the final update, not for the initial creation.
+    // The `conversionData` object is ONLY included for the final update (when StageName is set), not for the initial creation.
     if (formData.StageName) {
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
@@ -381,4 +381,6 @@ export default function Home() {
     </div>
   );
 }
+    
+
     

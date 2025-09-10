@@ -130,43 +130,43 @@ const buildLeadPayload = (formData: FormData) => {
         sourceData: sourceData,
     };
   
-    // For final updates, add id, interestProduct (with quotes), and conversionData.
-    // For creation, these are omitted to create a simple lead.
-    if (formData.StageName) { // StageName is only set for the final update
-        const riskObject = {
-            'Número de matrícula__c': formData.numero_de_matricula,
-            'Marca__c': formData.marca,
-            'Modelo__c': formData.modelo,
-            'Año del vehículo__c': formData.ano_del_vehiculo,
-            'Número de serie__c': formData.numero_de_serie,
-        };
+    const riskObject = {
+        'Número de matrícula__c': formData.numero_de_matricula,
+        'Marca__c': formData.marca,
+        'Modelo__c': formData.modelo,
+        'Año del vehículo__c': formData.ano_del_vehiculo,
+        'Número de serie__c': formData.numero_de_serie,
+    };
 
+    leadWrapper.interestProduct = {
+        businessLine: "01",
+        sector: "XX_01",
+        subsector: "XX_00",
+        branch: "XX_205",
+        risk: JSON.stringify(riskObject),
+    };
+    
+    // Add quotes array only if it's the final update
+    if (formData.StageName) {
         leadWrapper.id = formData.id;
-        
-        leadWrapper.interestProduct = {
-            businessLine: "01",
-            sector: "XX_01",
-            subsector: "XX_00",
-            branch: "XX_205",
-            risk: JSON.stringify(riskObject),
-            quotes: [{
-                id: "123456",
-                effectiveDate: formData.effectiveDate,
-                expirationDate: formData.expirationDate,
-                paymentMethod: formData.paymentMethod,
-                paymentPeriodicity: formData.paymentPeriodicity,
-                paymentTerm: formData.paymentTerm,
-                netPremium: formData.Amount,
-                additionalInformation: "test",
-                isSelected: true
-            }]
-        };
+        leadWrapper.interestProduct.quotes = [{
+            id: "123456",
+            effectiveDate: formData.effectiveDate,
+            expirationDate: formData.expirationDate,
+            paymentMethod: formData.paymentMethod,
+            paymentPeriodicity: formData.paymentPeriodicity,
+            paymentTerm: formData.paymentTerm,
+            netPremium: formData.Amount,
+            additionalInformation: "test",
+            isSelected: true
+        }];
 
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
             policyNumber: formData.policyNumber || null
         };
     }
+
 
     return { leadWrappers: [leadWrapper] };
 };
@@ -201,9 +201,10 @@ export default function Home() {
         id: null,
         StageName: null, // CRITICAL: Ensure StageName is null for creation
         idFullOperation: newIdFullOperation,
+        isSelected: false, // Explicitly set to false for creation
     };
     
-    // This payload is minimal, only containing lead data, no product/quote info.
+    // This payload is for creation.
     const leadPayload = buildLeadPayload(submissionData);
 
     try {
@@ -256,6 +257,7 @@ export default function Home() {
         idFullOperation: salesforceIds.idFullOperation,
         StageName: '06', // Set to 'Won' for final conversion
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
+        isSelected: true, // Explicitly set to true for final submission
       };
 
       // This payload is complete, with all data for update and conversion.

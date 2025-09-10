@@ -81,14 +81,6 @@ const initialFormData: FormData = {
 
 
 const buildLeadPayload = (formData: FormData) => {
-    const riskObject = {
-        'Número de matrícula__c': formData.numero_de_matricula,
-        'Marca__c': formData.marca,
-        'Modelo__c': formData.modelo,
-        'Año del vehículo__c': formData.ano_del_vehiculo,
-        'Número de serie__c': formData.numero_de_serie,
-    };
-    
     let sourceData: any = {
         sourceEvent: formData.sourceEvent,
         eventReason: "01",
@@ -112,8 +104,9 @@ const buildLeadPayload = (formData: FormData) => {
         utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
-    // Base wrapper object
+    // Base wrapper object for all calls
     const leadWrapper: any = {
+        idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
         documentType: formData.documentType,
@@ -133,41 +126,46 @@ const buildLeadPayload = (formData: FormData) => {
               country: formData.country,
             }
         },
-        interestProduct: {
+        utmData: utmData,
+        sourceData: sourceData,
+    };
+  
+    // For final updates, add id, interestProduct (with quotes), and conversionData.
+    // For creation, these are omitted to create a simple lead.
+    if (formData.StageName) { // StageName is only set for the final update
+        const riskObject = {
+            'Número de matrícula__c': formData.numero_de_matricula,
+            'Marca__c': formData.marca,
+            'Modelo__c': formData.modelo,
+            'Año del vehículo__c': formData.ano_del_vehiculo,
+            'Número de serie__c': formData.numero_de_serie,
+        };
+
+        leadWrapper.id = formData.id;
+        
+        leadWrapper.interestProduct = {
             businessLine: "01",
             sector: "XX_01",
             subsector: "XX_00",
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
-        },
-        utmData: utmData,
-        sourceData: sourceData,
-    };
-  
-    // For updates, add id, quotes and conversionData. For creation, they are omitted.
-    if (formData.id && formData.StageName) {
-        leadWrapper.id = formData.id;
-        leadWrapper.idFullOperation = formData.idFullOperation;
-        
-        leadWrapper.interestProduct.quotes = [{
-            id: "123456",
-            effectiveDate: formData.effectiveDate,
-            expirationDate: formData.expirationDate,
-            paymentMethod: formData.paymentMethod,
-            paymentPeriodicity: formData.paymentPeriodicity,
-            paymentTerm: formData.paymentTerm,
-            netPremium: formData.Amount,
-            additionalInformation: "test",
-            isSelected: true
-        }];
+            quotes: [{
+                id: "123456",
+                effectiveDate: formData.effectiveDate,
+                expirationDate: formData.expirationDate,
+                paymentMethod: formData.paymentMethod,
+                paymentPeriodicity: formData.paymentPeriodicity,
+                paymentTerm: formData.paymentTerm,
+                netPremium: formData.Amount,
+                additionalInformation: "test",
+                isSelected: true
+            }]
+        };
 
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
             policyNumber: formData.policyNumber || null
         };
-    } else {
-        // For creation, we only need the idFullOperation at the top level.
-        leadWrapper.idFullOperation = formData.idFullOperation;
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -202,10 +200,10 @@ export default function Home() {
         ...data,
         id: null,
         StageName: null, // CRITICAL: Ensure StageName is null for creation
-        isSelected: false, // CRITICAL: Ensure isSelected is false for creation
         idFullOperation: newIdFullOperation,
     };
     
+    // This payload is minimal, only containing lead data, no product/quote info.
     const leadPayload = buildLeadPayload(submissionData);
 
     try {
@@ -256,11 +254,11 @@ export default function Home() {
         ...data,
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
-        StageName: '06', 
-        isSelected: true,
+        StageName: '06', // Set to 'Won' for final conversion
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
       };
 
+      // This payload is complete, with all data for update and conversion.
       const updatePayload = buildLeadPayload(finalData);
 
       try {

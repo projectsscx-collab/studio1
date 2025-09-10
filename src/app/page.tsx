@@ -129,6 +129,10 @@ const buildLeadPayload = (formData: FormData) => {
         utmData: utmData,
         sourceData: sourceData,
     };
+    
+    if (formData.id) {
+        leadWrapper.id = formData.id;
+    }
   
     const riskObject = {
         'Número de matrícula__c': formData.numero_de_matricula,
@@ -150,6 +154,7 @@ const buildLeadPayload = (formData: FormData) => {
     // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
     if (formData.StageName) { 
         leadWrapper.interestProduct.quotes = [{
+            id: calculateUniqueId('QT'), // Add random ID to quote
             effectiveDate: formData.effectiveDate,
             expirationDate: formData.expirationDate,
             paymentMethod: formData.paymentMethod,
@@ -162,6 +167,7 @@ const buildLeadPayload = (formData: FormData) => {
 
         leadWrapper.conversionData = {
             convertedStatus: '02',
+            policyNumber: calculateUniqueId('POL'), // Add random policy number
         };
     }
 

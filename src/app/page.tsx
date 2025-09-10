@@ -167,11 +167,11 @@ const buildLeadPayload = (formData: FormData) => {
             paymentTerm: formData.paymentTerm,
             netPremium: formData.Amount,
             additionalInformation: "test",
-            isSelected: formData.isSelected, 
+            isSelected: true,
         }];
 
         leadWrapper.conversionData = {
-            convertedStatus: formData.StageName,
+            convertedStatus: '02', // Set final status for conversion
         };
     }
 
@@ -186,6 +186,7 @@ export default function Home() {
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResponse, setSubmissionResponse] = useState<any>(null);
+  const [creationResponse, setCreationResponse] = useState<any>(null);
   
   const { toast } = useToast();
 
@@ -211,6 +212,7 @@ export default function Home() {
 
     try {
         const response = await submitLead(leadPayload);
+        setCreationResponse(response);
 
         if (!response?.success || !response?.leadId) {
             console.error("Salesforce Response does not contain Lead ID:", response);
@@ -218,7 +220,7 @@ export default function Home() {
         }
         
         const leadId = response.leadId;
-        const newIds: SalesforceIds = { id: leadId, idFullOperation: formData.idFullOperation };
+        const newIds: SalesforceIds = { id: leadId, idFullOperation: formData.idFullOperation! };
         
         setSalesforceIds(newIds);
         
@@ -295,6 +297,7 @@ export default function Home() {
     setFormData({...initialFormData, idFullOperation: calculateUniqueId('IS')});
     setSalesforceIds(null);
     setSubmissionResponse(null);
+    setCreationResponse(null);
     setCurrentStep(1);
     setIsSubmitting(false);
   };
@@ -345,7 +348,7 @@ export default function Home() {
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, true)} />;
       case 6:
-        return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} salesforceIds={salesforceIds} />;
+        return <SubmissionConfirmation onStartOver={handleStartOver} creationResponse={creationResponse} updateResponse={submissionResponse} salesforceIds={salesforceIds} />;
       default:
         return null;
     }
@@ -383,10 +386,4 @@ export default function Home() {
     </div>
   );
 }
-    
-
-    
-
-    
-
     

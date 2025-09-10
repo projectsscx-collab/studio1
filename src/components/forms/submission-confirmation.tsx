@@ -5,14 +5,16 @@ import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import type { SalesforceIds } from '@/lib/salesforce-schemas';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 interface SubmissionConfirmationProps {
   onStartOver: () => void;
-  response: any;
+  creationResponse: any;
+  updateResponse: any;
   salesforceIds: SalesforceIds | null;
 }
 
-const SubmissionConfirmation = ({ onStartOver, response, salesforceIds }: SubmissionConfirmationProps) => {
+const SubmissionConfirmation = ({ onStartOver, creationResponse, updateResponse, salesforceIds }: SubmissionConfirmationProps) => {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="p-3 rounded-full bg-green-100 mb-4">
@@ -41,18 +43,29 @@ const SubmissionConfirmation = ({ onStartOver, response, salesforceIds }: Submis
             </Card>
         )}
 
-        {response && (
-          <Card className="w-full max-w-2xl my-4 bg-gray-50 border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-lg text-gray-800">Respuesta de Salesforce (Actualización)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto max-h-96">
-                {JSON.stringify(response, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
+        <Accordion type="single" collapsible className="w-full max-w-2xl my-4">
+            {creationResponse && (
+                <AccordionItem value="item-1">
+                    <AccordionTrigger>Respuesta de Salesforce (Creación)</AccordionTrigger>
+                    <AccordionContent>
+                         <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto max-h-96">
+                            {JSON.stringify(creationResponse, null, 2)}
+                        </pre>
+                    </AccordionContent>
+                </AccordionItem>
+            )}
+            {updateResponse && (
+                <AccordionItem value="item-2">
+                    <AccordionTrigger>Respuesta de Salesforce (Actualización)</AccordionTrigger>
+                    <AccordionContent>
+                         <pre className="p-4 bg-gray-100 rounded-md text-xs text-left overflow-auto max-h-96">
+                            {JSON.stringify(updateResponse, null, 2)}
+                        </pre>
+                    </AccordionContent>
+                </AccordionItem>
+            )}
+        </Accordion>
+
 
         <p className="text-sm text-center text-muted-foreground my-8">
           Recibirá un correo electrónico de confirmación en breve. Si tiene alguna pregunta, no dude en ponerse en contacto con nuestro equipo de soporte.

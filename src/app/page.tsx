@@ -89,7 +89,6 @@ const buildLeadPayload = (formData: FormData) => {
         'Número de serie__c': formData.numero_de_serie,
     };
     
-    // Base sourceData, starting with CC defaults
     let sourceData: any = {
         sourceEvent: formData.sourceEvent,
         eventReason: "01",
@@ -102,10 +101,8 @@ const buildLeadPayload = (formData: FormData) => {
         ipData: {}
     };
 
-    // Base utmData
     let utmData: any = {};
 
-    // Conditional logic based on agentType
     if (formData.agentType === 'APM') {
         sourceData.systemOrigin = '02';
         sourceData.leadSource = '02';
@@ -115,17 +112,24 @@ const buildLeadPayload = (formData: FormData) => {
         utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
-    const quote = {
-        id: "123456",
-        effectiveDate: formData.effectiveDate,
-        expirationDate: formData.expirationDate,
-        paymentMethod: formData.paymentMethod,
-        paymentPeriodicity: formData.paymentPeriodicity,
-        paymentTerm: formData.paymentTerm,
-        netPremium: formData.Amount,
-        additionalInformation: "test",
-        isSelected: formData.isSelected // CRITICAL: Always send a boolean
-    };
+    // *** CRITICAL CHANGE FOR FINAL SOLUTION ***
+    // Quotes will be built differently for creation vs. update.
+    let quotes: any[] = [];
+    
+    // Only include the full quote object for the final update (when StageName is set)
+    if (formData.StageName) {
+        quotes.push({
+            id: "123456",
+            effectiveDate: formData.effectiveDate,
+            expirationDate: formData.expirationDate,
+            paymentMethod: formData.paymentMethod,
+            paymentPeriodicity: formData.paymentPeriodicity,
+            paymentTerm: formData.paymentTerm,
+            netPremium: formData.Amount,
+            additionalInformation: "test",
+            isSelected: true // Explicitly true for update/conversion
+        });
+    }
 
     const leadWrapper: any = {
         id: formData.id,
@@ -155,7 +159,7 @@ const buildLeadPayload = (formData: FormData) => {
             subsector: "XX_00",
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
-            quotes: [quote]
+            quotes: quotes // Use the dynamically built quotes array
         },
         utmData: utmData,
         sourceData: sourceData,
@@ -166,8 +170,7 @@ const buildLeadPayload = (formData: FormData) => {
         delete leadWrapper.id;
     }
 
-    // *** CRITICAL CHANGE ***
-    // The `conversionData` object is ONLY included for the final update (when StageName is set), not for the initial creation.
+    // The `conversionData` object is ONLY included for the final update (when StageName is set).
     if (formData.StageName) {
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
@@ -206,8 +209,8 @@ export default function Home() {
         ...formData, 
         ...data,
         id: null,
-        StageName: null, 
-        isSelected: false,
+        StageName: null, // CRITICAL: Ensure StageName is null for creation
+        isSelected: false, // CRITICAL: Ensure isSelected is false for creation
         idFullOperation: newIdFullOperation,
     };
     
@@ -226,7 +229,6 @@ export default function Home() {
         
         setSalesforceIds(newIds);
         
-        // Update formData with the new IDs before moving to the next step
         const nextStepData = { ...submissionData, ...newIds };
         setFormData(nextStepData);
         

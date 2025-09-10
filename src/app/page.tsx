@@ -167,12 +167,11 @@ const buildLeadPayload = (formData: FormData) => {
             paymentTerm: formData.paymentTerm,
             netPremium: formData.Amount,
             additionalInformation: "test",
-            isSelected: true 
+            isSelected: formData.isSelected, 
         }];
 
         leadWrapper.conversionData = {
-            convertedStatus: formData.StageName, 
-            policyNumber: formData.policyNumber || null
+            convertedStatus: formData.StageName,
         };
     }
 
@@ -257,8 +256,9 @@ export default function Home() {
         ...data,
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
-        StageName: '06', 
+        StageName: '02', // Set final status for conversion
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
+        isSelected: true,
       };
       
       const updatePayload = buildLeadPayload(finalData);
@@ -321,8 +321,9 @@ export default function Home() {
         const dataForPreview: FormData = {
             ...formData,
             ...currentData,
-            StageName: isFinalStep ? '06' : null,
+            StageName: isFinalStep ? '02' : null,
             id: isFinalStep ? salesforceIds?.id || formData.id : null,
+            isSelected: isFinalStep
         };
         return buildLeadPayload(dataForPreview);
     };
@@ -382,6 +383,8 @@ export default function Home() {
     </div>
   );
 }
+    
+
     
 
     

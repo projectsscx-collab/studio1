@@ -17,7 +17,7 @@ interface EmissionFormProps {
   initialData: any;
   isSubmitting: boolean;
   salesforceIds: SalesforceIds | null;
-  buildPreviewPayload: (data: any) => any;
+  buildPreviewPayload: (data: any, isFinalStep: boolean) => any;
 }
 
 const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceIds, buildPreviewPayload }: EmissionFormProps) => {
@@ -43,12 +43,8 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
   const watchedData = form.watch();
   
   // Construct the full preview payload by combining all existing data with the current form's data
-  const finalPayloadPreview = buildPreviewPayload({
-    ...initialData,
-    ...watchedData,
-    id: salesforceIds?.id,
-    idFullOperation: initialData.idFullOperation,
-  });
+  // Pass true to indicate this is the final step for the preview.
+  const finalPayloadPreview = buildPreviewPayload(watchedData, true);
 
 
   return (

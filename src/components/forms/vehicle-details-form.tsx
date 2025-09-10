@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, FormProvider } from 'react-hook-form';
@@ -98,7 +99,7 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData, buildPreviewPayload
             </div>
         </div>
         <div className="space-y-2">
-            <label className="text-sm font-medium">Estado actual del formulario (Vista Previa)</label>
+            <label className="text-sm font-medium">Payload de Creación (Vista Previa)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(previewPayload, null, 2)}
             </pre>

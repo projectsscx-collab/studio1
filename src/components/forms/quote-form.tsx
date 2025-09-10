@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, FormProvider } from 'react-hook-form';
@@ -177,7 +178,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">JSON a Enviar (Vista Previa)</label>
+            <label className="text-sm font-medium">Payload de Creación (Vista Previa)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
                 {JSON.stringify(leadPayload, null, 2)}
             </pre>
@@ -186,7 +187,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
         <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
             <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CONTINUAR >'}
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CREAR LEAD >'}
             </Button>
         </div>
       </form>

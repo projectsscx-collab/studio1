@@ -29,7 +29,7 @@ const calculateUniqueId = (prefix = 'ID') => {
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
   id: null,
-  idFullOperation: '',
+  idFullOperation: calculateUniqueId('IS'), // Generate ID at the beginning
 
   // --- Step 1: Personal Details ---
   firstName: '',
@@ -138,6 +138,7 @@ const buildLeadPayload = (formData: FormData) => {
         'Número de serie__c': formData.numero_de_serie,
     };
 
+    // The interestProduct object is always present
     leadWrapper.interestProduct = {
         businessLine: "01",
         sector: "XX_01",
@@ -146,9 +147,10 @@ const buildLeadPayload = (formData: FormData) => {
         risk: JSON.stringify(riskObject),
     };
     
-    // Add quotes array and conversion data only for the final update.
-    if (formData.StageName) {
-        leadWrapper.id = formData.id; // Add Lead ID for update
+    // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
+    if (formData.StageName === '06') { // Check for the final stage
+        leadWrapper.id = formData.id; // Add Lead ID for the update
+        
         leadWrapper.interestProduct.quotes = [{
             id: calculateUniqueId('QT'), // Generate a dynamic ID for the quote
             effectiveDate: formData.effectiveDate,
@@ -158,20 +160,14 @@ const buildLeadPayload = (formData: FormData) => {
             paymentTerm: formData.paymentTerm,
             netPremium: formData.Amount,
             additionalInformation: "test",
-            isSelected: true
+            isSelected: true // Only selected on the final update
         }];
 
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
             policyNumber: formData.policyNumber || null
         };
-    } else {
-        // For creation, send an empty quote and null conversion data.
-        // This was the source of the "Select a valid ConvertedStatus" error.
-        // By making the API call simpler, it should only create the lead.
-        // The final update will add the quote and convert.
     }
-
 
     return { leadWrappers: [leadWrapper] };
 };
@@ -197,19 +193,14 @@ export default function Home() {
 
   const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
-    const newIdFullOperation = calculateUniqueId('IS');
     
-    // Explicitly set creation-specific values
     const submissionData: FormData = { 
         ...formData, 
         ...data,
-        id: null,
         StageName: null, // CRITICAL: Ensure StageName is null for creation
-        idFullOperation: newIdFullOperation,
-        isSelected: false, // Explicitly set to false for creation
     };
     
-    // This payload is for creation.
+    // This payload is for creation. It should NOT contain quotes or conversionData.
     const leadPayload = buildLeadPayload(submissionData);
 
     try {
@@ -221,7 +212,8 @@ export default function Home() {
         }
         
         const leadId = response.leadId;
-        const newIds: SalesforceIds = { id: leadId, idFullOperation: newIdFullOperation };
+        // Keep the original idFullOperation, just add the returned Lead ID.
+        const newIds: SalesforceIds = { id: leadId, idFullOperation: formData.idFullOperation };
         
         setSalesforceIds(newIds);
         
@@ -262,7 +254,6 @@ export default function Home() {
         idFullOperation: salesforceIds.idFullOperation,
         StageName: '06', // Set to 'Won' for final conversion
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
-        isSelected: true, // Explicitly set to true for final submission
       };
 
       // This payload is complete, with all data for update and conversion.
@@ -297,7 +288,8 @@ export default function Home() {
 
   const handleStartOver = () => {
     setDirection(1);
-    setFormData(initialFormData);
+    // Reset form but generate a new idFullOperation for the new session
+    setFormData({...initialFormData, idFullOperation: calculateUniqueId('IS')});
     setSalesforceIds(null);
     setSubmissionResponse(null);
     setCurrentStep(1);
@@ -318,30 +310,38 @@ export default function Home() {
       x: direction < 0 ? '100%' : '-100%',
       opacity: 0,
       transition: { duration: 0.5, ease: 'easeInOut' },
-      transition: { duration: 0.5, ease: 'easeInOut' },
     }),
   };
 
   const renderStep = () => {
-    const buildPreviewPayload = (data: any) => buildLeadPayload({ ...formData, ...data });
+    // This function for the preview now needs to know which stage it is
+    const buildPreviewPayloadForStep = (currentData: any, isFinalStep = false) => {
+        const dataForPreview: FormData = {
+            ...formData,
+            ...currentData,
+            // Simulate the final stage for the emission form preview
+            StageName: isFinalStep ? '06' : null,
+            id: isFinalStep ? salesforceIds?.id || formData.id : null,
+        };
+        return buildLeadPayload(dataForPreview);
+    };
     
     const formProps = {
         initialData: formData,
         isSubmitting: isSubmitting,
-        buildPreviewPayload: buildPreviewPayload
     };
 
     switch (currentStep) {
       case 1:
-        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 2:
-        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 3:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 4:
-        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, true)} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} response={submissionResponse} salesforceIds={salesforceIds} />;
       default:

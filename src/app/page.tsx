@@ -105,16 +105,7 @@ const buildLeadPayload = (formData: FormData) => {
     }
     
     // Base wrapper object for all calls
-    let leadWrapper: any = {};
-    
-    // CRITICAL: For updates, the 'id' must be the first property.
-    if (formData.id) {
-        leadWrapper.id = formData.id;
-    }
-
-    // Add the rest of the properties
-    leadWrapper = {
-        ...leadWrapper,
+    let leadWrapper: any = {
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -159,7 +150,6 @@ const buildLeadPayload = (formData: FormData) => {
     // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
     if (formData.StageName) { 
         leadWrapper.interestProduct.quotes = [{
-            id: calculateUniqueId('QT'),
             effectiveDate: formData.effectiveDate,
             expirationDate: formData.expirationDate,
             paymentMethod: formData.paymentMethod,
@@ -386,4 +376,6 @@ export default function Home() {
     </div>
   );
 }
+    
+
     

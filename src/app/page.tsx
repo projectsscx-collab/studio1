@@ -112,28 +112,8 @@ const buildLeadPayload = (formData: FormData) => {
         utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
-    // *** CRITICAL CHANGE FOR FINAL SOLUTION ***
-    // Quotes will be built differently for creation vs. update.
-    let quotes: any[] = [];
-    
-    // Only include the full quote object for the final update (when StageName is set)
-    if (formData.StageName) {
-        quotes.push({
-            id: "123456",
-            effectiveDate: formData.effectiveDate,
-            expirationDate: formData.expirationDate,
-            paymentMethod: formData.paymentMethod,
-            paymentPeriodicity: formData.paymentPeriodicity,
-            paymentTerm: formData.paymentTerm,
-            netPremium: formData.Amount,
-            additionalInformation: "test",
-            isSelected: true // Explicitly true for update/conversion
-        });
-    }
-
+    // Base wrapper object
     const leadWrapper: any = {
-        id: formData.id,
-        idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
         documentType: formData.documentType,
@@ -159,23 +139,35 @@ const buildLeadPayload = (formData: FormData) => {
             subsector: "XX_00",
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
-            quotes: quotes // Use the dynamically built quotes array
         },
         utmData: utmData,
         sourceData: sourceData,
     };
   
-    // Only include the 'id' field if it's not null for the wrapper.
-    if (!formData.id) {
-        delete leadWrapper.id;
-    }
+    // For updates, add id, quotes and conversionData. For creation, they are omitted.
+    if (formData.id && formData.StageName) {
+        leadWrapper.id = formData.id;
+        leadWrapper.idFullOperation = formData.idFullOperation;
+        
+        leadWrapper.interestProduct.quotes = [{
+            id: "123456",
+            effectiveDate: formData.effectiveDate,
+            expirationDate: formData.expirationDate,
+            paymentMethod: formData.paymentMethod,
+            paymentPeriodicity: formData.paymentPeriodicity,
+            paymentTerm: formData.paymentTerm,
+            netPremium: formData.Amount,
+            additionalInformation: "test",
+            isSelected: true
+        }];
 
-    // The `conversionData` object is ONLY included for the final update (when StageName is set).
-    if (formData.StageName) {
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName, 
             policyNumber: formData.policyNumber || null
         };
+    } else {
+        // For creation, we only need the idFullOperation at the top level.
+        leadWrapper.idFullOperation = formData.idFullOperation;
     }
 
     return { leadWrappers: [leadWrapper] };

@@ -105,7 +105,16 @@ const buildLeadPayload = (formData: FormData) => {
     }
     
     // Base wrapper object for all calls
-    const leadWrapper: any = {
+    let leadWrapper: any = {};
+    
+    // CRITICAL: For updates, the 'id' must be the first property.
+    if (formData.id) {
+        leadWrapper.id = formData.id;
+    }
+
+    // Add the rest of the properties
+    leadWrapper = {
+        ...leadWrapper,
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -148,9 +157,7 @@ const buildLeadPayload = (formData: FormData) => {
     };
     
     // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
-    if (formData.StageName === '06') { // Check for the final stage
-        leadWrapper.id = formData.id; // Add Lead ID for the update
-        
+    if (formData.StageName) { 
         leadWrapper.interestProduct.quotes = [{
             id: calculateUniqueId('QT'), // Generate a dynamic ID for the quote
             effectiveDate: formData.effectiveDate,
@@ -160,7 +167,7 @@ const buildLeadPayload = (formData: FormData) => {
             paymentTerm: formData.paymentTerm,
             netPremium: formData.Amount,
             additionalInformation: "test",
-            isSelected: true // Only selected on the final update
+            isSelected: true 
         }];
 
         leadWrapper.conversionData = {
@@ -198,9 +205,9 @@ export default function Home() {
         ...formData, 
         ...data,
         StageName: null, // CRITICAL: Ensure StageName is null for creation
+        id: null, // Ensure ID is null for creation
     };
     
-    // This payload is for creation. It should NOT contain quotes or conversionData.
     const leadPayload = buildLeadPayload(submissionData);
 
     try {
@@ -212,7 +219,6 @@ export default function Home() {
         }
         
         const leadId = response.leadId;
-        // Keep the original idFullOperation, just add the returned Lead ID.
         const newIds: SalesforceIds = { id: leadId, idFullOperation: formData.idFullOperation };
         
         setSalesforceIds(newIds);
@@ -246,17 +252,15 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
-      // Set update-specific values
       const finalData: FormData = { 
         ...formData, 
         ...data,
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
-        StageName: '06', // Set to 'Won' for final conversion
+        StageName: '06', 
         CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
       };
-
-      // This payload is complete, with all data for update and conversion.
+      
       const updatePayload = buildLeadPayload(finalData);
 
       try {
@@ -288,7 +292,6 @@ export default function Home() {
 
   const handleStartOver = () => {
     setDirection(1);
-    // Reset form but generate a new idFullOperation for the new session
     setFormData({...initialFormData, idFullOperation: calculateUniqueId('IS')});
     setSalesforceIds(null);
     setSubmissionResponse(null);
@@ -314,12 +317,10 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    // This function for the preview now needs to know which stage it is
     const buildPreviewPayloadForStep = (currentData: any, isFinalStep = false) => {
         const dataForPreview: FormData = {
             ...formData,
             ...currentData,
-            // Simulate the final stage for the emission form preview
             StageName: isFinalStep ? '06' : null,
             id: isFinalStep ? salesforceIds?.id || formData.id : null,
         };
@@ -381,6 +382,8 @@ export default function Home() {
     </div>
   );
 }
+    
+
     
 
     

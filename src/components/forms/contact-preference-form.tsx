@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import type { z } from 'zod';
 
 interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;
@@ -17,16 +18,20 @@ interface ContactPreferenceFormProps {
   buildPreviewPayload: (data: any) => any;
 }
 
+// Define the schema for this specific form step to improve readability and avoid parsing errors.
+const formSchema = leadSchema.pick({
+  sourceEvent: true,
+  agentType: true,
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
 const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
-  const form = useForm({
-    resolver: zodResolver(
-      leadSchema.pick({
-        sourceEvent: true,
-        agentType: true,
-      })
-    ),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      ...initialData,
+      sourceEvent: initialData.sourceEvent || '',
+      agentType: initialData.agentType || '',
     },
     mode: 'onChange',
   });

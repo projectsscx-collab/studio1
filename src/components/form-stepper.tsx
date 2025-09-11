@@ -1,3 +1,4 @@
+
 import { cn } from '@/lib/utils';
 import { User, Car, FileText, Handshake, CheckCircle } from 'lucide-react';
 
@@ -9,8 +10,8 @@ interface FormStepperProps {
 const steps = [
     { number: 1, title: 'Datos Personales', icon: User },
     { number: 2, title: 'Datos del Vehículo', icon: Car },
-    { number: 3, title: 'Cotización', icon: FileText },
-    { number: 4, title: 'Contacto', icon: Handshake },
+    { number: 3, title: 'Contacto', icon: Handshake },
+    { number: 4, title: 'Cotización', icon: FileText },
     { number: 5, title: 'Emisión', icon: CheckCircle },
 ];
 

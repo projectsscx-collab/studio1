@@ -58,21 +58,20 @@ const initialFormData: FormData = {
   modelo: '',
   ano_del_vehiculo: '',
   numero_de_serie: '',
+  
+  // --- Step 3: Contact Preference ---
+  agentType: 'CC', // Default to Contact Center
+  sourceEvent: '01',
+  UTMCampaign: '',
 
-  // --- Step 3: Quote Details ---
+  // --- Step 4: Quote Details ---
   effectiveDate: '',
   expirationDate: '',
   paymentMethod: '',
   paymentPeriodicity: '',
   paymentTerm: '',
   
-  // --- Step 4: Contact Preference ---
-  agentType: 'CC', // Default to Contact Center
-  sourceEvent: '01',
-  UTMCampaign: '',
-  
   // --- Step 5: Emission ---
-  policyNumber: '', 
   StageName: null, 
   CloseDate: null,
   Amount: 1000,
@@ -104,18 +103,14 @@ const buildLeadPayload = (formData: FormData) => {
         utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
-    // Base wrapper object for all calls
-    let leadWrapper: any = {
-        // The 'id' field for updates is handled by passing it in the payload,
-        // but it should be at the top level, so we handle it conditionally.
-    };
+    let leadWrapper: any = {};
 
     // For updates, the lead ID from Salesforce must be the first property.
     if (formData.id) {
-       // No longer adding the ID to the payload as per user request
+       leadWrapper.id = formData.id;
     }
     
-    // Add the rest of the properties
+    // Base properties for both create and update
     leadWrapper = {
         ...leadWrapper,
         idFullOperation: formData.idFullOperation,
@@ -150,19 +145,22 @@ const buildLeadPayload = (formData: FormData) => {
         'Número de serie__c': formData.numero_de_serie,
     };
     
-    // For all calls, interestProduct is present
-    leadWrapper.interestProduct = {
-        businessLine: "01",
-        sector: "XX_01",
-        subsector: "XX_00",
-        branch: "XX_205",
-        risk: JSON.stringify(riskObject),
-    };
-
-    // CRITICAL LOGIC: Add quotes and conversion data ONLY for the final update.
-    if (formData.StageName) { 
+    // Only include interestProduct if we have vehicle data (i.e. past step 2)
+    if (formData.numero_de_matricula) {
+        leadWrapper.interestProduct = {
+            businessLine: "01",
+            sector: "XX_01",
+            subsector: "XX_00",
+            branch: "XX_205",
+            risk: JSON.stringify(riskObject),
+        };
+    }
+    
+    // CRITICAL LOGIC: Add quotes and conversion data based on the flow.
+    // The presence of a quote indicates this is the "creation" call.
+    if (formData.effectiveDate) { 
         leadWrapper.interestProduct.quotes = [{
-            id: calculateUniqueId('QT'), // Add random quote ID
+            id: calculateUniqueId('QT'),
             effectiveDate: formData.effectiveDate,
             expirationDate: formData.expirationDate,
             paymentMethod: formData.paymentMethod,
@@ -172,11 +170,20 @@ const buildLeadPayload = (formData: FormData) => {
             additionalInformation: "test",
             isSelected: true,
         }];
+    }
 
-        leadWrapper.conversionData = {
-            convertedStatus: '02',
-            policyNumber: Math.random().toString(36).substring(2, 10).toUpperCase(),
-        };
+    // The presence of StageName indicates this is the final "update" call for conversion.
+    if (formData.StageName) {
+        // For the final update, we ONLY need the ID and conversion data.
+        // All other data has been sent.
+        return {
+            leadWrappers: [{
+                id: formData.id,
+                conversionData: {
+                    convertedStatus: formData.StageName,
+                }
+            }]
+        }
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -263,8 +270,6 @@ export default function Home() {
         id: salesforceIds.id, 
         idFullOperation: salesforceIds.idFullOperation,
         StageName: '02', // Set final status for conversion
-        CloseDate: format(addYears(new Date(), 1), 'yyyy-MM-dd'),
-        isSelected: true,
       };
       
       const updatePayload = buildLeadPayload(finalData);
@@ -329,7 +334,7 @@ export default function Home() {
             ...formData,
             ...currentData,
             StageName: isFinalStep ? '02' : null,
-            id: isFinalStep ? salesforceIds?.id || formData.id : null,
+            id: isFinalStep ? salesforceIds?.id || formData.id : formData.id,
             isSelected: isFinalStep
         };
         return buildLeadPayload(dataForPreview);
@@ -346,9 +351,9 @@ export default function Home() {
       case 2:
         return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 3:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
-      case 4:
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
+      case 4:
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, true)} />;
       case 6:
@@ -390,8 +395,4 @@ export default function Home() {
     </div>
   );
 }
-    
-
-    
-
     

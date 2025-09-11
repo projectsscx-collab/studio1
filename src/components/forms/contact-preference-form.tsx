@@ -17,8 +17,6 @@ interface ContactPreferenceFormProps {
   buildPreviewPayload: (data: any) => any;
 }
 
-// This form now only updates the local state and moves to the next step.
-// It no longer triggers a backend call.
 const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
@@ -37,7 +35,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
         <div>
           <h2 className="text-xl font-semibold mb-6">Preferencia de Contacto y Agente</h2>
           <p className="text-muted-foreground mb-6">
-              Seleccione sus preferencias. Estos datos se utilizarán para la actualización final del Lead.
+              Seleccione sus preferencias. Estos datos se incluirán en la creación del Lead.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
@@ -72,7 +70,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione un tipo de agente" />
-                      </SelectTrigger>
+                      </Trigger>
                     </FormControl>
                     <SelectContent>
                       {Object.entries(agentTypes).map(([key, value]) => (

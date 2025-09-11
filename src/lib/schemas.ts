@@ -36,7 +36,7 @@ export const sourceEvents = {
 export const agentTypes = {
     "CC": "Contact Center (CC)",
     "APM": "Agente (APM)",
-    "ADM": "Agente (ADM)",
+    "ADM": "Agente (ADM)"
 };
 
 // This composite schema validates the fields across all steps.

@@ -14,7 +14,6 @@ interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;
   onBack: () => void;
   initialData: any;
-  isSubmitting: boolean;
 }
 
 // Define the schema for this specific form step to improve readability and avoid parsing errors.
@@ -25,7 +24,7 @@ const formSchema = leadSchema.pick({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
+const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPreferenceFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,6 +33,8 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
     },
     mode: 'onChange',
   });
+
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <FormProvider {...form}>

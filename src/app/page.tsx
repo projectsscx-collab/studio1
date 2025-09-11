@@ -76,6 +76,7 @@ const initialFormData: FormData = {
   CloseDate: null,
   Amount: 1000,
   isSelected: false,
+  policyNumber: '',
 };
 
 
@@ -112,6 +113,7 @@ const buildLeadPayload = (formData: FormData) => {
                 id: formData.id, // ID is required to identify the lead to update
                 conversionData: {
                     convertedStatus: formData.StageName,
+                    policyNumber: formData.policyNumber, // Include policy number on final update
                 }
             }]
         }
@@ -332,7 +334,8 @@ export default function Home() {
             ...currentData,
             StageName: isFinalStep ? '02' : null,
             id: isFinalStep ? salesforceIds?.id || formData.id : formData.id,
-            isSelected: isFinalStep
+            isSelected: isFinalStep,
+            policyNumber: isFinalStep ? currentData.policyNumber : '',
         };
         return buildLeadPayload(dataForPreview);
     };

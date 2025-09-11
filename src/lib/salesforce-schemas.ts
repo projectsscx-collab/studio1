@@ -73,6 +73,5 @@ export interface SalesforceIds {
     id: string;
     idFullOperation: string;
 }
-    
 
     

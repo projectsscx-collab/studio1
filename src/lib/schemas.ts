@@ -80,7 +80,7 @@ export const leadSchema = z.object({
 
   // Step 5: Emission
   Amount: z.number().positive('El importe debe ser un número positivo.'),
-  policyNumber: z.string().min(1, "El número de póliza es requerido.").max(8, "El número de póliza no puede tener más de 8 caracteres.")
+  policyNumber: z.string().min(1, "El número de póliza es requerido.").max(6, "El número de póliza no puede tener más de 6 caracteres.")
 });
 
 export type LeadData = z.infer<typeof leadSchema>;

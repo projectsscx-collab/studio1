@@ -19,6 +19,10 @@ import Header from '@/components/header';
 const TOTAL_STEPS = 5;
 
 const calculateUniqueId = (prefix = 'ID') => {
+    if (prefix === 'POL') {
+        // Generate a 6-digit numeric string for the policy number
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
     const timestamp = Date.now();
     const randomPart = Math.random().toString(36).substring(2, 9).toUpperCase();
     return `${prefix}${timestamp}${randomPart}`;

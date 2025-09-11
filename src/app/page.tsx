@@ -119,9 +119,9 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        birthdate: formData.birthdate,
         documentType: formData.documentType,
         documentNumber: formData.documentNumber,
+        birthdate: formData.birthdate,
         contactData: {
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,
@@ -160,6 +160,7 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     
     // If it's the final update, add the conversion data
     if (isFinalUpdate) {
+        leadWrapper.ownerId = "005D7000003o4a2IAA";
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName,
             policyNumber: formData.policyNumber,
@@ -366,4 +367,6 @@ export default function Home() {
     </div>
   );
 }
+    
+
     

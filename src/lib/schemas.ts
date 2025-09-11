@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const documentTypes = {
   "01": "Cédula de Identidad",
   "02": "Pasaporte",
-  "03": "Licencia de Conducir",
+  "03": "Licencia de Conducir"
 };
 
 export const paymentMethods = {
@@ -30,7 +30,7 @@ export const paymentTerms = {
 export const sourceEvents = {
     "01": "Manual",
     "02": "Call me back",
-    "03": "Call me now",
+    "03": "Call me now"
 };
 
 export const agentTypes = {

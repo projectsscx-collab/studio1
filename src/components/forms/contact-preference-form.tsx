@@ -19,10 +19,12 @@ interface ContactPreferenceFormProps {
 
 const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
   const form = useForm({
-    resolver: zodResolver(leadSchema.pick({
-      sourceEvent: true,
-      agentType: true,
-    })),
+    resolver: zodResolver(
+      leadSchema.pick({
+        sourceEvent: true,
+        agentType: true,
+      })
+    ),
     defaultValues: {
       ...initialData,
     },

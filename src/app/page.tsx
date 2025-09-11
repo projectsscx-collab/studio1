@@ -162,6 +162,7 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName,
             policyNumber: formData.policyNumber, // Include policy number on final update
+            ownerId: "005D7000003o4a2IAA" // Add the required OwnerId for conversion
         };
     }
 

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 interface ContactPreferenceFormProps {
   onSubmit: (data: any) => void;
@@ -33,7 +33,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
       agentType: initialData.agentType || '',
     },
     mode: 'onChange',
-  })
+  });
 
   return (
     <FormProvider {...form}>

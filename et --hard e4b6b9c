@@ -1,0 +1,61 @@
+[33m8be4deb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m SOLUCIONALO YA
+[33maab9184[m Error: ./src/components/forms/contact-preference-form.tsx:40:6 Parsing e
+[33m99e7b80[m revierte todos los cambios a ahi
+[33mf786435[m Try fixing this error: `Build Error: Parsing ecmascript source code fail
+[33m2b343d5[m En el lead que creas se está pasando "LeadSource"?
+[33m0909c39[m Error: ./src/components/forms/contact-preference-form.tsx:39:6 Parsing e
+[33mb943c64[m Try fixing this error: `Build Error: Parsing ecmascript source code fail
+[33mcda0d7f[m Try fixing this error: `Build Error: Parsing ecmascript source code fail
+[33m20d459a[m Try fixing this error: `Build Error: Parsing ecmascript source code fail
+[33m0fcad1c[m Try fixing this error: `Build Error: Parsing ecmascript source code fail
+[33m38737fb[m Metemos la ventana de Contacto despuesd e Datos del vehiculo, y en emisi
+[33me4b6b9c[m el numero de poliza macimo puede tener 8 caracteres
+[33m30471f6[m PERO DENTRO DE QUOTES SI QUE TEINE QUE HABER UN ID ALEATORIO
+[33m6f05102[m ese id sobra
+[33m10717fe[m Inventate un policy number, segundo, "quotes": [           {
+[33mbeff210[m "interestProduct": {         "businessLine": "01",         "sector": "XX
+[33m014bd19[m no me has metido la respuesta del servicio([     {         "resultQuotes
+[33m1578222[m quiero ver las respuestas del servicio, y no uses el campo "id": "00QD70
+[33md5d37e7[m Converted status es 02, y elimina el policy number
+[33md99d2a0[m {   "leadWrappers": [     {       "id": "00QD700000EZH16MAH",       "idF
+[33mf1ae912[m se envia este json {   "leadWrappers": [     {
+[33m100bfcc[m tienes que crear un id, y ponerlo en la actualizacion
+[33m54e11bc[m La Solución Definitiva:
+[33m19d8fa6[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m1d7512f[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m04ee604[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m10a6894[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33mb274ef0[m Try fixing this error: `Console Error: Error: Failed to submit lead: 500
+[33mc27051b[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m0fb94e0[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m76b6115[m al principio, en cotizacion, cuando se sube por primera vez, pones  "con
+[33m1669c83[m Error: Lead ID not found in Salesforce response: [{"resultQuotes":null,"
+[33mf9bf86e[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m045e3b7[m Error: Lead ID not found in Salesforce response: [{"resultQuotes":null,"
+[33m9603e2a[m Emisión de la Póliza Confirme los detalles finales para emitir la póliza
+[33m527375d[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33m35a9f54[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33meb25cc7[m Try fixing this error: `Console Error: Error: Failed to submit lead: 400
+[33m3ac004b[m al final no tewnemos que usar el servicio de patch, es todo mediante el
+[33mdadf83e[m Try fixing this error: `Console Error: Error: Lead ID not found in Sales
+[33mdf1708d[m Try fixing this error: `Console Error: Error: Failed to update opportuni
+[33m8c24710[m no se cambia lo de utm campaing etc, ni me aparece la oportuidad
+[33m5246bd5[m Error: Converted Opportunity ID was not available after 3 attempts. The
+[33mb27ccd3[m no lo has implementado
+[33mc707de3[m Try fixing this error: `Console Error: Error: Failed to update opportuni
+[33m19c83bf[m I see this error with the app, reported by NextJS, please fix it. The er
+[33mf2fb9cc[m {   "leadWrappers": [     {       "id": null,       "idFullOperation": "
+[33m676e7af[m Try fixing this error: `Console Error: Error: Opportunity ID not found i
+[33ma5f87e6[m Try fixing this error: `Console Error: Error: Failed to update opportuni
+[33m87e005c[m en esta pantalla, el servicio es este: PATCH {{instance_url}}/services/d
+[33m20026a3[m en esta parte, cuando cambies el call me back etc, tiene que ser con est
+[33m503ad9e[m Información Personal Nombre E.g. John Apellido E.g. Doe Fecha de Nacimie
+[33m40fad63[m Información Personal Nombre E.g. John Apellido E.g. Doe Fecha de Nacimie
+[33m252abd7[m "leadWrappers": [
+[33m27b93e0[m {//En la URL se pone el id de Salesforce de la Oportunidad al final. En
+[33m2ca0425[m dime que podrias necesitar de mi org del postman o de que para soluicion
+[33mfc47586[m Try fixing this error: `Console Error: Error: Failed to update lead: 500
+[33m2b402b7[m no tienes que hacer un upsert, es un update
+[33m02f5a51[m Error: Failed to update lead: 500 [{"errorCode":"APEX_ERROR","message":"
+[33m6563c02[m Error: Failed to update lead: 500 [{"errorCode":"APEX_ERROR","message":"
+[33m940eb8b[m Error: Failed to update lead: 500 [{"errorCode":"APEX_ERROR","message":"

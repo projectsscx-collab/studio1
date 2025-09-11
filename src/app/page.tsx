@@ -114,9 +114,9 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         birthdate: formData.birthdate,
+        documentType: formData.documentType, // Moved to root
+        documentNumber: formData.documentNumber, // Moved to root
         contactData: {
-            documentType: formData.documentType,
-            documentNumber: formData.documentNumber,
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,
             email: formData.email,

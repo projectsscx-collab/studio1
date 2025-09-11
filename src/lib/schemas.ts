@@ -41,7 +41,7 @@ export const agentTypes = {
 
 // This composite schema validates the fields across all steps.
 export const leadSchema = z.object({
-  idFullOperation: z.string().optional(), 
+  idFullOperation: z.string().optional(),
   
   // Step 1: Personal Details
   firstName: z.string().min(1, 'El nombre es requerido.'),

@@ -15,8 +15,6 @@ import { submitLead } from '@/ai/flows/insert-lead-flow';
 import type { FormData, SalesforceIds } from '@/lib/salesforce-schemas';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
-import { format, addYears } from 'date-fns';
-
 
 const TOTAL_STEPS = 5;
 
@@ -26,11 +24,10 @@ const calculateUniqueId = (prefix = 'ID') => {
     return `${prefix}${timestamp}${randomPart}`;
 };
 
-
 const initialFormData: FormData = {
   // --- Salesforce IDs ---
   id: null,
-  idFullOperation: calculateUniqueId('IS'), // Generate ID at the beginning
+  idFullOperation: calculateUniqueId('IS'),
 
   // --- Step 1: Personal Details ---
   firstName: '',
@@ -80,8 +77,7 @@ const initialFormData: FormData = {
   policyNumber: '',
 };
 
-
-const buildLeadPayload = (formData: FormData) => {
+const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     let sourceData: any = {
         sourceEvent: formData.sourceEvent,
         eventReason: "01",
@@ -95,7 +91,6 @@ const buildLeadPayload = (formData: FormData) => {
     };
 
     let utmData: any = {};
-
     if (formData.agentType === 'APM') {
         sourceData.systemOrigin = '02';
         sourceData.leadSource = '02';
@@ -105,24 +100,16 @@ const buildLeadPayload = (formData: FormData) => {
         utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
-    let leadWrapper: any = {};
-
-    // For the final update, we ONLY need the ID and conversion data.
-    if (formData.StageName) {
-        return {
-            leadWrappers: [{
-                id: formData.id, // ID is required to identify the lead to update
-                conversionData: {
-                    convertedStatus: formData.StageName,
-                    policyNumber: formData.policyNumber, // Include policy number on final update
-                }
-            }]
-        }
-    }
+    const riskObject = {
+        'Número de matrícula__c': formData.numero_de_matricula,
+        'Marca__c': formData.marca,
+        'Modelo__c': formData.modelo,
+        'Año del vehículo__c': formData.ano_del_vehiculo,
+        'Número de serie__c': formData.numero_de_serie,
+    };
     
-    // Base properties for creation
-    leadWrapper = {
-        ...leadWrapper,
+    // Base properties for creation and update
+    let leadWrapper: any = {
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -145,19 +132,7 @@ const buildLeadPayload = (formData: FormData) => {
         },
         utmData: utmData,
         sourceData: sourceData,
-    };
-    
-    const riskObject = {
-        'Número de matrícula__c': formData.numero_de_matricula,
-        'Marca__c': formData.marca,
-        'Modelo__c': formData.modelo,
-        'Año del vehículo__c': formData.ano_del_vehiculo,
-        'Número de serie__c': formData.numero_de_serie,
-    };
-    
-    // Only include interestProduct if we are at the quote step or beyond
-    if (formData.effectiveDate) {
-        leadWrapper.interestProduct = {
+        interestProduct: {
             businessLine: "01",
             sector: "XX_01",
             subsector: "XX_00",
@@ -174,21 +149,20 @@ const buildLeadPayload = (formData: FormData) => {
                 additionalInformation: "test",
                 isSelected: true,
             }],
-        };
-    } else if (formData.numero_de_matricula) {
-        // Include interestProduct with just risk if we are past vehicle details but not yet at quote
-        leadWrapper.interestProduct = {
-            businessLine: "01",
-            sector: "XX_01",
-            subsector: "XX_00",
-            branch: "XX_205",
-            risk: JSON.stringify(riskObject),
+        },
+    };
+    
+    // If it's the final update, add the ID and conversion data
+    if (isFinalUpdate) {
+        leadWrapper.id = formData.id; // Required to identify the lead to update
+        leadWrapper.conversionData = {
+            convertedStatus: formData.StageName,
+            policyNumber: formData.policyNumber, // Include policy number on final update
         };
     }
 
     return { leadWrappers: [leadWrapper] };
 };
-
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -212,13 +186,8 @@ export default function Home() {
   const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
     
-    // This is the creation step, so merge all data so far
-    const submissionData: FormData = { 
-        ...formData, 
-        ...data,
-    };
-    
-    const leadPayload = buildLeadPayload(submissionData);
+    const submissionData: FormData = { ...formData, ...data };
+    const leadPayload = buildLeadPayload(submissionData, false); // Not the final update
 
     try {
         const response = await submitLead(leadPayload);
@@ -234,14 +203,11 @@ export default function Home() {
         
         setSalesforceIds(newIds);
         
-        // IMPORTANT: Update form data with the new IDs for the next steps
-        const nextStepData = { ...submissionData, ...newIds };
+        const nextStepData = { ...submissionData, id: leadId }; // Carry over the lead ID
         setFormData(nextStepData);
         
         setDirection(1);
-        if (currentStep < TOTAL_STEPS + 1) {
-            setCurrentStep((prev) => prev + 1);
-        }
+        setCurrentStep((prev) => prev + 1);
 
     } catch(error) {
         console.error('Error creating lead:', error);
@@ -257,22 +223,23 @@ export default function Home() {
   };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
-      if (!salesforceIds?.id) {
+      if (!formData?.id) {
         toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
         setIsSubmitting(false);
         return;
       }
       setIsSubmitting(true);
 
-      // Data for the final update only needs the IDs and the StageName
+      const generatedPolicyNumber = calculateUniqueId('POL');
+
       const finalData: FormData = { 
-        ...formData, // carry over existing data
-        ...data, // new data from this step (if any)
-        id: salesforceIds.id, // Make sure the lead ID is set
-        StageName: '02', // Set final status for conversion
+        ...formData, 
+        ...data,
+        StageName: '02',
+        policyNumber: generatedPolicyNumber,
       };
       
-      const updatePayload = buildLeadPayload(finalData);
+      const updatePayload = buildLeadPayload(finalData, true); // This IS the final update
 
       try {
           const response = await submitLead(updatePayload);
@@ -329,16 +296,14 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    const buildPreviewPayloadForStep = (currentData: any, isFinalStep = false) => {
+    const buildPreviewPayloadForStep = (stepData: any, isFinal = false) => {
         const dataForPreview: FormData = {
             ...formData,
-            ...currentData,
-            StageName: isFinalStep ? '02' : null,
-            id: isFinalStep ? salesforceIds?.id || formData.id : formData.id,
-            isSelected: isFinalStep,
-            policyNumber: isFinalStep ? currentData.policyNumber : '',
+            ...stepData,
+            StageName: isFinal ? '02' : null,
+            id: formData.id,
         };
-        return buildLeadPayload(dataForPreview);
+        return buildLeadPayload(dataForPreview, isFinal);
     };
     
     const formProps = {
@@ -350,15 +315,15 @@ export default function Home() {
       case 1:
         return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 2:
-        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
+        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 3:
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 4:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
+        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, false)} />;
       case 5:
         return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, true)} />;
       case 6:
-        return <SubmissionConfirmation onStartOver={handleStartOver} creationResponse={creationResponse} updateResponse={submissionResponse} salesforceIds={salesforceIds} />;
+        return <SubmissionConfirmation onStartOver={handleStartOver} creationResponse={creationResponse} updateResponse={submissionResponse} salesforceIds={salesforceIds || {id: formData.id!, idFullOperation: formData.idFullOperation!}} />;
       default:
         return null;
     }
@@ -396,6 +361,4 @@ export default function Home() {
     </div>
   );
 }
-    
-
     

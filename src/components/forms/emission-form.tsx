@@ -11,9 +11,9 @@ import { Loader2 } from 'lucide-react';
 import type { SalesforceIds } from '@/lib/salesforce-schemas';
 import { leadSchema } from '@/lib/schemas';
 
-// Use only the policyNumber part of the main schema for this step's validation.
-const emissionSchema = leadSchema.pick({
-  policyNumber: true,
+// For this step, no fields are required from the user, but we define an empty schema for consistency.
+const emissionSchema = z.object({
+    policyNumber: z.string().optional(), // No user input needed, but keep for structure.
 });
 
 type EmissionFormValues = z.infer<typeof emissionSchema>;
@@ -47,7 +47,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
         <div>
           <h2 className="text-xl font-semibold mb-6">Emisión de la Póliza</h2>
           <p className="text-muted-foreground mb-6">
-              Introduzca el número de póliza y haga clic en el botón para finalizar la conversión del Lead a una Oportunidad en Salesforce.
+              Se generará un número de póliza automáticamente. Haga clic en el botón para finalizar la conversión del Lead a una Oportunidad en Salesforce.
           </p>
         </div>
 
@@ -57,9 +57,9 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
               name="policyNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número de Póliza</FormLabel>
+                  <FormLabel>Número de Póliza (se generará automáticamente)</FormLabel>
                   <FormControl>
-                    <Input placeholder="E.g. 12345678" {...field} />
+                    <Input placeholder="Se generará al finalizar" {...field} readOnly />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -79,7 +79,7 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
           <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
             Atrás
           </Button>
-          <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
+          <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'FINALIZAR Y CONVERTIR'}
           </Button>
         </div>
@@ -89,5 +89,3 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
 };
 
 export default EmissionForm;
-
-    

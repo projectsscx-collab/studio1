@@ -38,7 +38,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
   });
 
   const watchedData = form.watch();
-  const leadPayload = buildPreviewPayload(watchedData);
+  const leadPayloadPreview = buildPreviewPayload(watchedData);
   
   return (
     <FormProvider {...form}>
@@ -180,7 +180,7 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
         <div className="space-y-2">
             <label className="text-sm font-medium">Payload de Creación de Lead (Vista Previa)</label>
             <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                {JSON.stringify(leadPayload, null, 2)}
+                {JSON.stringify(leadPayloadPreview, null, 2)}
             </pre>
         </div>
         

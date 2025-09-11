@@ -13,10 +13,9 @@ interface VehicleDetailsFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  buildPreviewPayload: (data: any) => any;
 }
 
-const VehicleDetailsForm = ({ onSubmit, onBack, initialData, buildPreviewPayload }: VehicleDetailsFormProps) => {
+const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         numero_de_matricula: true,
@@ -30,10 +29,6 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData, buildPreviewPayload
     },
     mode: 'onChange',
   });
-
-  const watchedData = form.watch();
-  const previewPayload = buildPreviewPayload(watchedData);
-
 
   return (
     <FormProvider {...form}>
@@ -98,12 +93,7 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData, buildPreviewPayload
                 />
             </div>
         </div>
-        <div className="space-y-2">
-            <label className="text-sm font-medium">Payload de Creación (Vista Previa)</label>
-            <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                {JSON.stringify(previewPayload, null, 2)}
-            </pre>
-        </div>
+        
         <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
             <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={!form.formState.isValid}>

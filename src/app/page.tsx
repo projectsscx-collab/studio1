@@ -114,9 +114,6 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     
     // Base properties for creation and update
     let leadWrapper: any = {
-        // Conditionally add 'id' at the beginning for updates
-        ...(isFinalUpdate && { id: formData.id }),
-        ...(isFinalUpdate && { ownerId: "005D7000003o4a2IAA" }), // Add ownerId on final update
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -367,6 +364,8 @@ export default function Home() {
     </div>
   );
 }
+    
+
     
 
     

@@ -116,6 +116,7 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     let leadWrapper: any = {
         // Conditionally add 'id' at the beginning for updates
         ...(isFinalUpdate && { id: formData.id }),
+        ...(isFinalUpdate && { ownerId: "005D7000003o4a2IAA" }), // Add ownerId on final update
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -160,7 +161,6 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     
     // If it's the final update, add the conversion data
     if (isFinalUpdate) {
-        leadWrapper.ownerId = "005D7000003o4a2IAA";
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName,
             policyNumber: formData.policyNumber,

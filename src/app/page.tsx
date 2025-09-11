@@ -156,10 +156,10 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
         },
     };
     
-    // If it's the final update, add the ownerId, and conversion data
+    // If it's the final update, add the idOwner, and conversion data
     if (isFinalUpdate) {
         leadWrapper = {
-          ownerId: '005D7000003o4a2IAA',
+          idOwner: '005D7000003o4a2IAA',
           ...leadWrapper
         };
         leadWrapper.conversionData = {
@@ -308,7 +308,6 @@ export default function Home() {
             ...formData,
             ...stepData,
             StageName: isFinal ? '02' : null,
-            id: formData.id,
         };
         return buildLeadPayload(dataForPreview, isFinal);
     };

@@ -105,12 +105,19 @@ const buildLeadPayload = (formData: FormData) => {
     
     let leadWrapper: any = {};
 
-    // For updates, the lead ID from Salesforce must be the first property.
-    if (formData.id) {
-       leadWrapper.id = formData.id;
+    // For the final update, we ONLY need the ID and conversion data.
+    if (formData.StageName) {
+        return {
+            leadWrappers: [{
+                id: formData.id, // ID is required to identify the lead to update
+                conversionData: {
+                    convertedStatus: formData.StageName,
+                }
+            }]
+        }
     }
     
-    // Base properties for both create and update
+    // Base properties for creation
     leadWrapper = {
         ...leadWrapper,
         idFullOperation: formData.idFullOperation,
@@ -145,8 +152,28 @@ const buildLeadPayload = (formData: FormData) => {
         'Número de serie__c': formData.numero_de_serie,
     };
     
-    // Only include interestProduct if we have vehicle data (i.e. past step 2)
-    if (formData.numero_de_matricula) {
+    // Only include interestProduct if we are at the quote step or beyond
+    if (formData.effectiveDate) {
+        leadWrapper.interestProduct = {
+            businessLine: "01",
+            sector: "XX_01",
+            subsector: "XX_00",
+            branch: "XX_205",
+            risk: JSON.stringify(riskObject),
+            quotes: [{
+                id: calculateUniqueId('QT'),
+                effectiveDate: formData.effectiveDate,
+                expirationDate: formData.expirationDate,
+                paymentMethod: formData.paymentMethod,
+                paymentPeriodicity: formData.paymentPeriodicity,
+                paymentTerm: formData.paymentTerm,
+                netPremium: formData.Amount,
+                additionalInformation: "test",
+                isSelected: true,
+            }],
+        };
+    } else if (formData.numero_de_matricula) {
+        // Include interestProduct with just risk if we are past vehicle details but not yet at quote
         leadWrapper.interestProduct = {
             businessLine: "01",
             sector: "XX_01",
@@ -154,36 +181,6 @@ const buildLeadPayload = (formData: FormData) => {
             branch: "XX_205",
             risk: JSON.stringify(riskObject),
         };
-    }
-    
-    // CRITICAL LOGIC: Add quotes and conversion data based on the flow.
-    // The presence of a quote indicates this is the "creation" call.
-    if (formData.effectiveDate) { 
-        leadWrapper.interestProduct.quotes = [{
-            id: calculateUniqueId('QT'),
-            effectiveDate: formData.effectiveDate,
-            expirationDate: formData.expirationDate,
-            paymentMethod: formData.paymentMethod,
-            paymentPeriodicity: formData.paymentPeriodicity,
-            paymentTerm: formData.paymentTerm,
-            netPremium: formData.Amount,
-            additionalInformation: "test",
-            isSelected: true,
-        }];
-    }
-
-    // The presence of StageName indicates this is the final "update" call for conversion.
-    if (formData.StageName) {
-        // For the final update, we ONLY need the ID and conversion data.
-        // All other data has been sent.
-        return {
-            leadWrappers: [{
-                id: formData.id,
-                conversionData: {
-                    convertedStatus: formData.StageName,
-                }
-            }]
-        }
     }
 
     return { leadWrappers: [leadWrapper] };
@@ -212,11 +209,10 @@ export default function Home() {
   const handleInitialSubmit = async (data: Partial<FormData>) => {
     setIsSubmitting(true);
     
+    // This is the creation step, so merge all data so far
     const submissionData: FormData = { 
         ...formData, 
         ...data,
-        StageName: null, // CRITICAL: Ensure StageName is null for creation
-        id: null, // Ensure ID is null for creation
     };
     
     const leadPayload = buildLeadPayload(submissionData);
@@ -235,6 +231,7 @@ export default function Home() {
         
         setSalesforceIds(newIds);
         
+        // IMPORTANT: Update form data with the new IDs for the next steps
         const nextStepData = { ...submissionData, ...newIds };
         setFormData(nextStepData);
         
@@ -264,11 +261,11 @@ export default function Home() {
       }
       setIsSubmitting(true);
 
+      // Data for the final update only needs the IDs and the StageName
       const finalData: FormData = { 
-        ...formData, 
-        ...data,
-        id: salesforceIds.id, 
-        idFullOperation: salesforceIds.idFullOperation,
+        ...formData, // carry over existing data
+        ...data, // new data from this step (if any)
+        id: salesforceIds.id, // Make sure the lead ID is set
         StageName: '02', // Set final status for conversion
       };
       
@@ -347,11 +344,11 @@ export default function Home() {
 
     switch (currentStep) {
       case 1:
-        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
+        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 2:
         return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 3:
-        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
+        return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 4:
         return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={buildPreviewPayloadForStep} />;
       case 5:

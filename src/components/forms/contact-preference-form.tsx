@@ -15,7 +15,6 @@ interface ContactPreferenceFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  buildPreviewPayload: (data: any) => any;
 }
 
 // Define the schema for this specific form step to improve readability and avoid parsing errors.
@@ -34,7 +33,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
       agentType: initialData.agentType || '',
     },
     mode: 'onChange',
-  });
+  })
 
   return (
     <FormProvider {...form}>

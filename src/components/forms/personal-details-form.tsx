@@ -19,7 +19,6 @@ interface PersonalDetailsFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  buildPreviewPayload: (data: any) => any;
 }
 
 const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {

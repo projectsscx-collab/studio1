@@ -85,5 +85,3 @@ export const leadSchema = z.object({
 });
 
 export type LeadData = z.infer<typeof leadSchema>;
-
-    

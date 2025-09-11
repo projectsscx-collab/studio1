@@ -3,38 +3,53 @@
 
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { leadSchema, agentTypes, sourceEvents } from '@/lib/schemas';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { agentTypes, sourceEvents } from '@/lib/schemas';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
-interface ContactPreferenceFormProps {
-  onSubmit: (data: any) => void;
-  onBack: () => void;
-  initialData: any;
-}
-
-// Define the schema for this specific form step to improve readability and avoid parsing errors.
-const formSchema = leadSchema.pick({
-  sourceEvent: true,
-  agentType: true,
+// 1. Define a clear and specific schema for this form step.
+const contactPreferenceSchema = z.object({
+  sourceEvent: z.string().min(1, 'Debe seleccionar cómo prefiere ser contactado.'),
+  agentType: z.string().min(1, 'Debe seleccionar una preferencia de agente.'),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+// 2. Define the type for the form values based on the schema.
+type ContactPreferenceFormValues = z.infer<typeof contactPreferenceSchema>;
 
-const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPreferenceFormProps) => {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+// 3. Define the props interface for the component.
+interface ContactPreferenceFormProps {
+  onSubmit: (data: ContactPreferenceFormValues) => void;
+  onBack: () => void;
+  initialData: Partial<ContactPreferenceFormValues>;
+  isSubmitting: boolean;
+}
+
+// 4. Rewrite the component with a clean and standard structure.
+const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: ContactPreferenceFormProps) => {
+  const form = useForm<ContactPreferenceFormValues>({
+    resolver: zodResolver(contactPreferenceSchema),
     defaultValues: {
       sourceEvent: initialData.sourceEvent || '',
       agentType: initialData.agentType || '',
     },
-    mode: 'onChange',
+    mode: 'onChange', // Validate fields as soon as they change.
   });
-
-  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <FormProvider {...form}>
@@ -42,7 +57,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPrefere
         <div>
           <h2 className="text-xl font-semibold mb-6">Preferencia de Contacto y Agente</h2>
           <p className="text-muted-foreground mb-6">
-              Seleccione sus preferencias. Estos datos se incluirán en la creación del Lead.
+            Seleccione sus preferencias. Estos datos se incluirán en la creación del Lead.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
@@ -106,5 +121,3 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData }: ContactPrefere
 };
 
 export default ContactPreferenceForm;
-
-    

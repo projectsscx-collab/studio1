@@ -159,7 +159,7 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     // If it's the final update, add the idOwner, and conversion data
     if (isFinalUpdate) {
         leadWrapper = {
-          idOwner: '005D7000003o4a2IAA',
+          idOwner: '005D700000GSthDIAT',
           ...leadWrapper
         };
         leadWrapper.conversionData = {
@@ -230,11 +230,6 @@ export default function Home() {
   };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
-      if (!formData?.id) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Salesforce Lead ID no encontrado. Por favor, reinicie el formulario.' });
-        setIsSubmitting(false);
-        return;
-      }
       setIsSubmitting(true);
 
       const generatedPolicyNumber = calculateUniqueId('POL');

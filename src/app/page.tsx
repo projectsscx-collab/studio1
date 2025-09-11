@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -125,10 +126,10 @@ const buildLeadPayload = (formData: FormData) => {
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        documentType: formData.documentType,
-        documentNumber: formData.documentNumber,
         birthdate: formData.birthdate,
         contactData: {
+            documentType: formData.documentType,
+            documentNumber: formData.documentNumber,
             mobilePhone: formData.mobilePhone,
             phone: formData.phone,
             email: formData.email,

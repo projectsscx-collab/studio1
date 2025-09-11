@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { agentTypes, sourceEvents } from '@/lib/schemas';
@@ -52,7 +51,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
   });
 
   return (
-    <FormProvider {...form}>
+    <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div>
           <h2 className="text-xl font-semibold mb-6">Preferencia de Contacto y Agente</h2>
@@ -92,7 +91,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione un tipo de agente" />
-                      </Trigger>
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {Object.entries(agentTypes).map(([key, value]) => (
@@ -116,7 +115,7 @@ const ContactPreferenceForm = ({ onSubmit, onBack, initialData, isSubmitting }: 
           </Button>
         </div>
       </form>
-    </FormProvider>
+    </Form>
   );
 };
 

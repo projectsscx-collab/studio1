@@ -70,7 +70,9 @@ export type SalesforceTokenResponse = z.infer<typeof SalesforceTokenResponseSche
 
 // Defines the shape of the IDs we get from Salesforce
 export interface SalesforceIds {
-    id: string; // This is the LEAD ID
+    id: string;
     idFullOperation: string;
 }
+    
+
     

@@ -81,8 +81,10 @@ export const leadSchema = z.object({
 
   // Step 5: Emission
   Amount: z.number().positive('El importe debe ser un número positivo.'),
-  policyNumber: z.string().optional(),
+  policyNumber: z.string().optional()
 });
 
 export type LeadData = z.infer<typeof leadSchema>;
+    
+
     

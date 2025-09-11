@@ -114,6 +114,7 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     
     // Base properties for creation and update
     let leadWrapper: any = {
+        ownerId: '005D7000003o4a2IAA',
         idFullOperation: formData.idFullOperation,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -158,6 +159,7 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     
     // If it's the final update, add the conversion data
     if (isFinalUpdate) {
+        leadWrapper.id = formData.id; // Add ID for update
         leadWrapper.conversionData = {
             convertedStatus: formData.StageName,
             policyNumber: formData.policyNumber,

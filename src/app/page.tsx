@@ -2,7 +2,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import PersonalDetailsForm from '@/components/forms/personal-details-form';
 import VehicleDetailsForm from '@/components/forms/vehicle-details-form';
@@ -95,13 +96,13 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
     };
 
     let utmData: any = {};
-    if (formData.agentType === 'APM') {
+    if (formData.agentType === 'CC') {
+        utmData = { UTMCampaign: 'ROPO_CCCampaign' };
+    } else if (formData.agentType === 'APM') {
         sourceData.systemOrigin = '02';
         sourceData.leadSource = '02';
-        utmData = { UTMCampaign: 'ROPO_APMCampaign' };
     } else if (formData.agentType === 'ADM') {
         sourceData.leadSource = '10';
-        utmData = { UTMCampaign: 'ROPO_ADMCampaign' };
     }
     
     const riskObject = {
@@ -181,6 +182,20 @@ export default function Home() {
   const [creationResponse, setCreationResponse] = useState<any>(null);
   
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const queryData: Partial<FormData> = {};
+    for (const [key, value] of searchParams.entries()) {
+      if (Object.prototype.hasOwnProperty.call(initialFormData, key)) {
+        (queryData as any)[key] = value;
+      }
+    }
+
+    if (Object.keys(queryData).length > 0) {
+      setFormData(prevData => ({ ...prevData, ...queryData }));
+    }
+  }, [searchParams]);
 
   const handleNextStep = (data: Partial<FormData>) => {
     setDirection(1);
@@ -314,11 +329,11 @@ export default function Home() {
 
     switch (currentStep) {
       case 1:
-        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
-      case 2:
-        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
-      case 3:
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+      case 2:
+        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+      case 3:
+        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 4:
         return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, false)} />;
       case 5:
@@ -362,10 +377,4 @@ export default function Home() {
     </div>
   );
 }
-    
-
-    
-
-    
-
     

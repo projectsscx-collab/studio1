@@ -8,9 +8,9 @@ interface FormStepperProps {
 }
 
 const steps = [
-    { number: 1, title: 'Datos Personales', icon: User },
-    { number: 2, title: 'Datos del Vehículo', icon: Car },
-    { number: 3, title: 'Contacto', icon: Handshake },
+    { number: 1, title: 'Contacto', icon: Handshake },
+    { number: 2, title: 'Datos Personales', icon: User },
+    { number: 3, title: 'Datos del Vehículo', icon: Car },
     { number: 4, title: 'Cotización', icon: FileText },
     { number: 5, title: 'Emisión', icon: CheckCircle },
 ];

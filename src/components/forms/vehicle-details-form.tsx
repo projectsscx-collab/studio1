@@ -7,6 +7,7 @@ import { leadSchema } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
 
 interface VehicleDetailsFormProps {
   onSubmit: (data: any) => void;
@@ -15,7 +16,7 @@ interface VehicleDetailsFormProps {
   isSubmitting: boolean;
 }
 
-const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFormProps) => {
+const VehicleDetailsForm = ({ onSubmit, onBack, initialData, isSubmitting }: VehicleDetailsFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         numero_de_matricula: true,
@@ -95,9 +96,9 @@ const VehicleDetailsForm = ({ onSubmit, onBack, initialData }: VehicleDetailsFor
         </div>
         
         <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onBack}>Atrás</Button>
-            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={!form.formState.isValid}>
-            CONTINUAR >
+            <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
+            <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'GENERAR RIESGO Y CONTINUAR >'}
             </Button>
         </div>
       </form>

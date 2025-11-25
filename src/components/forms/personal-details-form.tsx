@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -21,7 +21,7 @@ interface PersonalDetailsFormProps {
   isSubmitting: boolean;
 }
 
-const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps) => {
+const PersonalDetailsForm = ({ onSubmit, onBack, initialData, isSubmitting }: PersonalDetailsFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({ 
         firstName: true, 
@@ -174,9 +174,10 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
                 </div>
             </div>
             
-            <div className="flex justify-end">
-                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={!form.formState.isValid}>
-                    CONTINUAR >
+            <div className="flex justify-between">
+                <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
+                <Button type="submit" size="lg" className="bg-red-600 hover:bg-red-700 text-white font-bold" disabled={isSubmitting || !form.formState.isValid}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CREAR CANDIDATO Y CONTINUAR >'}
                 </Button>
             </div>
         </form>
@@ -185,4 +186,3 @@ const PersonalDetailsForm = ({ onSubmit, initialData }: PersonalDetailsFormProps
 };
 
 export default PersonalDetailsForm;
-    

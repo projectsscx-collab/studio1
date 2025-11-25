@@ -82,37 +82,66 @@ const initialFormData: FormData = {
   policyNumber: '',
 };
 
-const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
-    let sourceData: any = {
-        sourceEvent: formData.sourceEvent,
+const buildLeadPayload = (formData: FormData, isFinalUpdate = false, step: number) => {
+    const sourceData: any = {
         eventReason: "01",
         sourceSite: "Website",
         deviceType: "01",
         deviceModel: "iPhone",
-        leadSource: "01", 
         origin: "02",
-        systemOrigin: "06", 
-        ipData: {}
+        ipData: {},
     };
 
-    let utmData: any = {};
     if (formData.agentType === 'CC') {
-        utmData = { UTMCampaign: 'ROPO_CCCampaign' };
+        sourceData.sourceEvent = '05';
+        sourceData.systemOrigin = '06';
+        sourceData.leadSource = '01';
+    } else if (formData.agentType === 'ADM') {
+        sourceData.sourceEvent = '01';
+        sourceData.systemOrigin = '06';
+        sourceData.leadSource = '10';
     } else if (formData.agentType === 'APM') {
+        sourceData.sourceEvent = '01';
         sourceData.systemOrigin = '02';
         sourceData.leadSource = '02';
-    } else if (formData.agentType === 'ADM') {
-        sourceData.leadSource = '10';
+    } else {
+        sourceData.sourceEvent = formData.sourceEvent;
+        sourceData.systemOrigin = '06';
+        sourceData.leadSource = '01';
     }
     
-    const riskObject = {
-        'Número de matrícula__c': formData.numero_de_matricula,
-        'Marca__c': formData.marca,
-        'Modelo__c': formData.modelo,
-        'Año del vehículo__c': formData.ano_del_vehiculo,
-        'Número de serie__c': formData.numero_de_serie,
+    const interestProduct: any = {
+        businessLine: "01",
+        sector: "XX_01",
+        subsector: "XX_00",
+        branch: "XX_205",
     };
-    
+
+    if (step >= 3) {
+        const riskObject = {
+            'Número de matrícula__c': formData.numero_de_matricula,
+            'Marca__c': formData.marca,
+            'Modelo__c': formData.modelo,
+            'Año del vehículo__c': formData.ano_del_vehiculo,
+            'Número de serie__c': formData.numero_de_serie,
+        };
+        interestProduct.risk = JSON.stringify(riskObject);
+    }
+
+    if (step >= 4) {
+        const quotesArray = [{
+            id: Math.floor(100000000 + Math.random() * 900000000).toString(),
+            effectiveDate: formData.effectiveDate,
+            expirationDate: formData.expirationDate,
+            netPremium: formData.Amount,
+            paymentMethod: formData.paymentMethod,
+            isSelected: true,
+            paymentPeriodicity: formData.paymentPeriodicity,
+            paymentTerm: formData.paymentTerm
+        }];
+        interestProduct.quotes = quotesArray;
+    }
+
     // Base properties for creation and update
     let leadWrapper: any = {
         idFullOperation: formData.idFullOperation,
@@ -135,27 +164,13 @@ const buildLeadPayload = (formData: FormData, isFinalUpdate = false) => {
               country: formData.country,
             }
         },
-        utmData: utmData,
         sourceData: sourceData,
-        interestProduct: {
-            businessLine: "01",
-            sector: "XX_01",
-            subsector: "XX_00",
-            branch: "XX_205",
-            risk: JSON.stringify(riskObject),
-            quotes: [{
-                id: calculateUniqueId('QT'),
-                effectiveDate: formData.effectiveDate,
-                expirationDate: formData.expirationDate,
-                paymentMethod: formData.paymentMethod,
-                paymentPeriodicity: formData.paymentPeriodicity,
-                paymentTerm: formData.paymentTerm,
-                netPremium: formData.Amount,
-                additionalInformation: "test",
-                isSelected: true,
-            }],
-        },
+        interestProduct: interestProduct,
     };
+
+    if (formData.UTMCampaign && step >= 3) {
+        leadWrapper.utmData = { UTMCampaign: formData.UTMCampaign };
+    }
     
     // If it's the final update, add the idOwner, and conversion data
     if (isFinalUpdate) {
@@ -199,7 +214,16 @@ export default function Home() {
 
   const handleNextStep = (data: Partial<FormData>) => {
     setDirection(1);
-    setFormData((prev) => ({ ...prev, ...data }));
+    
+    const newData = { ...data };
+    if (data.agentType === 'CC') {
+      newData.UTMCampaign = 'ROPO_CCCampaign';
+    } else if (data.agentType) {
+      newData.UTMCampaign = '';
+    }
+
+    setFormData((prev) => ({ ...prev, ...newData }));
+    
     if (currentStep < TOTAL_STEPS + 1) {
       setCurrentStep((prev) => prev + 1);
     }
@@ -209,7 +233,7 @@ export default function Home() {
     setIsSubmitting(true);
     
     const submissionData: FormData = { ...formData, ...data };
-    const leadPayload = buildLeadPayload(submissionData, false); // Not the final update
+    const leadPayload = buildLeadPayload(submissionData, false, 2);
 
     try {
         const response = await submitLead(leadPayload);
@@ -243,6 +267,70 @@ export default function Home() {
         setIsSubmitting(false);
     }
   };
+
+  const handleVehicleSubmit = async (data: Partial<FormData>) => {
+    setIsSubmitting(true);
+    
+    const submissionData: FormData = { ...formData, ...data };
+    const leadPayload = buildLeadPayload(submissionData, false, 3);
+
+    try {
+        const response = await submitLead(leadPayload);
+        
+        if (!response?.success) {
+            console.error("Salesforce update failed:", response);
+            throw new Error('Lead update failed in Salesforce.');
+        }
+        
+        setFormData(submissionData);
+        
+        setDirection(1);
+        setCurrentStep((prev) => prev + 1);
+
+    } catch(error) {
+        console.error('Error updating lead:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        toast({
+          variant: 'destructive',
+          title: 'Error al Actualizar Lead',
+          description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleQuoteSubmit = async (data: Partial<FormData>) => {
+    setIsSubmitting(true);
+    
+    const submissionData: FormData = { ...formData, ...data };
+    const leadPayload = buildLeadPayload(submissionData, false, 4);
+
+    try {
+        const response = await submitLead(leadPayload);
+        
+        if (!response?.success) {
+            console.error("Salesforce update failed:", response);
+            throw new Error('Lead update failed in Salesforce.');
+        }
+        
+        setFormData(submissionData);
+        
+        setDirection(1);
+        setCurrentStep((prev) => prev + 1);
+
+    } catch(error) {
+        console.error('Error updating lead:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        toast({
+          variant: 'destructive',
+          title: 'Error al Actualizar Lead',
+          description: errorMessage,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
   
   const handleFinalSubmit = async (data: Partial<FormData>) => {
       setIsSubmitting(true);
@@ -256,7 +344,7 @@ export default function Home() {
         policyNumber: generatedPolicyNumber,
       };
       
-      const updatePayload = buildLeadPayload(finalData, true); // This IS the final update
+      const updatePayload = buildLeadPayload(finalData, true, 5);
 
       try {
           const response = await submitLead(updatePayload);
@@ -313,15 +401,6 @@ export default function Home() {
   };
 
   const renderStep = () => {
-    const buildPreviewPayloadForStep = (stepData: any, isFinal = false) => {
-        const dataForPreview: FormData = {
-            ...formData,
-            ...stepData,
-            StageName: isFinal ? '02' : null,
-        };
-        return buildLeadPayload(dataForPreview, isFinal);
-    };
-    
     const formProps = {
         initialData: formData,
         isSubmitting: isSubmitting,
@@ -331,13 +410,13 @@ export default function Home() {
       case 1:
         return <ContactPreferenceForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
       case 2:
-        return <PersonalDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+        return <PersonalDetailsForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} />;
       case 3:
-        return <VehicleDetailsForm onSubmit={handleNextStep} onBack={handlePrev} {...formProps} />;
+        return <VehicleDetailsForm onSubmit={handleVehicleSubmit} onBack={handlePrev} {...formProps} />;
       case 4:
-        return <QuoteForm onSubmit={handleInitialSubmit} onBack={handlePrev} {...formProps} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, false)} />;
+        return <QuoteForm onSubmit={handleQuoteSubmit} onBack={handlePrev} {...formProps} />;
       case 5:
-        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} buildPreviewPayload={(data) => buildPreviewPayloadForStep(data, true)} />;
+        return <EmissionForm onSubmit={handleFinalSubmit} onBack={handlePrev} {...formProps} salesforceIds={salesforceIds} />;
       case 6:
         return <SubmissionConfirmation onStartOver={handleStartOver} creationResponse={creationResponse} updateResponse={submissionResponse} salesforceIds={salesforceIds || {id: formData.id!, idFullOperation: formData.idFullOperation!}} />;
       default:

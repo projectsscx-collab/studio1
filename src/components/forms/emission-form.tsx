@@ -9,11 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import type { SalesforceIds } from '@/lib/salesforce-schemas';
-import { leadSchema } from '@/lib/schemas';
 
-// For this step, no fields are required from the user, but we define an empty schema for consistency.
 const emissionSchema = z.object({
-    policyNumber: z.string().optional(), // No user input needed, but keep for structure.
+    policyNumber: z.string().optional(),
 });
 
 type EmissionFormValues = z.infer<typeof emissionSchema>;
@@ -24,10 +22,9 @@ interface EmissionFormProps {
   initialData: Partial<EmissionFormValues>;
   isSubmitting: boolean;
   salesforceIds: SalesforceIds | null;
-  buildPreviewPayload: (data: any, isFinalStep: boolean) => any;
 }
 
-const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceIds, buildPreviewPayload }: EmissionFormProps) => {
+const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceIds }: EmissionFormProps) => {
   const form = useForm<EmissionFormValues>({
     resolver: zodResolver(emissionSchema),
     defaultValues: {
@@ -35,11 +32,6 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
     },
     mode: 'onChange',
   });
-
-  const watchedData = form.watch();
-  
-  // Construct the preview payload for the final update.
-  const finalPayloadPreview = buildPreviewPayload({ ...watchedData, id: salesforceIds?.id }, true);
 
   return (
     <FormProvider {...form}>
@@ -65,14 +57,6 @@ const EmissionForm = ({ onSubmit, onBack, initialData, isSubmitting, salesforceI
                 </FormItem>
               )}
             />
-        </div>
-
-
-        <div className="space-y-2">
-            <label className="text-sm font-medium">Payload Final de Actualización (Vista Previa)</label>
-            <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                {JSON.stringify(finalPayloadPreview, null, 2)}
-            </pre>
         </div>
 
         <div className="flex justify-between">

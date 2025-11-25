@@ -19,10 +19,9 @@ interface QuoteFormProps {
   onBack: () => void;
   initialData: any;
   isSubmitting: boolean;
-  buildPreviewPayload: (data: any) => any;
 }
 
-const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPayload }: QuoteFormProps) => {
+const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting }: QuoteFormProps) => {
   const form = useForm({
     resolver: zodResolver(leadSchema.pick({
         effectiveDate: true,
@@ -37,8 +36,6 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
     mode: 'onChange'
   });
 
-  const watchedData = form.watch();
-  const leadPayloadPreview = buildPreviewPayload(watchedData);
   
   return (
     <FormProvider {...form}>
@@ -177,12 +174,6 @@ const QuoteForm = ({ onSubmit, onBack, initialData, isSubmitting, buildPreviewPa
             </div>
         </div>
 
-        <div className="space-y-2">
-            <label className="text-sm font-medium">Payload de Creación de Lead (Vista Previa)</label>
-            <pre className="p-4 bg-secondary rounded-md text-xs overflow-auto h-64">
-                {JSON.stringify(leadPayloadPreview, null, 2)}
-            </pre>
-        </div>
         
         <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Atrás</Button>
